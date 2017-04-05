@@ -1,0 +1,46 @@
+//distri.go
+
+package pkg_wmg 
+
+import (
+    "fmt"
+)
+
+var successConsumeNum int = 0
+
+func Distri (pType string, num int) {
+    if "waf" == pType {
+        if num < wafWeightTotal {
+            for topic, _ := range Waf {
+                Consume(pType, topic)    
+            }
+            for i := 0; i < num - successConsumeNum; i++ {
+                Consume(pType, "waf")    
+            }
+        } else {
+            times:= num / wafWeightTotal
+            for i := 0; i < times; i++ {
+                for topic, v := range Waf {
+                    for j := 0; j < v.Weight; j++ {
+                        Consume(pType, topic)    
+                    }    
+                }    
+            }
+            fmt.Println(successConsumeNum)
+            for n := 0; n < num - successConsumeNum; n++ {
+                Consume(pType, "waf")    
+                fmt.Println("successConsumeNum")
+
+            }
+            
+            fmt.Println(Waf) 
+            fmt.Println(Vds) 
+            
+        }
+            
+    } else {
+
+    }
+
+}
+
