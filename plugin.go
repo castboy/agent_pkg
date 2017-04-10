@@ -58,12 +58,12 @@ func InitConsumers () {
     vdsConsumers = make(map[string] kafka.Consumer)
 
     for k, v := range Waf {
-        wafConsumers[k] = InitConsumer(k, localhostPartition, v.First)
+        wafConsumers[k] = InitConsumer(k, localhostPartition, v.Current)
         fmt.Println(v.First)
     }
 
     for k, v := range Vds {
-        vdsConsumers[k] = InitConsumer(k, localhostPartition, v.First)
+        vdsConsumers[k] = InitConsumer(k, localhostPartition, v.Current)
     }
 
 }

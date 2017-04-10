@@ -4,21 +4,21 @@ package pkg_wmg
 
 import (
     "fmt"
-//    "encoding/json"
+    "encoding/json"
 )
 
 var successConsumeNum int = 0
 var panicNum int = 0
-//var data interface{}
-//type Res struct {
-//    Code int
-//    Data interface{}    
-//    Num int
-//}
+var data interface{}
+type Res struct {
+    Code int
+    Data interface{}    
+    Num int
+}
 
 func Distri (pType string, num int) {
     wafLen := len(WafBak)
-//    dataSlice := make([]interface{}, 0) 
+    dataSlice := make([]interface{}, 0) 
     if "waf" == pType {
         for {
             for topic, v := range WafBak {
@@ -27,17 +27,19 @@ func Distri (pType string, num int) {
                         delete(WafBak, topic)
                         break    
                     } else {
-                        //byte, err := Consume(pType, topic)
-                        //if err != nil {
-                        //    err = json.Unmarshal(byte, &data)    
-                        //    if err != nil {
-                        //        
-                        //    }
-                        //    dataSlice = append(dataSlice, data)
-                        //}
-                        Consume(pType, topic)
+                        byte, err := Consume(pType, topic)
+                        fmt.Println(string(byte))
+                        if err != nil {
+                        } else {
+                            err = json.Unmarshal(byte, &data)    
+                            if err != nil {
+                                fmt.Println("Unmarshal Error")    
+                            }
+                            dataSlice = append(dataSlice, data)
+                        }
+                        //Consume(pType, topic)
                     }
-                    fmt.Println(WafBak)
+                    //fmt.Println(WafBak)
                     if (successConsumeNum == num || panicNum == wafLen) {
                         break
                     }
@@ -51,22 +53,22 @@ func Distri (pType string, num int) {
             }
         }
        
-        //res := Res {
-        //    Code: 10000,
-        //    Data: dataSlice,
-        //    Num: successConsumeNum,
-        //}
-        //byte, _ := json.Marshal(res)
-        //fmt.Println(string(byte))
+        res := Res {
+            Code: 10000,
+            Data: dataSlice,
+            Num: successConsumeNum,
+        }
+        byte, _ := json.Marshal(res)
+        fmt.Println(string(byte))
 
         fmt.Println(Waf) 
-        fmt.Println(Vds) 
-        fmt.Println(successConsumeNum)
+        //fmt.Println(Vds) 
+        //fmt.Println(successConsumeNum)
             
         for topic, v := range Waf {
             WafBak[topic] = Action{v.Weight, false}   
         }
-        fmt.Println(WafBak)
+        //fmt.Println(WafBak)
         panicNum = 0
         successConsumeNum = 0
 
