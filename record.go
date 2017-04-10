@@ -22,8 +22,6 @@ var wafVds [2]map[string]Partition
 
 var Waf map[string]Partition
 var Vds map[string]Partition
-var wafWeightTotal int = 0
-var vdsWeightTotal int = 0
 
 type Action struct {
     Weight int
@@ -50,18 +48,6 @@ func Read(file string) {
 	err = json.Unmarshal(bytes, &wafVds)
 	if nil != err {
 	}
-
-	Waf = wafVds[0]
-	Vds = wafVds[1]
-
-	WafBak = make(map[string]Action, 1000)
-	VdsBak= make(map[string]Action, 1000)
-    for topic, v := range Waf {
-        WafBak[topic] = Action{v.Weight, false}    
-    }
-    for topic, v := range Vds {
-        VdsBak[topic] = Action{v.Weight, false}    
-    }
 }
 
 func Write(file string) {
@@ -72,12 +58,18 @@ func Write(file string) {
 	fileHdl.Close()
 }
 
-func InitData () {
-    for _, v := range Waf {
-        wafWeightTotal += v.Weight  
+func InitWafVds() {
+	Waf = wafVds[0]
+	Vds = wafVds[1]
+}
+
+func InitWafVdsBak() {
+	WafBak = make(map[string]Action, 1000)
+	VdsBak= make(map[string]Action, 1000)
+    for topic, v := range Waf {
+        WafBak[topic] = Action{v.Weight, false}    
     }
-    fmt.Println(wafWeightTotal)
-    for _, v := range Vds {
-        vdsWeightTotal += v.Weight  
+    for topic, v := range Vds {
+        VdsBak[topic] = Action{v.Weight, false}    
     }
 }

@@ -4,6 +4,7 @@ package pkg_wmg
 
 import (
 	"log"
+    "fmt"
 	"github.com/optiopay/kafka"
 )
 
@@ -57,18 +58,18 @@ func InitConsumers () {
     vdsConsumers = make(map[string] kafka.Consumer)
 
     for k, v := range Waf {
-        wafConsumers[k] = InitConsumer(k, localhostPartition, v.Current)
+        wafConsumers[k] = InitConsumer(k, localhostPartition, v.First)
+        fmt.Println(v.First)
     }
 
     for k, v := range Vds {
-        vdsConsumers[k] = InitConsumer(k, localhostPartition, v.Current)
+        vdsConsumers[k] = InitConsumer(k, localhostPartition, v.First)
     }
 
 }
-
-func UpdateEndOffset () {
+func UpdateOffset () {
     for k, v := range Waf {
-        _, endOffset := Offset(k, localhostPartition)
-        Waf[k] = Partition{v.First, v.Current, endOffset, v.Weight, false}   
+        startOffset, endOffset := Offset(k, localhostPartition)
+        Waf[k] = Partition{startOffset, v.Current, endOffset, v.Weight, false}   
     } 
 }

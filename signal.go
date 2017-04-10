@@ -20,7 +20,6 @@ func StartOffline (w http.ResponseWriter, r *http.Request) {
     if "waf" == pType {
         Waf[topic] = Partition{startOffset, 0, -1, weight, false}     
         wafConsumers[topic] = InitConsumer(topic, localhostPartition, startOffset)
-        wafWeightTotal += weight
     }
 
 }
