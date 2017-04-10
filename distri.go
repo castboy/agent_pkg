@@ -16,65 +16,56 @@ type Res struct {
     Num int
 }
 
-func Distri (pType string, num int) {
-    wafLen := len(WafBak)
+func Distri (num int) string {
+    Len := len(*PtrBak)
     dataSlice := make([]interface{}, 0) 
-    if "waf" == pType {
-        for {
-            for topic, v := range WafBak {
-                for j := 0; j < v.Weight; j++ {
-                    if WafBak[topic].StopConsume {
-                        delete(WafBak, topic)
-                        break    
+    for {
+        for topic, v := range *PtrBak {
+            for j := 0; j < v.Weight; j++ {
+                if (*PtrBak)[topic].StopConsume {
+                    delete(*PtrBak, topic)
+                    break    
+                } else {
+                    byte, err := Consume(topic)
+                    if err != nil {
                     } else {
-                        byte, err := Consume(pType, topic)
-                        fmt.Println(string(byte))
+                        err = json.Unmarshal(byte, &data)    
                         if err != nil {
-                        } else {
-                            err = json.Unmarshal(byte, &data)    
-                            if err != nil {
-                                fmt.Println("Unmarshal Error")    
-                            }
-                            dataSlice = append(dataSlice, data)
+                            fmt.Println("Unmarshal Error")    
                         }
-                        //Consume(pType, topic)
+                        dataSlice = append(dataSlice, data)
                     }
-                    //fmt.Println(WafBak)
-                    if (successConsumeNum == num || panicNum == wafLen) {
-                        break
-                    }
-                }    
-                if (successConsumeNum == num || panicNum == wafLen) {
+                }
+                if (successConsumeNum == num || panicNum == Len) {
                     break
                 }
             }    
-            if (successConsumeNum == num || panicNum == wafLen) {
+            if (successConsumeNum == num || panicNum == Len) {
                 break
             }
+        }    
+        if (successConsumeNum == num || panicNum == Len) {
+            break
         }
-       
-        res := Res {
-            Code: 10000,
-            Data: dataSlice,
-            Num: successConsumeNum,
-        }
-        byte, _ := json.Marshal(res)
-        fmt.Println(string(byte))
-
-        fmt.Println(Waf) 
-        //fmt.Println(Vds) 
-        //fmt.Println(successConsumeNum)
-            
-        for topic, v := range Waf {
-            WafBak[topic] = Action{v.Weight, false}   
-        }
-        //fmt.Println(WafBak)
-        panicNum = 0
-        successConsumeNum = 0
-
-    } else {
-
+    }
+   
+    res := Res {
+        Code: 10000,
+        Data: dataSlice,
+        Num: successConsumeNum,
     }
 
+    byte, _ := json.Marshal(res)
+    jsonStr := string(byte)
+
+    fmt.Println(*Ptr) 
+        
+    for topic, v := range *Ptr {
+        (*PtrBak)[topic] = Action{v.Weight, false}   
+    }
+    panicNum = 0
+    successConsumeNum = 0
+
+    return jsonStr
 }
 

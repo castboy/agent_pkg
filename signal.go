@@ -7,6 +7,7 @@ import (
     "net/http"
 //	"fmt"
     "strconv"
+    "io"
 )
 
 func StartOffline (w http.ResponseWriter, r *http.Request) {
@@ -38,15 +39,25 @@ func GetLastOffset (w http.ResponseWriter, r *http.Request) {
     }
 }
 
-func ReadData (w http.ResponseWriter, r *http.Request) {
+func ReadWaf (w http.ResponseWriter, r *http.Request) {
     r.ParseForm() 
-    pType := r.Form["type"][0]
     reqNum, _ := strconv.Atoi(r.Form["reqNum"][0])
 
-    if "waf" == pType {
-        Distri("waf", reqNum)
-    } else {
-        
-    }
+    Ptr = &Waf
+    PtrBak = &WafBak
+    consumerPtr = &wafConsumers
+
+    io.WriteString(w, Distri(reqNum))
+}
+
+func ReadVds (w http.ResponseWriter, r *http.Request) {
+    r.ParseForm() 
+    reqNum, _ := strconv.Atoi(r.Form["reqNum"][0])
+
+    Ptr = &Vds
+    PtrBak = &VdsBak
+    consumerPtr = &vdsConsumers
+
+    Distri(reqNum)
 }
 

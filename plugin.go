@@ -15,8 +15,9 @@ const (
 var kafkaAddrs = []string{"10.80.6.9:9092", "10.80.6.9:9093"}
 var broker kafka.Client
 var consumer kafka.Consumer
-var wafConsumers map[string] kafka.Consumer
-var vdsConsumers map[string] kafka.Consumer
+var wafConsumers map[string]kafka.Consumer
+var vdsConsumers map[string]kafka.Consumer
+var consumerPtr *map[string]kafka.Consumer 
 
 func InitConsumer (topic string, partition int32, start int64) kafka.Consumer {
 	conf := kafka.NewConsumerConf(topic, partition)
@@ -71,5 +72,10 @@ func UpdateOffset () {
     for k, v := range Waf {
         startOffset, endOffset := Offset(k, localhostPartition)
         Waf[k] = Partition{startOffset, v.Current, endOffset, v.Weight, false}   
+    } 
+
+    for k, v := range Vds {
+        startOffset, endOffset := Offset(k, localhostPartition)
+        Vds[k] = Partition{startOffset, v.Current, endOffset, v.Weight, false}   
     } 
 }

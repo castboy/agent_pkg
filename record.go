@@ -18,18 +18,20 @@ type Partition struct {
     Stop bool
 }
 
-var wafVds [2]map[string]Partition
-
-var Waf map[string]Partition
-var Vds map[string]Partition
-
 type Action struct {
     Weight int
     StopConsume bool    
 }
 
+var wafVds [2]map[string]Partition
+
+var Waf map[string]Partition
+var Vds map[string]Partition
+var Ptr *map[string]Partition
+
 var WafBak map[string]Action
 var VdsBak map[string]Action
+var PtrBak *map[string]Action
 
 func Read(file string) {
 	Waf = make(map[string]Partition, 1000)
