@@ -41,7 +41,7 @@ func GetLastOffset (w http.ResponseWriter, r *http.Request) {
 
 func ReadWaf (w http.ResponseWriter, r *http.Request) {
     r.ParseForm() 
-    reqNum, _ := strconv.Atoi(r.Form["reqNum"][0])
+    reqNum, _ := strconv.Atoi(r.Form["count"][0])
 
     Ptr = &Waf
     PtrBak = &WafBak
@@ -52,7 +52,7 @@ func ReadWaf (w http.ResponseWriter, r *http.Request) {
 
 func ReadVds (w http.ResponseWriter, r *http.Request) {
     r.ParseForm() 
-    reqNum, _ := strconv.Atoi(r.Form["reqNum"][0])
+    reqNum, _ := strconv.Atoi(r.Form["count"][0])
 
     Ptr = &Vds
     PtrBak = &VdsBak
