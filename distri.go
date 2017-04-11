@@ -55,6 +55,14 @@ func Distri (num int) string {
         Num: successConsumeNum,
     }
 
+    if 0 == successConsumeNum {
+        res = Res {
+            Code: 10000,
+            Data: nil,
+            Num: successConsumeNum,
+        }
+    }
+
     byte, _ := json.Marshal(res)
     jsonStr := string(byte)
 
