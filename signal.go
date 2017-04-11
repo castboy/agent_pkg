@@ -58,6 +58,6 @@ func ReadVds (w http.ResponseWriter, r *http.Request) {
     PtrBak = &VdsBak
     consumerPtr = &vdsConsumers
 
-    Distri(reqNum)
+    io.WriteString(w, Distri(reqNum))
 }
 
