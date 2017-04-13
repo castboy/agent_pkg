@@ -9,7 +9,7 @@ import (
     //"fmt"
     //"errors"
 )
-func Consume (topic string) ([]byte, error) {
+func Consume (topic string) []byte {
     defer func() {
         if r := recover(); r != nil {
             log.Printf("consume err: %v", r)    
@@ -26,8 +26,7 @@ func Consume (topic string) ([]byte, error) {
         successConsumeNum++
     }
     //log.Printf("message %d: %s", msg.Offset, msg.Value)
-    return msg.Value, err
-            
+    return msg.Value
 }
 
 

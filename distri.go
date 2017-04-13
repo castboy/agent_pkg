@@ -9,7 +9,6 @@ import (
 
 var successConsumeNum int = 0
 var panicNum int = 0
-var data interface{}
 type Res struct {
     Code int
     Data interface{}    
@@ -18,6 +17,7 @@ type Res struct {
 
 func Distri (num int) string {
     Len := len(*PtrBak)
+    var data interface{}
     dataSlice := make([]interface{}, 0) 
     for {
         for topic, v := range *PtrBak {
@@ -26,10 +26,11 @@ func Distri (num int) string {
                     delete(*PtrBak, topic)
                     break    
                 } else {
-                    byte, err := Consume(topic)
-                    if err != nil {
+                    byte := Consume(topic)
+                    if len(byte) == 0 {
+
                     } else {
-                        err = json.Unmarshal(byte, &data)    
+                        err := json.Unmarshal(byte, &data)    
                         if err != nil {
                             fmt.Println("Unmarshal Error")    
                         }
