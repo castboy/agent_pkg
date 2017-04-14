@@ -1,0 +1,46 @@
+package pkg_wmg
+
+import (
+    "fmt"
+    "net/http"
+)
+
+var Ch = make(chan int)
+var MapIndex int = 0
+var ChMap = make(map[int] chan int, 100)
+
+func Parallize(w http.ResponseWriter, req *http.Request) {
+    //for {
+    //    _, found := ChMap[MapIndex]
+    //    if found {
+    //        MapIndex++    
+    //    } else {
+    //        break
+    //    }
+    //}
+    
+    Ch <- MapIndex
+
+    ch := make(chan int) 
+    ChMap[MapIndex] = ch
+
+    Data := <-ch
+
+    fmt.Println(Data)
+
+
+    MapIndex++
+}
+
+func Agent() {
+    for {
+        index := <-Ch    
+
+        ChMap[MapIndex] <- index 
+    }    
+}
+
+func Listen() {
+     http.HandleFunc("/waf", Parallize)  
+     http.ListenAndServe("localhost:8081", nil)  
+}
