@@ -41,8 +41,10 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
         fmt.Println("received PrefetchMsg:", prefetchMsg)
         if WafCacheInfoMap[prefetchMsg.Topic].End == WafCacheInfoMap[prefetchMsg.Topic].Current {
             prefetchOffset, prefetchDataPtr := ReadKafka(prefetchMsg)
-            res := PrefetchResMsg{prefetchMsg.Topic, prefetchOffset, prefetchDataPtr}
-            PrefetchResCh <- res 
+            if prefetchDataPtr != nil {
+                res := PrefetchResMsg{prefetchMsg.Topic, prefetchOffset, prefetchDataPtr}
+                PrefetchResCh <- res 
+            }
         }
     }
 }
