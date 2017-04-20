@@ -21,7 +21,7 @@ type PrefetchResMsg struct {
    PrefetchDataPtr *[][]byte
 }
 
-var HandleCh = make([]chan *[][]byte, 0)
+var HandleCh = make(map[int] chan *[][]byte)
 var ManageCh = make(chan ManageMsg, 100)
 
 var PrefetchResCh = make(chan PrefetchResMsg)
@@ -44,13 +44,21 @@ func Handle(w http.ResponseWriter, r *http.Request) {
         CacheInfoMapPtr = &VdsCacheInfoMap
     }
 
-    HandleCh = append(HandleCh, make(chan *[][]byte))
-    handleIndex := len(HandleCh) - 1
+    HandleIndex := 0
+    for HandleIndex = 0; HandleIndex < 1000; HandleIndex++ {
+        _, found := HandleCh[HandleIndex]    
+        if !found {
+            HandleCh[HandleIndex] = make(chan *[][]byte)
+            fmt.Println(HandleIndex)
+            break
+        }
+    }
 
-    ManageCh <- ManageMsg{EnginePtr, Count, handleIndex}
+    ManageCh <- ManageMsg{EnginePtr, Count, HandleIndex}
 
-    Data := <-HandleCh[handleIndex]
+    Data := <-HandleCh[HandleIndex]
     
+    delete(HandleCh, HandleIndex)
     fmt.Println("Handle", *Data)
 
     io.WriteString(w, "Response")
