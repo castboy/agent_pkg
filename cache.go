@@ -84,7 +84,7 @@ func UpdateEngineCurrent(EnginePtr *map[string]Partition, cacheAnalysisRes map[s
         (*EnginePtr)[topic] = Partition{(*EnginePtr)[topic].First, current+readCount, (*EnginePtr)[topic].Cache, 
                                         (*EnginePtr)[topic].Last, (*EnginePtr)[topic].Weight, (*EnginePtr)[topic].Stop} 
     }
-    fmt.Println(*EnginePtr)
+    fmt.Println("UpdateEngineCurrent", *EnginePtr)
 }
 
 func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
@@ -93,8 +93,10 @@ func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
     _, ok := Waf[topic]
     if ok {
         Waf[topic] = Partition{Waf[topic].First, Waf[topic].Engine, prefetchResMsg.PrefetchOffset, Waf[topic].Last, Waf[topic].Weight, Waf[topic].Stop} 
+        fmt.Println("UpdateCacheCurrent", Waf)
     } else {
         Vds[topic] = Partition{Vds[topic].First, Vds[topic].Engine, prefetchResMsg.PrefetchOffset, Vds[topic].Last, Vds[topic].Weight, Vds[topic].Stop} 
+        fmt.Println("UpdateCacheCurrent",Vds)
     }
 }
 
@@ -109,10 +111,9 @@ func SendPrefetchMsg(cacheAnalysisRes map[string] CacheAnalysisRes) {
 
 func DisposeReq(manageMsg ManageMsg) {
     res := AnalysisCache(manageMsg.EnginePtr, manageMsg.Count)
-    fmt.Println(res)
+    //fmt.Println("analysisCacheRes", res)
     ReadCache(res, manageMsg.HandleIndex)
     UpdateCacheStatus(res)
-    fmt.Println(WafCacheInfoMap)
     SendPrefetchMsg(res)
     UpdateEngineCurrent(manageMsg.EnginePtr, res)
 }

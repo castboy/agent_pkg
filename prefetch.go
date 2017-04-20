@@ -54,4 +54,8 @@ func InitPrefetch() {
         PrefetchChMap[topic] = make(chan PrefetchMsg, 100) 
         go Prefetch(PrefetchChMap[topic])
     }
+    for topic, _ :=  range Vds {
+        PrefetchChMap[topic] = make(chan PrefetchMsg, 100) 
+        go Prefetch(PrefetchChMap[topic])
+    }
 }

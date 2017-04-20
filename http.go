@@ -7,6 +7,7 @@ import (
     "io"
     "net/http"
     "strconv"
+    "encoding/json"
 )
 
 type ManageMsg struct {
@@ -19,6 +20,12 @@ type PrefetchResMsg struct {
    Topic string
    PrefetchOffset int64
    PrefetchDataPtr *[][]byte
+}
+
+type HttpRes struct {
+    Code int
+    Data interface{}    
+    Count int
 }
 
 var HandleCh = make(map[int] chan *[][]byte)
@@ -49,7 +56,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
         _, found := HandleCh[HandleIndex]    
         if !found {
             HandleCh[HandleIndex] = make(chan *[][]byte)
-            fmt.Println(HandleIndex)
             break
         }
     }
@@ -59,16 +65,42 @@ func Handle(w http.ResponseWriter, r *http.Request) {
     Data := <-HandleCh[HandleIndex]
     
     delete(HandleCh, HandleIndex)
-    fmt.Println("Handle", *Data)
 
-    io.WriteString(w, "Response")
+    var data interface{}
+    var dataSlice = make([]interface{}, 0)
+    dataLen := len(*Data)
+    for i := 0; i < dataLen; i++ {
+        err := json.Unmarshal((*Data)[i], &data)    
+        if err != nil {
+            fmt.Println("Unmarshal Error")    
+        }
+        dataSlice = append(dataSlice, data) 
+    }
+
+    res := HttpRes{
+        Code: 10000,
+        Data: dataSlice,
+        Count: dataLen,
+    }
+
+    if dataLen == 0 {
+        res = HttpRes{
+            Code: 10000,
+            Data: nil,
+            Count: dataLen,
+        }
+    }
+
+    byte, _ := json.Marshal(res)
+
+    io.WriteString(w, "\n\n\n"+string(byte))
 }
 
 func Manage() {
     for {
         select {
             case req := <-ManageCh:   
-                fmt.Println("req", req)
+                //fmt.Println("req", req)
                 DisposeReq(req)
                 
             case res := <-PrefetchResCh:

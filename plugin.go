@@ -4,7 +4,7 @@ package pkg_wmg
 
 import (
 	"log"
-    //"fmt"
+    "fmt"
 	"github.com/optiopay/kafka"
 )
 
@@ -28,7 +28,7 @@ func InitConsumer (topic string, partition int32, start int64) kafka.Consumer {
     return consumer
 }
 
-func Offset  (topic string, partition int32) (int64, int64) {
+func Offset (topic string, partition int32) (int64, int64) {
     start, err := broker.OffsetEarliest(topic, partition)
     if err != nil {
         log.Fatalf("cannot get start %s", err)
@@ -77,4 +77,5 @@ func UpdateOffset () {
         startOffset, endOffset := Offset(k, localhostPartition)
         Vds[k] = Partition{startOffset, v.Engine, v.Cache, endOffset, v.Weight, false}   
     } 
+    fmt.Println(Waf, Vds)
 }
