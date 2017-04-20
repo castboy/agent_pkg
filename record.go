@@ -5,7 +5,7 @@ package pkg_wmg
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	//"io"
 	"io/ioutil"
 	"os"
 )
@@ -13,6 +13,7 @@ import (
 type Partition struct {
 	First   int64
 	Engine int64
+	Cache int64
 	Last    int64
 	Weight  int
     Stop bool
