@@ -28,10 +28,24 @@ type HttpRes struct {
     Count int
 }
 
+type StartOfflineMsg struct {
+    Engine string
+    Topic string
+    Weight int    
+}
+
+type StopOfflineMsg struct {
+    Engine string
+    Topic string
+}
+
 var HandleCh = make(map[int] chan *[][]byte)
 var ManageCh = make(chan ManageMsg, 100)
 
 var PrefetchResCh = make(chan PrefetchResMsg)
+
+var StartOfflineCh = make(chan StartOfflineMsg)
+var StopOfflineCh = make(chan StopOfflineMsg)
 
 var EnginePtr *map[string]Partition
 
@@ -105,11 +119,64 @@ func Manage() {
                 
             case res := <-PrefetchResCh:
                 DisposeRes(res)
+
+            case start := <- StartOfflineCh:
+                StartOffline(start)
+
+            case stop := <- StopOfflineCh:
+                StopOffline(stop)
         }
     }    
 }
 
+func OfflineStartHandle(w http.ResponseWriter, r *http.Request) {
+    r.ParseForm()
+    engine := r.Form["type"][0]
+    topic := r.Form["topic"][0]
+    weight, _ := strconv.Atoi(r.Form["weight"][0])
+    
+    startOfflineMsg := StartOfflineMsg {
+        Engine: engine,
+        Topic: topic,
+        Weight: weight,    
+    }
+
+    StartOfflineCh <- startOfflineMsg
+}
+
+func OfflineStopHandle(w http.ResponseWriter, r *http.Request) {
+    r.ParseForm()
+    engine := r.Form["type"][0]
+    topic := r.Form["topic"][0]
+    
+    stopOfflineMsg := StopOfflineMsg {
+        Engine: engine,
+        Topic: topic,
+    }
+
+    StopOfflineCh <- stopOfflineMsg
+}
+
+func OfflineProgressHandle(w http.ResponseWriter, r *http.Request) {
+    r.ParseForm()
+    engine := r.Form["type"][0]
+    topic := r.Form["topic"][0]
+    
+    rate := 0.000
+    if engine == "waf" {
+        rate = float64(Waf[topic].Engine) / float64(Waf[topic].Last)    
+    } else {
+        rate = float64(Vds[topic].Engine) / float64(Vds[topic].Last)    
+    }
+
+    io.WriteString(w, strconv.FormatFloat(rate, 'f', 5, 32))
+}
+
 func Listen() {
      http.HandleFunc("/", Handle)  
+     http.HandleFunc("/start", OfflineStartHandle)  
+     http.HandleFunc("/stop", OfflineStopHandle)  
+     http.HandleFunc("/progress", OfflineProgressHandle)  
+
      http.ListenAndServe("localhost:8081", nil)  
 }

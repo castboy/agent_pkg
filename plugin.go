@@ -67,6 +67,7 @@ func InitConsumers () {
     }
 
 }
+
 func UpdateOffset () {
     for k, v := range Waf {
         startOffset, endOffset := Offset(k, localhostPartition)
