@@ -16,12 +16,6 @@ type ManageMsg struct {
     HandleIndex int
 }
 
-type PrefetchResMsg struct {
-   Topic string
-   PrefetchOffset int64
-   PrefetchDataPtr *[][]byte
-}
-
 type HttpRes struct {
     Code int
     Data interface{}    
@@ -37,6 +31,11 @@ type StartOfflineMsg struct {
 type StopOfflineMsg struct {
     Engine string
     Topic string
+}
+
+type PrefetchResMsg struct {
+    Topic string
+    Count int    
 }
 
 var HandleCh = make(map[int] chan *[][]byte)

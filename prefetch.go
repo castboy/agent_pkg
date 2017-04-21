@@ -11,28 +11,24 @@ type PrefetchMsg struct {
 }
 
 var PrefetchChMap = make(map[string] chan PrefetchMsg)
+var PrefetchDataCount = make(map[string] int)
 
-func ReadKafka(prefetchMsg PrefetchMsg) (int64, *[][]byte) {
-    PrefetchData := make([][]byte, 0)
-    var PrefetchOffset int64 = 0
-
-    defer func() {
+func ReadKafka(prefetchMsg PrefetchMsg) {
+    defer func()  {
         if r := recover(); r != nil {
             fmt.Printf("consume err: %v", r)    
-            //return PrefetchOffset, &PrefetchData 
         }    
     }()
 
+    PrefetchDataCount[prefetchMsg.Topic] = 0
     for i := 0; i < prefetchMsg.Count; i++ {
         msg, err := (*consumerPtr)[prefetchMsg.Topic].Consume() 
         if err != nil {
             panic("no data in: " + prefetchMsg.Topic)    
         }
-        PrefetchOffset = msg.Offset
-        PrefetchData = append(PrefetchData, msg.Value)
+        PrefetchDataCount[prefetchMsg.Topic]++ 
+        CacheDataMap[prefetchMsg.Topic] = append(CacheDataMap[prefetchMsg.Topic], msg.Value)
     }
-
-    return PrefetchOffset, &PrefetchData 
 }
 
 func Prefetch(prefetchCh chan PrefetchMsg) {
@@ -40,9 +36,14 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
         prefetchMsg := <-prefetchCh   
         fmt.Println("received PrefetchMsg:", prefetchMsg)
         if WafCacheInfoMap[prefetchMsg.Topic].End == WafCacheInfoMap[prefetchMsg.Topic].Current {
-            prefetchOffset, prefetchDataPtr := ReadKafka(prefetchMsg)
-            if prefetchDataPtr != nil {
-                res := PrefetchResMsg{prefetchMsg.Topic, prefetchOffset, prefetchDataPtr}
+            ReadKafka(prefetchMsg)
+            count := PrefetchDataCount[prefetchMsg.Topic]
+            res := PrefetchResMsg{
+                Topic: prefetchMsg.Topic,
+                Count: count,    
+            }
+
+            if PrefetchDataCount[prefetchMsg.Topic] != 0 {
                 PrefetchResCh <- res 
             }
         }

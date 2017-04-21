@@ -71,9 +71,7 @@ func UpdateCacheStatus(cacheAnalysisRes map[string] CacheAnalysisRes) {
 }
 
 func WriteCache(prefetchResMsg PrefetchResMsg) {
-    CacheDataMap[prefetchResMsg.Topic] = *(prefetchResMsg.PrefetchDataPtr)
-    cacheLen := len(*(prefetchResMsg.PrefetchDataPtr))
-    (*CacheInfoMapPtr)[prefetchResMsg.Topic] = CacheInfo{0, cacheLen} 
+    (*CacheInfoMapPtr)[prefetchResMsg.Topic] = CacheInfo{0, prefetchResMsg.Count} 
     //fmt.Println(*CacheInfoMapPtr)
 }
 
@@ -89,13 +87,13 @@ func UpdateEngineCurrent(EnginePtr *map[string]Partition, cacheAnalysisRes map[s
 
 func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
     topic := prefetchResMsg.Topic
-    
+    count := int64(prefetchResMsg.Count)
     _, ok := Waf[topic]
     if ok {
-        Waf[topic] = Partition{Waf[topic].First, Waf[topic].Engine, prefetchResMsg.PrefetchOffset, Waf[topic].Last, Waf[topic].Weight, Waf[topic].Stop} 
+        Waf[topic] = Partition{Waf[topic].First, Waf[topic].Engine, Waf[topic].Cache+count, Waf[topic].Last, Waf[topic].Weight, Waf[topic].Stop} 
         fmt.Println("UpdateCacheCurrent", Waf)
     } else {
-        Vds[topic] = Partition{Vds[topic].First, Vds[topic].Engine, prefetchResMsg.PrefetchOffset, Vds[topic].Last, Vds[topic].Weight, Vds[topic].Stop} 
+        Vds[topic] = Partition{Vds[topic].First, Vds[topic].Engine, Vds[topic].Cache+count, Vds[topic].Last, Vds[topic].Weight, Vds[topic].Stop} 
         fmt.Println("UpdateCacheCurrent",Vds)
     }
 }
