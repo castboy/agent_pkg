@@ -39,7 +39,7 @@ type PrefetchResMsg struct {
 }
 
 var HandleCh = make(map[int] chan *[][]byte)
-var ManageCh = make(chan ManageMsg, 100)
+var ManageCh = make(chan ManageMsg, 1000)
 
 var PrefetchResCh = make(chan PrefetchResMsg)
 

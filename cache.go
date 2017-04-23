@@ -39,6 +39,7 @@ func AnalysisCache(EnginePtr *map[string]Partition, reqNum int) map[string] Cach
 
     for topic, cacheInfo := range *CacheInfoMapPtr {
         Remainder := cacheInfo.End - cacheInfo.Current
+        fmt.Println(topic, "Remainder:", Remainder)
         Deserve := (reqNum / weightSum) * (*EnginePtr)[topic].Weight
         if Remainder > Deserve {
             Res[topic] = CacheAnalysisRes{Deserve , false}    
@@ -68,11 +69,13 @@ func UpdateCacheStatus(cacheAnalysisRes map[string] CacheAnalysisRes) {
         current := (*CacheInfoMapPtr)[topic].Current
         (*CacheInfoMapPtr)[topic] = CacheInfo{current+v.ReadCount, (*CacheInfoMapPtr)[topic].End}  
     } 
+    fmt.Println(*CacheInfoMapPtr)
+
 }
 
 func WriteCache(prefetchResMsg PrefetchResMsg) {
     (*CacheInfoMapPtr)[prefetchResMsg.Topic] = CacheInfo{0, prefetchResMsg.Count} 
-    //fmt.Println(*CacheInfoMapPtr)
+    fmt.Println(*CacheInfoMapPtr)
 }
 
 func UpdateEngineCurrent(EnginePtr *map[string]Partition, cacheAnalysisRes map[string] CacheAnalysisRes) {
@@ -87,33 +90,41 @@ func UpdateEngineCurrent(EnginePtr *map[string]Partition, cacheAnalysisRes map[s
 
 func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
     topic := prefetchResMsg.Topic
+    fmt.Println("UpdateCacheCurrent-topic", topic)
     count := int64(prefetchResMsg.Count)
     _, ok := Waf[topic]
     if ok {
         Waf[topic] = Partition{Waf[topic].First, Waf[topic].Engine, Waf[topic].Cache+count, Waf[topic].Last, Waf[topic].Weight, Waf[topic].Stop} 
         fmt.Println("UpdateCacheCurrent", Waf)
-    } else {
+    } 
+
+    _, ok = Vds[topic]
+    if ok {
         Vds[topic] = Partition{Vds[topic].First, Vds[topic].Engine, Vds[topic].Cache+count, Vds[topic].Last, Vds[topic].Weight, Vds[topic].Stop} 
         fmt.Println("UpdateCacheCurrent",Vds)
     }
+
+    PrefetchMsgSwitchMap[topic] = true
 }
 
 func SendPrefetchMsg(cacheAnalysisRes map[string] CacheAnalysisRes) {
     for topic, v := range cacheAnalysisRes {
-        if v.SendPrefetchMsg {
+        if v.SendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
             fmt.Println("send prefetchMsg:", topic)
             PrefetchChMap[topic] <- PrefetchMsg{topic, 50}   
+
+            PrefetchMsgSwitchMap[topic] = false
         }
     } 
 }
 
 func DisposeReq(manageMsg ManageMsg) {
     res := AnalysisCache(manageMsg.EnginePtr, manageMsg.Count)
-    //fmt.Println("analysisCacheRes", res)
+    fmt.Println("analysisCacheRes", res)
     ReadCache(res, manageMsg.HandleIndex)
     UpdateCacheStatus(res)
-    SendPrefetchMsg(res)
     UpdateEngineCurrent(manageMsg.EnginePtr, res)
+    SendPrefetchMsg(res)
 }
 
 func DisposeRes(prefetchResMsg PrefetchResMsg) {

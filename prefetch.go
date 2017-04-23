@@ -10,8 +10,19 @@ type PrefetchMsg struct {
     Count int
 }
 
+var PrefetchMsgSwitchMap = make(map[string] bool)
 var PrefetchChMap = make(map[string] chan PrefetchMsg)
 var PrefetchDataCount = make(map[string] int)
+
+func InitPrefetchMsgSwitchMap() {
+    for topic, _ := range Waf {
+        PrefetchMsgSwitchMap[topic] = true    
+    } 
+
+    for topic, _ := range Vds {
+        PrefetchMsgSwitchMap[topic] = true    
+    } 
+}
 
 func ReadKafka(prefetchMsg PrefetchMsg) {
     defer func()  {
@@ -35,18 +46,18 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
     for {
         prefetchMsg := <-prefetchCh   
         fmt.Println("received PrefetchMsg:", prefetchMsg)
-        if WafCacheInfoMap[prefetchMsg.Topic].End == WafCacheInfoMap[prefetchMsg.Topic].Current {
-            ReadKafka(prefetchMsg)
-            count := PrefetchDataCount[prefetchMsg.Topic]
-            res := PrefetchResMsg{
-                Topic: prefetchMsg.Topic,
-                Count: count,    
-            }
 
-            if PrefetchDataCount[prefetchMsg.Topic] != 0 {
-                PrefetchResCh <- res 
-            }
+        ReadKafka(prefetchMsg)
+        count := PrefetchDataCount[prefetchMsg.Topic]
+        res := PrefetchResMsg{
+            Topic: prefetchMsg.Topic,
+            Count: count,    
         }
+
+        if PrefetchDataCount[prefetchMsg.Topic] != 0 {
+            PrefetchResCh <- res 
+        }
+                
     }
 }
 
