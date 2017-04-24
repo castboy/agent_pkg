@@ -3,7 +3,7 @@
 package pkg_wmg
 
 import (
-    //"fmt"
+    "fmt"
 )
 
 func StartOffline(msg StartOfflineMsg) {
@@ -12,14 +12,19 @@ func StartOffline(msg StartOfflineMsg) {
         wafConsumers[msg.Topic] = InitConsumer(msg.Topic, localhostPartition, startOffset)
         Waf[msg.Topic] = Partition{startOffset, 0, startOffset, endOffset, msg.Weight, false}    
        
+        PrefetchMsgSwitchMap[msg.Topic] = true
+
         PrefetchChMap[msg.Topic] = make(chan PrefetchMsg, 100) 
         go Prefetch(PrefetchChMap[msg.Topic])
 
         WafCacheInfoMap[msg.Topic] = CacheInfo{0, 0}
     } else {
         startOffset, endOffset := Offset(msg.Topic, localhostPartition)
+        fmt.Println("startOffset", startOffset)
         vdsConsumers[msg.Topic] = InitConsumer(msg.Topic, localhostPartition, startOffset)
         Vds[msg.Topic] = Partition{startOffset, 0, startOffset, endOffset, msg.Weight, false}    
+
+        PrefetchMsgSwitchMap[msg.Topic] = true
        
         PrefetchChMap[msg.Topic] = make(chan PrefetchMsg, 100) 
         go Prefetch(PrefetchChMap[msg.Topic])

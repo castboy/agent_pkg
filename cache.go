@@ -9,16 +9,18 @@ type CacheInfo struct {
     End int 
 }
 
+type CacheAnalysisRes struct {
+    ReadCount int
+    SendPrefetchMsg bool
+}
+
 var WafCacheInfoMap = make(map[string] CacheInfo)
 var VdsCacheInfoMap = make(map[string] CacheInfo)
 var CacheInfoMapPtr *map[string] CacheInfo
 
 var CacheDataMap = make(map[string] [][]byte)
 
-type CacheAnalysisRes struct {
-    ReadCount int
-    SendPrefetchMsg bool
-}
+var CacheCount int = 50
 
 func InitCacheInfoMap() {
     for topic, _ := range Waf {
@@ -111,7 +113,7 @@ func SendPrefetchMsg(cacheAnalysisRes map[string] CacheAnalysisRes) {
     for topic, v := range cacheAnalysisRes {
         if v.SendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
             fmt.Println("send prefetchMsg:", topic)
-            PrefetchChMap[topic] <- PrefetchMsg{topic, 50}   
+            PrefetchChMap[topic] <- PrefetchMsg{topic, CacheCount}   
 
             PrefetchMsgSwitchMap[topic] = false
         }

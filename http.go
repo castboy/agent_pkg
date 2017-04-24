@@ -171,11 +171,12 @@ func OfflineProgressHandle(w http.ResponseWriter, r *http.Request) {
     io.WriteString(w, strconv.FormatFloat(rate, 'f', 5, 32))
 }
 
-func Listen() {
+func Listen(url string) {
      http.HandleFunc("/", Handle)  
      http.HandleFunc("/start", OfflineStartHandle)  
      http.HandleFunc("/stop", OfflineStopHandle)  
      http.HandleFunc("/progress", OfflineProgressHandle)  
 
-     http.ListenAndServe("localhost:8081", nil)  
+     //http.ListenAndServe("localhost:8081", nil)  
+     http.ListenAndServe(url, nil)  
 }
