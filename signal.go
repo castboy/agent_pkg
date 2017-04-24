@@ -8,6 +8,7 @@ import (
 //	"fmt"
     "strconv"
     "io"
+    "time"
 )
 
 func StartOffline (w http.ResponseWriter, r *http.Request) {
@@ -47,6 +48,8 @@ func ReadWaf (w http.ResponseWriter, r *http.Request) {
     PtrBak = &WafBak
     consumerPtr = &wafConsumers
 
+    time.Sleep(1*time.Second)
+
     io.WriteString(w, Distri(reqNum))
 }
 
@@ -57,6 +60,8 @@ func ReadVds (w http.ResponseWriter, r *http.Request) {
     Ptr = &Vds
     PtrBak = &VdsBak
     consumerPtr = &vdsConsumers
+
+    time.Sleep(1*time.Second)
 
     io.WriteString(w, Distri(reqNum))
 }
