@@ -6,6 +6,7 @@ import (
     "fmt"
 )
 type PrefetchMsg struct {
+    Engine string
     Topic string
     Count int
 }
@@ -32,14 +33,27 @@ func ReadKafka(prefetchMsg PrefetchMsg) {
     }()
 
     PrefetchDataCount[prefetchMsg.Topic] = 0
-    for i := 0; i < prefetchMsg.Count; i++ {
-        msg, err := (*consumerPtr)[prefetchMsg.Topic].Consume() 
-        if err != nil {
-            panic("no data in: " + prefetchMsg.Topic)    
+
+    if prefetchMsg.Engine == "waf" {
+        for i := 0; i < prefetchMsg.Count; i++ {
+            msg, err := wafConsumers[prefetchMsg.Topic].Consume() 
+            if err != nil {
+                panic("no data in: " + prefetchMsg.Topic)    
+            }
+            PrefetchDataCount[prefetchMsg.Topic]++ 
+            CacheDataMap[prefetchMsg.Topic] = append(CacheDataMap[prefetchMsg.Topic], msg.Value)
         }
-        PrefetchDataCount[prefetchMsg.Topic]++ 
-        CacheDataMap[prefetchMsg.Topic] = append(CacheDataMap[prefetchMsg.Topic], msg.Value)
+    } else {
+        for i := 0; i < prefetchMsg.Count; i++ {
+            msg, err := vdsConsumers[prefetchMsg.Topic].Consume() 
+            if err != nil {
+                panic("no data in: " + prefetchMsg.Topic)    
+            }
+            PrefetchDataCount[prefetchMsg.Topic]++ 
+            CacheDataMap[prefetchMsg.Topic] = append(CacheDataMap[prefetchMsg.Topic], msg.Value)
+        }
     }
+
 }
 
 func Prefetch(prefetchCh chan PrefetchMsg) {
@@ -50,13 +64,12 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
         ReadKafka(prefetchMsg)
         count := PrefetchDataCount[prefetchMsg.Topic]
         res := PrefetchResMsg{
+            Engine: prefetchMsg.Engine,
             Topic: prefetchMsg.Topic,
             Count: count,    
         }
 
-        if PrefetchDataCount[prefetchMsg.Topic] != 0 {
-            PrefetchResCh <- res 
-        }
+        PrefetchResCh <- res 
                 
     }
 }

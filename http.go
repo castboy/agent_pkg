@@ -11,9 +11,9 @@ import (
 )
 
 type ManageMsg struct {
-    EnginePtr *map[string]Partition
+    Engine string
     Count int
-    HandleIndex int
+    HandleCh chan *[][]byte
 }
 
 type HttpRes struct {
@@ -34,51 +34,30 @@ type StopOfflineMsg struct {
 }
 
 type PrefetchResMsg struct {
+    Engine string
     Topic string
     Count int    
 }
 
-var HandleCh = make(map[int] chan *[][]byte)
-var ManageCh = make(chan ManageMsg, 1000)
+var ManageCh = make(chan ManageMsg, 10000)
 
 var PrefetchResCh = make(chan PrefetchResMsg)
 
 var StartOfflineCh = make(chan StartOfflineMsg)
 var StopOfflineCh = make(chan StopOfflineMsg)
 
-var EnginePtr *map[string]Partition
-
 func Handle(w http.ResponseWriter, r *http.Request) {
     r.ParseForm()
     Engine := r.Form["type"][0]
     Count, _ := strconv.Atoi(r.Form["count"][0])
     
-    var EnginePtr *map[string]Partition
-    if Engine == "waf" {
-        EnginePtr = &Waf 
-        consumerPtr = &wafConsumers
-        CacheInfoMapPtr = &WafCacheInfoMap
-    } else {
-        EnginePtr = &Vds    
-        consumerPtr = &vdsConsumers
-        CacheInfoMapPtr = &VdsCacheInfoMap
-    }
 
-    HandleIndex := 0
-    for HandleIndex = 0; HandleIndex < 1000; HandleIndex++ {
-        _, found := HandleCh[HandleIndex]    
-        if !found {
-            HandleCh[HandleIndex] = make(chan *[][]byte)
-            break
-        }
-    }
+    HandleCh := make(chan *[][]byte)
 
-    ManageCh <- ManageMsg{EnginePtr, Count, HandleIndex}
+    ManageCh <- ManageMsg{Engine, Count, HandleCh}
 
-    Data := <-HandleCh[HandleIndex]
+    Data := <-HandleCh
     
-    delete(HandleCh, HandleIndex)
-
     var data interface{}
     var dataSlice = make([]interface{}, 0)
     dataLen := len(*Data)
@@ -113,7 +92,7 @@ func Manage() {
     for {
         select {
             case req := <-ManageCh:   
-                //fmt.Println("req", req)
+                fmt.Println("req", req)
                 DisposeReq(req)
                 
             case res := <-PrefetchResCh:
