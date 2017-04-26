@@ -71,12 +71,21 @@ func InitConsumers () {
 func UpdateOffset () {
     for k, v := range Waf {
         startOffset, endOffset := Offset(k, localhostPartition)
-        Waf[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight, false}   
+        if startOffset > v.Engine {
+            Waf[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight, false}   
+        } else {
+            Waf[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight, false}   
+        }
+        
     } 
 
     for k, v := range Vds {
         startOffset, endOffset := Offset(k, localhostPartition)
-        Vds[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight, false}   
+        if startOffset > v.Engine {
+            Vds[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight, false}   
+        } else {
+            Vds[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight, false}   
+        }
     } 
     fmt.Println(Waf, Vds)
 }
