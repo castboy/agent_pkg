@@ -111,11 +111,22 @@ func UpdateCacheStatus(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg 
 
 func WriteCache(prefetchResMsg PrefetchResMsg) {
     fmt.Println("WriteCache")
-    if prefetchResMsg.Engine == "waf" {
-        WafCacheInfoMap[prefetchResMsg.Topic] = CacheInfo{0, prefetchResMsg.Count} 
+    data := *prefetchResMsg.DataPtr
+    count := len(data)
+    topic := prefetchResMsg.Topic
+    engine := prefetchResMsg.Engine
+
+    if engine == "waf" {
+        WafCacheInfoMap[topic] = CacheInfo{0, count} 
+        for _, v := range data {
+            CacheDataMap[topic] = append(CacheDataMap[topic], v)   
+        }
         fmt.Println("WafCacheInfoMap", WafCacheInfoMap)
     } else {
-        VdsCacheInfoMap[prefetchResMsg.Topic] = CacheInfo{0, prefetchResMsg.Count} 
+        VdsCacheInfoMap[prefetchResMsg.Topic] = CacheInfo{0, count} 
+        for _, v := range data {
+            CacheDataMap[topic] = append(CacheDataMap[topic], v)   
+        }
         fmt.Println("WafCacheInfoMap", VdsCacheInfoMap)
     }
 }
@@ -144,7 +155,7 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMs
 func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
     topic := prefetchResMsg.Topic
     fmt.Println("UpdateCacheCurrent-topic", topic)
-    count := int64(prefetchResMsg.Count)
+    count := int64(len(*prefetchResMsg.DataPtr))
 
     if prefetchResMsg.Engine == "waf" {
         Waf[topic] = Partition{Waf[topic].First, Waf[topic].Engine, Waf[topic].Cache+count, Waf[topic].Last, Waf[topic].Weight, Waf[topic].Stop} 

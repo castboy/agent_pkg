@@ -13,7 +13,6 @@ type PrefetchMsg struct {
 
 var PrefetchMsgSwitchMap = make(map[string] bool)
 var PrefetchChMap = make(map[string] chan PrefetchMsg)
-var PrefetchDataCount = make(map[string] int)
 
 func InitPrefetchMsgSwitchMap() {
     for topic, _ := range Waf {
@@ -25,14 +24,12 @@ func InitPrefetchMsgSwitchMap() {
     } 
 }
 
-func ReadKafka(prefetchMsg PrefetchMsg) {
+func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
     defer func()  {
         if r := recover(); r != nil {
             fmt.Printf("consume err: %v", r)    
         }    
     }()
-
-    PrefetchDataCount[prefetchMsg.Topic] = 0
 
     if prefetchMsg.Engine == "waf" {
         for i := 0; i < prefetchMsg.Count; i++ {
@@ -40,8 +37,7 @@ func ReadKafka(prefetchMsg PrefetchMsg) {
             if err != nil {
                 panic("no data in: " + prefetchMsg.Topic)    
             }
-            PrefetchDataCount[prefetchMsg.Topic]++ 
-            CacheDataMap[prefetchMsg.Topic] = append(CacheDataMap[prefetchMsg.Topic], msg.Value)
+            *data = append(*data, msg.Value)
         }
     } else {
         for i := 0; i < prefetchMsg.Count; i++ {
@@ -49,11 +45,9 @@ func ReadKafka(prefetchMsg PrefetchMsg) {
             if err != nil {
                 panic("no data in: " + prefetchMsg.Topic)    
             }
-            PrefetchDataCount[prefetchMsg.Topic]++ 
-            CacheDataMap[prefetchMsg.Topic] = append(CacheDataMap[prefetchMsg.Topic], msg.Value)
+            *data = append(*data, msg.Value)
         }
     }
-
 }
 
 func Prefetch(prefetchCh chan PrefetchMsg) {
@@ -61,12 +55,14 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
         prefetchMsg := <-prefetchCh   
         fmt.Println("received PrefetchMsg:", prefetchMsg)
 
-        ReadKafka(prefetchMsg)
-        count := PrefetchDataCount[prefetchMsg.Topic]
+        var Data [][]byte
+        ReadKafka(prefetchMsg, &Data)
+        dataPtr := &Data
+
         res := PrefetchResMsg{
             Engine: prefetchMsg.Engine,
             Topic: prefetchMsg.Topic,
-            Count: count,    
+            DataPtr: dataPtr,    
         }
 
         PrefetchResCh <- res 

@@ -19,7 +19,7 @@ type ManageMsg struct {
 type HttpRes struct {
     Code int
     Data interface{}    
-    Count int
+    Num int
 }
 
 type StartOfflineMsg struct {
@@ -36,7 +36,7 @@ type StopOfflineMsg struct {
 type PrefetchResMsg struct {
     Engine string
     Topic string
-    Count int    
+    DataPtr *[][]byte
 }
 
 var ManageCh = make(chan ManageMsg, 10000)
@@ -72,14 +72,14 @@ func Handle(w http.ResponseWriter, r *http.Request) {
     res := HttpRes{
         Code: 10000,
         Data: dataSlice,
-        Count: dataLen,
+        Num: dataLen,
     }
 
     if dataLen == 0 {
         res = HttpRes{
             Code: 10000,
             Data: nil,
-            Count: dataLen,
+            Num: dataLen,
         }
     }
 
