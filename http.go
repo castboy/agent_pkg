@@ -85,7 +85,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
     byte, _ := json.Marshal(res)
 
-    io.WriteString(w, "\n\n\n"+string(byte))
+    io.WriteString(w, string(byte))
 }
 
 func Manage() {
