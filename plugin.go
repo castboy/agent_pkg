@@ -8,11 +8,8 @@ import (
 	"github.com/optiopay/kafka"
 )
 
-const (
-	localhostPartition = 0
-)
+var localhostPartition int32 = MyConf.Partition
 
-var kafkaAddrs = []string{"10.80.6.9:9092", "10.80.6.9:9093"}
 var broker kafka.Client
 var consumer kafka.Consumer
 var wafConsumers map[string]kafka.Consumer
@@ -42,6 +39,7 @@ func Offset (topic string, partition int32) (int64, int64) {
 }
 
 func InitBroker () {
+    var kafkaAddrs []string = []string{MyConf.HostPort1, MyConf.HostPort2}
 	conf := kafka.NewBrokerConf("wmg-test-client")
 	conf.AllowTopicCreation = false
 

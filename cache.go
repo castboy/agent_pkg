@@ -20,7 +20,8 @@ var CacheInfoMapPtr *map[string] CacheInfo
 
 var CacheDataMap = make(map[string] [][]byte)
 
-var CacheCount int = 50
+var CacheCount int = 200
+//var CacheCount int = MyConf.MaxCache
 
 func InitCacheInfoMap() {
     for topic, _ := range Waf {
