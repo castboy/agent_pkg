@@ -8,8 +8,6 @@ import (
 	"github.com/optiopay/kafka"
 )
 
-var localhostPartition int32 = MyConf.Partition
-
 var broker kafka.Client
 var consumer kafka.Consumer
 var wafConsumers map[string]kafka.Consumer
@@ -57,18 +55,18 @@ func InitConsumers () {
     vdsConsumers = make(map[string] kafka.Consumer)
 
     for k, v := range Waf {
-        wafConsumers[k] = InitConsumer(k, localhostPartition, v.Engine)
+        wafConsumers[k] = InitConsumer(k, MyConf.Partition, v.Engine)
     }
 
     for k, v := range Vds {
-        vdsConsumers[k] = InitConsumer(k, localhostPartition, v.Engine)
+        vdsConsumers[k] = InitConsumer(k, MyConf.Partition, v.Engine)
     }
 
 }
 
 func UpdateOffset () {
     for k, v := range Waf {
-        startOffset, endOffset := Offset(k, localhostPartition)
+        startOffset, endOffset := Offset(k, MyConf.Partition)
         if startOffset > v.Engine {
             Waf[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight, false}   
         } else {
@@ -78,7 +76,7 @@ func UpdateOffset () {
     } 
 
     for k, v := range Vds {
-        startOffset, endOffset := Offset(k, localhostPartition)
+        startOffset, endOffset := Offset(k, MyConf.Partition)
         if startOffset > v.Engine {
             Vds[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight, false}   
         } else {

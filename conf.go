@@ -24,5 +24,4 @@ func InitConf(file string) {
     byte, err := ioutil.ReadAll(hdl)
 
     err = json.Unmarshal(byte, &MyConf)
-    fmt.Println(MyConf.MaxCache)
 }

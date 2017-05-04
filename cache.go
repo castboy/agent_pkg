@@ -20,9 +20,6 @@ var CacheInfoMapPtr *map[string] CacheInfo
 
 var CacheDataMap = make(map[string] [][]byte)
 
-var CacheCount int = 200
-//var CacheCount int = MyConf.MaxCache
-
 func InitCacheInfoMap() {
     for topic, _ := range Waf {
         WafCacheInfoMap[topic] = CacheInfo{0, 0}    
@@ -171,12 +168,13 @@ func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
 
 func SendPrefetchMsg(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg ManageMsg) {
     fmt.Println("SendPrefetchMsg")
+    fmt.Println("MaxCache:", MyConf.MaxCache)
     for topic, v := range cacheAnalysisRes {
         if v.SendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
             fmt.Println("send prefetchMsg:", topic)
-            PrefetchChMap[topic] <- PrefetchMsg{manageMsg.Engine, topic, CacheCount}   
+            PrefetchChMap[topic] <- PrefetchMsg{manageMsg.Engine, topic, MyConf.MaxCache}   
 
-            fmt.Println(PrefetchMsg{manageMsg.Engine, topic, CacheCount})
+            fmt.Println(PrefetchMsg{manageMsg.Engine, topic, MyConf.MaxCache})
             PrefetchMsgSwitchMap[topic] = false
         }
     } 
