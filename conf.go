@@ -8,8 +8,7 @@ import (
 )
 
 type Conf struct {
-    HostPort1 string
-    HostPort2 string
+    Host string
     Partition int32
     MaxCache int    
 }

@@ -37,7 +37,7 @@ func Offset (topic string, partition int32) (int64, int64) {
 }
 
 func InitBroker () {
-    var kafkaAddrs []string = []string{MyConf.HostPort1, MyConf.HostPort2}
+    var kafkaAddrs []string = []string{MyConf.Host+":9092", MyConf.Host+":9093"}
 	conf := kafka.NewBrokerConf("wmg-test-client")
 	conf.AllowTopicCreation = false
 
