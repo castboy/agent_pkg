@@ -1,6 +1,6 @@
 //prefetch.go
 
-package pkg_wmg
+package agent_pkg
 
 import (
     "fmt"
