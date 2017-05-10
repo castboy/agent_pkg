@@ -8,6 +8,7 @@ import (
     "net/http"
     "strconv"
     "encoding/json"
+    "regexp"
 )
 
 type ManageMsg struct {
@@ -47,6 +48,13 @@ var StartOfflineCh = make(chan StartOfflineMsg)
 var StopOfflineCh = make(chan StopOfflineMsg)
 
 func Handle(w http.ResponseWriter, r *http.Request) {
+    
+    match, _ := regexp.MatchString("/?type=(waf|vds)&count=([0-9]+$)", r.RequestURI)
+    if !match {
+        io.WriteString(w, "Usage of: http://ip:port/?type=waf/vds&count=num")     
+        return
+    }
+
     r.ParseForm()
     Engine := r.Form["type"][0]
     Count, _ := strconv.Atoi(r.Form["count"][0])
@@ -55,6 +63,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
     HandleCh := make(chan *[][]byte)
 
     ManageCh <- ManageMsg{Engine, Count, HandleCh}
+    fmt.Println("Length of ManageCh:", len(ManageCh))
 
     Data := <-HandleCh
     
