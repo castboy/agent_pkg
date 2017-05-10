@@ -25,7 +25,16 @@ func InitCacheInfoMap() {
         WafCacheInfoMap[topic] = CacheInfo{0, 0}    
     }
     for topic, _ := range Vds {
-        VdsCacheInfoMap[topic] = CacheInfo{0, 0}    
+        VdsCacheInfoMap[topic] = CacheInfo{0, 0}
+    }
+}
+
+func InitCacheDataMap() {
+    for topic, _ := range Waf {
+        CacheDataMap[topic] = make([][]byte, MyConf.MaxCache)    
+    }
+    for topic, _ := range Vds {
+        CacheDataMap[topic] = make([][]byte, MyConf.MaxCache)    
     }
 }
 
@@ -116,15 +125,11 @@ func WriteCache(prefetchResMsg PrefetchResMsg) {
 
     if engine == "waf" {
         WafCacheInfoMap[topic] = CacheInfo{0, count} 
-        for _, v := range data {
-            CacheDataMap[topic] = append(CacheDataMap[topic], v)   
-        }
+        CacheDataMap[topic] = data
         fmt.Println("WafCacheInfoMap", WafCacheInfoMap)
     } else {
         VdsCacheInfoMap[prefetchResMsg.Topic] = CacheInfo{0, count} 
-        for _, v := range data {
-            CacheDataMap[topic] = append(CacheDataMap[topic], v)   
-        }
+        CacheDataMap[topic] = data
         fmt.Println("WafCacheInfoMap", VdsCacheInfoMap)
     }
 }

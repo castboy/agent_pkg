@@ -2,7 +2,7 @@ package pkg_wmg
 
 import (
     "os"
-    "fmt"
+    //"fmt"
     "encoding/json"
     "io/ioutil"
 )
