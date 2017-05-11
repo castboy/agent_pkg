@@ -7,13 +7,13 @@ import (
     "io/ioutil"
 )
 
-type Conf struct {
+type V2Conf struct {
     Host string
     Partition int32
     MaxCache int    
 }
 
-var MyConf Conf = Conf{}
+var MyConf V2Conf = V2Conf{}
 
 func InitConf(file string) {
     hdl, err := os.Open(file)    
