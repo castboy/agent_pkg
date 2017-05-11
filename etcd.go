@@ -46,6 +46,15 @@ func ParseConf(bytes []byte) {
     }
 }
 
+func Record(file string) {
+    for {
+        byte, _ := json.Marshal(wafVds)
+        EtcdSet("apt/agent/status/192.168.0.10", string(byte))
+        
+        time.Sleep(1 * time.Second)
+    }    
+}
+
 func InitEtcdCli() {
     cfg := clientv3.Config{
         Endpoints:               []string{"http://10.80.6.8:2379"},
