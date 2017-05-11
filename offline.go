@@ -10,7 +10,7 @@ func StartOffline(msg StartOfflineMsg) {
     if msg.Engine == "waf" {
         startOffset, endOffset := Offset(msg.Topic, MyConf.Partition)
         wafConsumers[msg.Topic] = InitConsumer(msg.Topic, MyConf.Partition, startOffset)
-        Waf[msg.Topic] = Partition{startOffset, startOffset, startOffset, endOffset, msg.Weight, false}    
+        Waf[msg.Topic] = Partition{startOffset, startOffset, startOffset, endOffset, msg.Weight}    
        
         PrefetchMsgSwitchMap[msg.Topic] = true
 
@@ -22,7 +22,7 @@ func StartOffline(msg StartOfflineMsg) {
         startOffset, endOffset := Offset(msg.Topic, MyConf.Partition)
         fmt.Println("startOffset", startOffset)
         vdsConsumers[msg.Topic] = InitConsumer(msg.Topic, MyConf.Partition, startOffset)
-        Vds[msg.Topic] = Partition{startOffset, startOffset, startOffset, endOffset, msg.Weight, false}    
+        Vds[msg.Topic] = Partition{startOffset, startOffset, startOffset, endOffset, msg.Weight}    
 
         PrefetchMsgSwitchMap[msg.Topic] = true
        
@@ -37,8 +37,8 @@ func StartOffline(msg StartOfflineMsg) {
 func StopOffline(msg StopOfflineMsg) {
     startOffset, endOffset := Offset(msg.Topic, MyConf.Partition)
     if msg.Engine == "waf" {
-        Waf[msg.Topic] = Partition{startOffset, Waf[msg.Topic].Engine, Waf[msg.Topic].Cache, endOffset, Waf[msg.Topic].Weight, true}    
+        Waf[msg.Topic] = Partition{startOffset, Waf[msg.Topic].Engine, Waf[msg.Topic].Cache, endOffset, Waf[msg.Topic].Weight}    
     } else {
-        Vds[msg.Topic] = Partition{startOffset, Vds[msg.Topic].Engine, Vds[msg.Topic].Cache, endOffset, Vds[msg.Topic].Weight, true}    
+        Vds[msg.Topic] = Partition{startOffset, Vds[msg.Topic].Engine, Vds[msg.Topic].Cache, endOffset, Vds[msg.Topic].Weight}    
     } 
 }

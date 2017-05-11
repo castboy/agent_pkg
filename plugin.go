@@ -69,9 +69,9 @@ func UpdateOffset () {
     for k, v := range Waf {
         startOffset, endOffset := Offset(k, MyConf.Partition)
         if startOffset > v.Engine {
-            Waf[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight, false}   
+            Waf[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight}   
         } else {
-            Waf[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight, false}   
+            Waf[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
         }
         if v.Engine > endOffset {
             fmt.Println(Waf)
@@ -84,9 +84,9 @@ func UpdateOffset () {
     for k, v := range Vds {
         startOffset, endOffset := Offset(k, MyConf.Partition)
         if startOffset > v.Engine {
-            Vds[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight, false}   
+            Vds[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight}   
         } else {
-            Vds[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight, false}   
+            Vds[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
         }
         if v.Engine > endOffset {
             fmt.Println(Vds)

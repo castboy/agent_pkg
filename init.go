@@ -16,7 +16,6 @@ type Partition struct {
 	Cache int64
 	Last    int64
 	Weight  int
-    Stop bool
 }
 
 
