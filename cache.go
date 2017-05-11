@@ -141,7 +141,7 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMs
             current := Waf[topic].Engine
             readCount := int64(v.ReadCount)
             Waf[topic] = Partition{Waf[topic].First, current+readCount, Waf[topic].Cache, 
-                                            Waf[topic].Last, Waf[topic].Weight, Waf[topic].Stop} 
+                                   Waf[topic].Last, Waf[topic].Weight} 
         }
         fmt.Println("UpdateEngineCurrent", Waf)
     } else {
@@ -149,7 +149,7 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMs
             current := Vds[topic].Engine
             readCount := int64(v.ReadCount)
             Vds[topic] = Partition{Vds[topic].First, current+readCount, Vds[topic].Cache, 
-                                            Vds[topic].Last, Vds[topic].Weight, Vds[topic].Stop} 
+                                   Vds[topic].Last, Vds[topic].Weight} 
         }
         fmt.Println("UpdateEngineCurrent", Vds)
     }
@@ -161,10 +161,12 @@ func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
     count := int64(len(*prefetchResMsg.DataPtr))
 
     if prefetchResMsg.Engine == "waf" {
-        Waf[topic] = Partition{Waf[topic].First, Waf[topic].Engine, Waf[topic].Cache+count, Waf[topic].Last, Waf[topic].Weight, Waf[topic].Stop} 
+        Waf[topic] = Partition{Waf[topic].First, Waf[topic].Engine, Waf[topic].Cache+count,
+                               Waf[topic].Last, Waf[topic].Weight} 
         fmt.Println("UpdateCacheCurrent", Waf)
     } else { 
-        Vds[topic] = Partition{Vds[topic].First, Vds[topic].Engine, Vds[topic].Cache+count, Vds[topic].Last, Vds[topic].Weight, Vds[topic].Stop} 
+        Vds[topic] = Partition{Vds[topic].First, Vds[topic].Engine, Vds[topic].Cache+count, 
+                               Vds[topic].Last, Vds[topic].Weight} 
         fmt.Println("UpdateCacheCurrent",Vds)
     }
 
