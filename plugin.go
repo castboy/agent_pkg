@@ -6,6 +6,7 @@ import (
 	"log"
     "fmt"
 	"github.com/optiopay/kafka"
+    "os"
 )
 
 var broker kafka.Client
@@ -72,6 +73,11 @@ func UpdateOffset () {
         } else {
             Waf[k] = Status{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
         }
+        if v.Engine > endOffset {
+            fmt.Println(Waf)
+            fmt.Println("conf err: xdrHttp msg-offset requested out of kafka msg-offset")
+            os.Exit(0)
+        }
         
     } 
 
@@ -81,6 +87,11 @@ func UpdateOffset () {
             Vds[k] = Status{startOffset, startOffset, startOffset, endOffset, v.Weight}   
         } else {
             Vds[k] = Status{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
+        }
+        if v.Engine > endOffset {
+            fmt.Println(Vds)
+            fmt.Println("conf err: xdrFile msg-offset requested out of kafka msg-offset")
+            os.Exit(0)
         }
     } 
     fmt.Println(Waf, Vds)
