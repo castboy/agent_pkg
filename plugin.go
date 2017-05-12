@@ -36,8 +36,8 @@ func Offset (topic string, partition int32) (int64, int64) {
     return start, end
 }
 
-func InitBroker () {
-    var kafkaAddrs []string = []string{MyConf.Host+":9092", MyConf.Host+":9093"}
+func InitBroker (localhost string) {
+    var kafkaAddrs []string = []string{localhost+":9092", localhost+":9093"}
 	conf := kafka.NewBrokerConf("wmg-test-client")
 	conf.AllowTopicCreation = false
 
@@ -50,37 +50,37 @@ func InitBroker () {
 	defer broker.Close()
 }
 
-func InitConsumers () {
+func InitConsumers (partition int32) {
     wafConsumers = make(map[string] kafka.Consumer)
     vdsConsumers = make(map[string] kafka.Consumer)
 
     for k, v := range Waf {
-        wafConsumers[k] = InitConsumer(k, MyConf.Partition, v.Engine)
+        wafConsumers[k] = InitConsumer(k, partition, v.Engine)
     }
 
     for k, v := range Vds {
-        vdsConsumers[k] = InitConsumer(k, MyConf.Partition, v.Engine)
+        vdsConsumers[k] = InitConsumer(k, partition, v.Engine)
     }
 
 }
 
 func UpdateOffset () {
     for k, v := range Waf {
-        startOffset, endOffset := Offset(k, MyConf.Partition)
+        startOffset, endOffset := Offset(k, Partition)
         if startOffset > v.Engine {
-            Waf[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight}   
+            Waf[k] = Status{startOffset, startOffset, startOffset, endOffset, v.Weight}   
         } else {
-            Waf[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
+            Waf[k] = Status{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
         }
         
     } 
 
     for k, v := range Vds {
-        startOffset, endOffset := Offset(k, MyConf.Partition)
+        startOffset, endOffset := Offset(k, Partition)
         if startOffset > v.Engine {
-            Vds[k] = Partition{startOffset, startOffset, startOffset, endOffset, v.Weight}   
+            Vds[k] = Status{startOffset, startOffset, startOffset, endOffset, v.Weight}   
         } else {
-            Vds[k] = Partition{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
+            Vds[k] = Status{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
         }
     } 
     fmt.Println(Waf, Vds)

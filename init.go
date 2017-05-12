@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	//"io"
-	"io/ioutil"
-	"os"
+	//"io/ioutil"
+	//"os"
 )
 
-type Partition struct {
+type Status struct {
 	First   int64
 	Engine int64
 	Cache int64
@@ -18,34 +18,35 @@ type Partition struct {
 	Weight  int
 }
 
+var WafVds [2]map[string]Status
 
-var wafVds [2]map[string]Partition
-
-var Waf map[string]Partition
-var Vds map[string]Partition
-var Ptr *map[string]Partition
-
-func Read(file string) {
-	Waf = make(map[string]Partition, 1000)
-	Vds = make(map[string]Partition, 1000)
-	fileHdl, err := os.OpenFile(file, os.O_RDONLY, 0666)
-	if nil != err {
-		fmt.Println("openfileerror")
-	}
-
-	defer fileHdl.Close()
-
-	bytes, err := ioutil.ReadAll(fileHdl)
-	if nil != err {
-	}
-
-	err = json.Unmarshal(bytes, &wafVds)
-	if nil != err {
-	}
-}
+var Waf map[string]Status
+var Vds map[string]Status
 
 func InitWafVds() {
-	Waf = wafVds[0]
-	Vds = wafVds[1]
+	Waf = make(map[string]Status, 1000)
+	Vds = make(map[string]Status, 1000)
+    
+    wafTopic := AgentConf.Topic[0]
+    vdsTopic := AgentConf.Topic[1]
+
+    Waf[wafTopic] = Status{0, 0, 0, 0, 10}
+    Vds[vdsTopic] = Status{0, 0, 0, 0, 10}
+
+    WafVds[0] = Waf
+    WafVds[1] = Vds
+
+    fmt.Println("WafVds ", WafVds)
 }
 
+func UpdateWafVds(status []byte) {
+	Waf = make(map[string]Status, 1000)
+	Vds = make(map[string]Status, 1000)
+    err := json.Unmarshal(status, &WafVds)
+    if err != nil {
+        fmt.Println("InitWafVds Err")
+    }
+    fmt.Println("WafVds", WafVds)
+	Waf = WafVds[0]
+	Vds = WafVds[1]
+}

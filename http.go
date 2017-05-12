@@ -159,7 +159,7 @@ func OfflineProgressHandle(w http.ResponseWriter, r *http.Request) {
     io.WriteString(w, strconv.FormatFloat(rate, 'f', 5, 32))
 }
 
-func Listen(url string) {
+func ListenReq(url string) {
      http.HandleFunc("/", Handle)  
      http.HandleFunc("/start", OfflineStartHandle)  
      http.HandleFunc("/stop", OfflineStopHandle)  

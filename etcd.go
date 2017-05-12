@@ -1,3 +1,5 @@
+//etcd.go
+
 package agent_pkg
 
 import (
@@ -13,7 +15,7 @@ import (
 type Conf struct {
     EngineReqPort int
     MaxCache int
-    Partition map[string]int
+    Partition map[string]int32
     Topic []string    
 }
 
@@ -21,35 +23,19 @@ var EtcdCli *clientv3.Client
 
 var AgentConf Conf
 
-func SetConf() string {
-    partitions := make(map[string]int)
-    partitions["192.168.0.10"] = 0
-    partitions["192.168.0.11"] = 1
-    partitions["192.168.0.12"] = 2
-    partitions["192.168.0.13"] = 4
-
-    topic := []string{"xdrHttp", "xdrFile"}
-
-    conf := Conf{8081, 100, partitions, topic} 
-
-    byte, _ := json.Marshal(conf)
-    
-    return string(byte)
-}
-
 func ParseConf(bytes []byte) {
     err := json.Unmarshal(bytes, &AgentConf)
     if err != nil {
-        
+        fmt.Println("ParseConf Error") 
     } else {
         fmt.Println(AgentConf)     
     }
 }
 
-func Record(file string) {
+func Record() {
     for {
-        byte, _ := json.Marshal(wafVds)
-        EtcdSet("apt/agent/status/192.168.0.10", string(byte))
+        byte, _ := json.Marshal(WafVds)
+        EtcdSet("apt/agent/status/"+Localhost, string(byte))
         
         time.Sleep(1 * time.Second)
     }    
@@ -70,13 +56,13 @@ func InitEtcdCli() {
 
 func EtcdSet(k, v string) {
     ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-    _, err := EtcdCli.Put(ctx, k, v)
+    resp, err := EtcdCli.Put(ctx, k, v)
     cancel()
     if err != nil {
         fmt.Println("EtcdSetErr")
     } else {
         //fmt.Println(string(resp.Kvs[0].Value))    
-        //fmt.Println(resp)    
+        fmt.Println("set ", k, "success. times:", resp.Header.Revision)    
     }
 }
 
@@ -86,6 +72,7 @@ func EtcdGet(key string) []byte {
     cancel()
     if err != nil {
             // handle error!
+        fmt.Println("EtcdGet Err")
     }
     bytes := resp.Kvs[0].Value   
     
