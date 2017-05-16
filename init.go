@@ -36,7 +36,7 @@ func InitWafVds() {
     WafVds[0] = Waf
     WafVds[1] = Vds
 
-    fmt.Println("WafVds ", WafVds)
+    fmt.Println("Init-Status : ", WafVds)
 }
 
 func UpdateWafVds(status []byte) {
@@ -46,7 +46,9 @@ func UpdateWafVds(status []byte) {
     if err != nil {
         fmt.Println("InitWafVds Err")
     }
-    fmt.Println("WafVds", WafVds)
+
+    fmt.Println("UpdateStatus: ", WafVds)
+
 	Waf = WafVds[0]
 	Vds = WafVds[1]
 }

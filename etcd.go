@@ -28,7 +28,7 @@ func ParseConf(bytes []byte) {
     if err != nil {
         fmt.Println("ParseConf Error") 
     } else {
-        fmt.Println(AgentConf)     
+        fmt.Println("Cluster-Conf: ", AgentConf)     
     }
 }
 
