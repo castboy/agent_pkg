@@ -53,7 +53,7 @@ func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 func Prefetch(prefetchCh chan PrefetchMsg) {
     for {
         prefetchMsg := <-prefetchCh   
-        fmt.Println("received PrefetchMsg:", prefetchMsg)
+        //fmt.Println("received PrefetchMsg:", prefetchMsg)
 
         var Data [][]byte
         ReadKafka(prefetchMsg, &Data)

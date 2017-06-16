@@ -1,4 +1,4 @@
-//plugin.go
+//consumer.go
 
 package agent_pkg
 
@@ -13,7 +13,6 @@ var broker kafka.Client
 var consumer kafka.Consumer
 var wafConsumers map[string]kafka.Consumer
 var vdsConsumers map[string]kafka.Consumer
-var consumerPtr *map[string]kafka.Consumer 
 
 func InitConsumer (topic string, partition int32, start int64) kafka.Consumer {
 	conf := kafka.NewConsumerConf(topic, partition)
@@ -28,10 +27,14 @@ func Offset (topic string, partition int32) (int64, int64) {
     start, err := broker.OffsetEarliest(topic, partition)
     if err != nil {
         log.Fatalf("cannot get start %s", err)
+        errLog := "cannot get start of" + topic + "-partition" + string(partition)
+        Log("Err", errLog)
     }
     end, err := broker.OffsetLatest(topic, partition)
     if err != nil {
         log.Fatalf("cannot get end %s", err)
+        errLog := "cannot get end of" + topic + "-partition" + string(partition)
+        Log("Err", errLog)
     }
 
     return start, end
@@ -46,6 +49,8 @@ func InitBroker (localhost string) {
 	broker, err = kafka.Dial(kafkaAddrs, conf)
 	if err != nil {
 		log.Fatalf("cannot connect to kafka cluster: %s", err)
+        errLog := "cannot connect to kafka cluster"
+        Log("Err", errLog)
 	}
 
 	defer broker.Close()
@@ -74,8 +79,10 @@ func UpdateOffset () {
             Waf[k] = Status{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
         }
         if v.Engine > endOffset {
-            fmt.Println(Waf)
+            fmt.Println("Waf", Waf)
             fmt.Println("conf err: xdrHttp msg-offset requested out of kafka msg-offset")
+            errLog := "conf err: xdrHttp msg-offset requested out of kafka msg-offset"
+            Log("Err", errLog)
             os.Exit(0)
         }
         
@@ -89,10 +96,12 @@ func UpdateOffset () {
             Vds[k] = Status{startOffset, v.Engine, v.Engine, endOffset, v.Weight}   
         }
         if v.Engine > endOffset {
-            fmt.Println(Vds)
+            fmt.Println("Vds", Vds)
             fmt.Println("conf err: xdrFile msg-offset requested out of kafka msg-offset")
+            errLog := "conf err: xdrFile msg-offset requested out of kafka msg-offset"
+            Log("Err", errLog)
             os.Exit(0)
         }
     } 
-    fmt.Println(Waf, Vds)
+    fmt.Println("UpdateOffset: ", Waf, Vds)
 }

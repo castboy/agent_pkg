@@ -1,13 +1,10 @@
-//record.go
+//init.go
 
 package agent_pkg
 
 import (
 	"encoding/json"
 	"fmt"
-	//"io"
-	//"io/ioutil"
-	//"os"
 )
 
 type Status struct {
@@ -44,7 +41,7 @@ func UpdateWafVds(status []byte) {
 	Vds = make(map[string]Status, 1000)
     err := json.Unmarshal(status, &WafVds)
     if err != nil {
-        fmt.Println("InitWafVds Err")
+        fmt.Println("UpdateWafVds Err")
     }
 
     fmt.Println("UpdateStatus: ", WafVds)

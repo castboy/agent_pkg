@@ -3,14 +3,13 @@
 package agent_pkg
 
 import (
-    "fmt"
 )
 
 func StartOffline(msg StartOfflineMsg) {
     if msg.Engine == "waf" {
-        startOffset, endOffset := Offset(msg.Topic, Partition)
+        startOffset, _ := Offset(msg.Topic, Partition)
         wafConsumers[msg.Topic] = InitConsumer(msg.Topic, Partition, startOffset)
-        Waf[msg.Topic] = Status{startOffset, startOffset, startOffset, endOffset, msg.Weight}    
+        Waf[msg.Topic] = Status{startOffset, startOffset, startOffset, -1, msg.Weight}    
        
         PrefetchMsgSwitchMap[msg.Topic] = true
 
@@ -19,10 +18,9 @@ func StartOffline(msg StartOfflineMsg) {
 
         WafCacheInfoMap[msg.Topic] = CacheInfo{0, 0}
     } else {
-        startOffset, endOffset := Offset(msg.Topic, Partition)
-        fmt.Println("startOffset", startOffset)
+        startOffset, _ := Offset(msg.Topic, Partition)
         vdsConsumers[msg.Topic] = InitConsumer(msg.Topic, Partition, startOffset)
-        Vds[msg.Topic] = Status{startOffset, startOffset, startOffset, endOffset, msg.Weight}    
+        Vds[msg.Topic] = Status{startOffset, startOffset, startOffset, -1, msg.Weight}    
 
         PrefetchMsgSwitchMap[msg.Topic] = true
        

@@ -6,6 +6,7 @@ import (
     "os"
     "net"
     "fmt"
+    "regexp"
 )
 
 var Localhost string
@@ -18,20 +19,22 @@ func GetLocalhost() {
         os.Exit(1)
     }
 
-    n := 0
+    var ips []string
     for _, a := range addrs {
         if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
             if ipnet.IP.To4() != nil {
-                if 0 == n {
-                    //os.Stdout.WriteString(ipnet.IP.String() + "\n")
-                    Localhost =  ipnet.IP.String()
-                }
+                ips = append(ips, ipnet.IP.String())
             }
         }
-        n++
     }
-    Localhost = "192.168.1.103"
+    for _, ip := range ips {
+        match, _ := regexp.MatchString("^192.*", ip)
+        if match {
+            Localhost = ip
+        }
+    }
     fmt.Println("Localhost   : ", Localhost)
+
 }
 
 func GetPartition() {

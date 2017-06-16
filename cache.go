@@ -48,7 +48,7 @@ func AnalysisCache(manageMsg ManageMsg) map[string] CacheAnalysisRes{
 	    }
         for topic, cacheInfo := range WafCacheInfoMap {
             Remainder := cacheInfo.End - cacheInfo.Current
-            fmt.Println(topic, "Remainder:", Remainder)
+            //fmt.Println(topic, "Remainder:", Remainder)
             Deserve := (manageMsg.Count/ weightSum) * Waf[topic].Weight
             if Remainder > Deserve {
                 Res[topic] = CacheAnalysisRes{Deserve , false}    
@@ -62,7 +62,7 @@ func AnalysisCache(manageMsg ManageMsg) map[string] CacheAnalysisRes{
 	    }
         for topic, cacheInfo := range VdsCacheInfoMap {
             Remainder := cacheInfo.End - cacheInfo.Current
-            fmt.Println(topic, "Remainder:", Remainder)
+            //fmt.Println(topic, "Remainder:", Remainder)
             Deserve := (manageMsg.Count/ weightSum) * Vds[topic].Weight
             if Remainder > Deserve {
                 Res[topic] = CacheAnalysisRes{Deserve , false}    
@@ -105,13 +105,13 @@ func UpdateCacheStatus(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg 
             current := WafCacheInfoMap[topic].Current
             WafCacheInfoMap[topic] = CacheInfo{current+v.ReadCount, WafCacheInfoMap[topic].End}  
         } 
-        fmt.Println("WafCacheInfoMap", WafCacheInfoMap)
+        //fmt.Println("WafCacheInfoMap", WafCacheInfoMap)
     } else {
         for topic, v := range cacheAnalysisRes {
             current := VdsCacheInfoMap[topic].Current
             VdsCacheInfoMap[topic] = CacheInfo{current+v.ReadCount, VdsCacheInfoMap[topic].End}  
         } 
-        fmt.Println("VdsCacheInfoMap", VdsCacheInfoMap)
+        //fmt.Println("VdsCacheInfoMap", VdsCacheInfoMap)
     } 
 
 }
@@ -126,16 +126,16 @@ func WriteCache(prefetchResMsg PrefetchResMsg) {
     if engine == "waf" {
         WafCacheInfoMap[topic] = CacheInfo{0, count} 
         CacheDataMap[topic] = data
-        fmt.Println("WafCacheInfoMap", WafCacheInfoMap)
+        //fmt.Println("WafCacheInfoMap", WafCacheInfoMap)
     } else {
         VdsCacheInfoMap[prefetchResMsg.Topic] = CacheInfo{0, count} 
         CacheDataMap[topic] = data
-        fmt.Println("WafCacheInfoMap", VdsCacheInfoMap)
+        //fmt.Println("WafCacheInfoMap", VdsCacheInfoMap)
     }
 }
 
 func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg ManageMsg) {
-    fmt.Println("UpdateEngineCurrent")
+    //fmt.Println("UpdateEngineCurrent")
     if manageMsg.Engine == "waf" {
         for topic, v := range cacheAnalysisRes {
             current := Waf[topic].Engine
@@ -143,7 +143,7 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMs
             Waf[topic] = Status{Waf[topic].First, current+readCount, Waf[topic].Cache, 
                                    Waf[topic].Last, Waf[topic].Weight} 
         }
-        fmt.Println("UpdateEngineCurrent", Waf)
+        //fmt.Println("UpdateEngineCurrent", Waf)
     } else {
         for topic, v := range cacheAnalysisRes {
             current := Vds[topic].Engine
@@ -151,37 +151,37 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMs
             Vds[topic] = Status{Vds[topic].First, current+readCount, Vds[topic].Cache, 
                                    Vds[topic].Last, Vds[topic].Weight} 
         }
-        fmt.Println("UpdateEngineCurrent", Vds)
+        //fmt.Println("UpdateEngineCurrent", Vds)
     }
 }
 
 func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
     topic := prefetchResMsg.Topic
-    fmt.Println("UpdateCacheCurrent-topic", topic)
+    //fmt.Println("UpdateCacheCurrent-topic", topic)
     count := int64(len(*prefetchResMsg.DataPtr))
 
     if prefetchResMsg.Engine == "waf" {
         Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Cache+count,
                                Waf[topic].Last, Waf[topic].Weight} 
-        fmt.Println("UpdateCacheCurrent", Waf)
+        //fmt.Println("UpdateCacheCurrent", Waf)
     } else { 
         Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Cache+count, 
                                Vds[topic].Last, Vds[topic].Weight} 
-        fmt.Println("UpdateCacheCurrent",Vds)
+        //fmt.Println("UpdateCacheCurrent",Vds)
     }
 
     PrefetchMsgSwitchMap[topic] = true
 }
 
 func SendPrefetchMsg(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg ManageMsg) {
-    fmt.Println("SendPrefetchMsg")
-    fmt.Println("MaxCache:", AgentConf.MaxCache)
+    //fmt.Println("SendPrefetchMsg")
+    //fmt.Println("MaxCache:", AgentConf.MaxCache)
     for topic, v := range cacheAnalysisRes {
         if v.SendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
-            fmt.Println("send prefetchMsg:", topic)
+            //fmt.Println("send prefetchMsg:", topic)
             PrefetchChMap[topic] <- PrefetchMsg{manageMsg.Engine, topic, AgentConf.MaxCache}   
 
-            fmt.Println(PrefetchMsg{manageMsg.Engine, topic, AgentConf.MaxCache})
+            //fmt.Println(PrefetchMsg{manageMsg.Engine, topic, AgentConf.MaxCache})
             PrefetchMsgSwitchMap[topic] = false
         }
     } 
@@ -189,7 +189,7 @@ func SendPrefetchMsg(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg Ma
 
 func DisposeReq(manageMsg ManageMsg) {
     res := AnalysisCache(manageMsg)
-    fmt.Println("analysisCacheRes", res)
+    //fmt.Println("analysisCacheRes", res)
     ReadCache(res, manageMsg)
     UpdateCacheStatus(res, manageMsg)
     UpdateEngineCurrent(res, manageMsg)

@@ -122,6 +122,7 @@ func OfflineStartHandle(w http.ResponseWriter, r *http.Request) {
     topic := r.Form["topic"][0]
     weight, _ := strconv.Atoi(r.Form["weight"][0])
     
+    fmt.Println("OfflineStart:  ", "engine:", engine, " topic:", topic, "weight:", weight)
     startOfflineMsg := StartOfflineMsg {
         Engine: engine,
         Topic: topic,
@@ -136,6 +137,7 @@ func OfflineStopHandle(w http.ResponseWriter, r *http.Request) {
     engine := r.Form["type"][0]
     topic := r.Form["topic"][0]
     
+    fmt.Println("OfflineStop:  ", "engine:", engine, " topic:", topic)
     stopOfflineMsg := StopOfflineMsg {
         Engine: engine,
         Topic: topic,
@@ -144,27 +146,9 @@ func OfflineStopHandle(w http.ResponseWriter, r *http.Request) {
     StopOfflineCh <- stopOfflineMsg
 }
 
-func OfflineProgressHandle(w http.ResponseWriter, r *http.Request) {
-    r.ParseForm()
-    engine := r.Form["type"][0]
-    topic := r.Form["topic"][0]
-    
-    rate := 0.000
-    if engine == "waf" {
-        rate = float64(Waf[topic].Engine) / float64(Waf[topic].Last)    
-    } else {
-        rate = float64(Vds[topic].Engine) / float64(Vds[topic].Last)    
-    }
-
-    io.WriteString(w, strconv.FormatFloat(rate, 'f', 5, 32))
-}
-
 func ListenReq(url string) {
      http.HandleFunc("/", Handle)  
      http.HandleFunc("/start", OfflineStartHandle)  
      http.HandleFunc("/stop", OfflineStopHandle)  
-     http.HandleFunc("/progress", OfflineProgressHandle)  
-
-     //http.ListenAndServe("localhost:8081", nil)  
      http.ListenAndServe(url, nil)  
 }
