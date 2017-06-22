@@ -44,8 +44,22 @@ func UpdateWafVds(status []byte) {
         fmt.Println("UpdateWafVds Err")
     }
 
-    fmt.Println("UpdateStatus: ", WafVds)
-
 	Waf = WafVds[0]
 	Vds = WafVds[1]
+
+    PrintUpdateStatus()
+}
+
+func PrintUpdateStatus() {
+    fmt.Println("\n\nUpdateStatus:")
+
+    fmt.Println("Waf")
+    for key, val := range Waf {
+        fmt.Println(key, "     ", val)
+    }
+
+    fmt.Println("\nVds")
+    for key, val := range Vds {
+        fmt.Println(key, "     ", val)
+    }
 }

@@ -103,5 +103,20 @@ func UpdateOffset () {
             os.Exit(0)
         }
     } 
-    fmt.Println("UpdateOffset: ", Waf, Vds)
+    //fmt.Println("UpdateOffset: ", Waf, Vds)
+    PrintUpdateOffset()
+}
+
+func PrintUpdateOffset() {
+    fmt.Println("\n\nUpdateOffset:")
+
+    fmt.Println("Waf")
+    for key, val := range Waf {
+        fmt.Println(key, "     ", val)
+    }
+
+    fmt.Println("\nVds")
+    for key, val := range Vds {
+        fmt.Println(key, "     ", val)
+    }
 }
