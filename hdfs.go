@@ -34,10 +34,11 @@ const (
 
 var (
     HdfsToLocalReqChs [PRTNNUM]chan HdfsToLocalReqParams
-    HdfsToLocalResCh chan HdfsToLocalRes
     
     client *hdfs.Client
 )
+
+var HdfsToLocalResCh = make(chan HdfsToLocalRes, 1000)
 
 func InitHdfsCli (namenode string) {
     client, _ = hdfs.New(namenode)
