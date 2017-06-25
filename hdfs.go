@@ -7,10 +7,6 @@ import (
     "crypto/sha256" 
 )
 
-const (
-    PRTNNUM = 128
-)
-
 type ToUpdateDataInfo struct {
     Topic string
     DataIndex int
@@ -26,9 +22,22 @@ type HdfsToLocalReqParams struct {
     ToUpdateData ToUpdateDataInfo 
 }
 
-var HdfsToLocalReqChs [PRTNNUM]chan HdfsToLocalReqParams
- 
-var client *hdfs.Client
+type HdfsToLocalRes struct {
+    Topic string
+    
+    XdrBytesPtr *[]byte
+}
+
+const (
+    PRTNNUM = 128
+)
+
+var (
+    HdfsToLocalReqChs [PRTNNUM]chan HdfsToLocalReqParams
+    HdfsToLocalResCh chan HdfsToLocalRes
+    
+    client *hdfs.Client
+)
 
 func InitHdfsCli (namenode string) {
     client, _ = hdfs.New(namenode)
@@ -36,6 +45,8 @@ func InitHdfsCli (namenode string) {
 
 func HdfsToLocal (idx int) {
     p := <-HdfsToLocalReqChs[idx]
+    
+    var xdrBytesPtr = new([]byte) 
 
     bytes, runTime := hdfsRd(p)
     ok := isRightFile(bytes, p.XdrMark)
@@ -43,8 +54,16 @@ func HdfsToLocal (idx int) {
         file := p.File + "_" + strconv.Itoa(p.Offset) + "_" + 
                 strconv.Itoa(p.Size) + "_" + strconv.Itoa(runTime) 
         localWrite(file, bytes)
+        
+        *xdrBytesPtr = updateXdr(p.ToUpdateData, file)
     }
     
+    res := {
+        Topic: p.ToUpdateData.Topic,
+        XdrBytesPtr: xdrBytesPtr,
+    }
+    
+    HdfsToLocalResCh <- res
 }
 
 func hdfsRd (ch chan HdfsToLocalReqParams) (bytes []byte, runTime int) {
@@ -92,11 +111,14 @@ func localWrite (file string, bytes []byte) {
     }
 }
 
-func updateXdr (info ToUpdateDataInfo, localFile string) {
+func updateXdr (info ToUpdateDataInfo, localFile string) []byte {
     bytes := CacheDataMap[info.Topic][info.DataIndex]
     
-    insertStr = ", \"File\": " + localFile + "}" 
+    appendStr = ", \"File\": " + localFile + "}" 
+    appendBytes = []byte(appendStr)
 
-    bytes = bytes[]
+    bytes = append(bytes[ : len(bytes) - 1], appendBytes)
+    
+    return bytes
 }
 
