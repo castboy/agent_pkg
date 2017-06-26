@@ -5,12 +5,10 @@ import (
     "fmt"
     "io/ioutil"
     "crypto/sha256" 
+    "os"
+    "strconv"
+    "time"
 )
-
-type ToUpdateDataInfo struct {
-    Topic string
-    DataIndex int
-} 
 
 type HdfsToLocalReqParams struct {
     File string
@@ -19,13 +17,17 @@ type HdfsToLocalReqParams struct {
 
     XdrMark string
     
-    ToUpdateData ToUpdateDataInfo 
+    Index int
+
+    HdfsToLocalResCh chan HdfsToLocalRes 
 }
 
 type HdfsToLocalRes struct {
-    Topic string
-    
-    XdrBytesPtr *[]byte
+    File string
+
+    Index int
+
+    Success bool    
 }
 
 const (
@@ -47,27 +49,27 @@ func InitHdfsCli (namenode string) {
 func HdfsToLocal (idx int) {
     p := <-HdfsToLocalReqChs[idx]
     
-    var xdrBytesPtr = new([]byte) 
+    wrSuccess := false
+    file := ""
 
     bytes, runTime := hdfsRd(p)
-    ok := isRightFile(bytes, p.XdrMark)
+    ok := isRightFile(bytes, p)
     if ok {
-        file := p.File + "_" + strconv.Itoa(p.Offset) + "_" + 
+        file = p.File + "_" + strconv.FormatInt(p.Offset, 10) + "_" + 
                 strconv.Itoa(p.Size) + "_" + strconv.Itoa(runTime) 
-        localWrite(file, bytes)
-        
-        *xdrBytesPtr = updateXdr(p.ToUpdateData, file)
+        wrSuccess = localWrite(file, bytes)
     }
     
-    res := {
-        Topic: p.ToUpdateData.Topic,
-        XdrBytesPtr: xdrBytesPtr,
+    res := HdfsToLocalRes{
+        File: file,
+        Index: p.Index,
+        Success: wrSuccess,
     }
     
-    HdfsToLocalResCh <- res
+    p.HdfsToLocalResCh <- res
 }
 
-func hdfsRd (ch chan HdfsToLocalReqParams) (bytes []byte, runTime int) {
+func hdfsRd (ch HdfsToLocalReqParams) (bytes []byte, runTime int) {
     beginTime := time.Now().Nanosecond()
 
     if fileIsExist(ch.File) {
@@ -78,7 +80,7 @@ func hdfsRd (ch chan HdfsToLocalReqParams) (bytes []byte, runTime int) {
 
     endTime := time.Now().Nanosecond()
     
-    return buf, endTime - beginTime 
+    return bytes, endTime - beginTime 
 }
 
 func fileIsExist(file string) (bool) {
@@ -89,10 +91,10 @@ func fileIsExist(file string) (bool) {
     return exist;
 }
 
-func isRightFile (hdfs []byte, xdrMark string) {
+func isRightFile (hdfs []byte, ch HdfsToLocalReqParams) bool {
     right := true
  
-    if xdrMark != getSha256Code(hdfs) {
+    if ch.XdrMark != sha256Code(hdfs) {
         right = false
     }
  
@@ -105,21 +107,19 @@ func sha256Code (bytes []byte) string {
     return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func localWrite (file string, bytes []byte) {
+func localWrite (file string, bytes []byte) bool {
+    success := true
+
     err := ioutil.WriteFile(file, bytes, 0666)
     if nil != err {
-        fmt.Println("LocalWrite Err")
+        success = false
+    }
+
+    return success
+}
+
+func HdfsToLocals () {
+    for i := 0; i < PRTNNUM; i++ {
+        go HdfsToLocal(i)
     }
 }
-
-func updateXdr (info ToUpdateDataInfo, localFile string) []byte {
-    bytes := CacheDataMap[info.Topic][info.DataIndex]
-    
-    appendStr = ", \"File\": " + localFile + "}" 
-    appendBytes = []byte(appendStr)
-
-    bytes = append(bytes[ : len(bytes) - 1], appendBytes)
-    
-    return bytes
-}
-

@@ -105,7 +105,7 @@ func Manage() {
                 DisposeReq(req)
                 
             case res := <-PrefetchResCh:
-                DisposeRes(res)
+                RdHdfs(res)
 
             case start := <- StartOfflineCh:
                 StartOffline(start)

@@ -116,24 +116,6 @@ func UpdateCacheStatus(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg 
 
 }
 
-func WriteCache(prefetchResMsg PrefetchResMsg) {
-    fmt.Println("WriteCache")
-    data := *prefetchResMsg.DataPtr
-    count := len(data)
-    topic := prefetchResMsg.Topic
-    engine := prefetchResMsg.Engine
-
-    if engine == "waf" {
-        WafCacheInfoMap[topic] = CacheInfo{0, count} 
-        CacheDataMap[topic] = data
-        //fmt.Println("WafCacheInfoMap", WafCacheInfoMap)
-    } else {
-        VdsCacheInfoMap[prefetchResMsg.Topic] = CacheInfo{0, count} 
-        CacheDataMap[topic] = data
-        //fmt.Println("WafCacheInfoMap", VdsCacheInfoMap)
-    }
-}
-
 func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg ManageMsg) {
     //fmt.Println("UpdateEngineCurrent")
     if manageMsg.Engine == "waf" {
@@ -153,24 +135,6 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMs
         }
         //fmt.Println("UpdateEngineCurrent", Vds)
     }
-}
-
-func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
-    topic := prefetchResMsg.Topic
-    //fmt.Println("UpdateCacheCurrent-topic", topic)
-    count := int64(len(*prefetchResMsg.DataPtr))
-
-    if prefetchResMsg.Engine == "waf" {
-        Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Cache+count,
-                               Waf[topic].Last, Waf[topic].Weight} 
-        //fmt.Println("UpdateCacheCurrent", Waf)
-    } else { 
-        Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Cache+count, 
-                               Vds[topic].Last, Vds[topic].Weight} 
-        //fmt.Println("UpdateCacheCurrent",Vds)
-    }
-
-    PrefetchMsgSwitchMap[topic] = true
 }
 
 func SendPrefetchMsg(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg ManageMsg) {
@@ -194,9 +158,4 @@ func DisposeReq(manageMsg ManageMsg) {
     UpdateCacheStatus(res, manageMsg)
     UpdateEngineCurrent(res, manageMsg)
     SendPrefetchMsg(res, manageMsg)
-}
-
-func DisposeRes(prefetchResMsg PrefetchResMsg) {
-    WriteCache(prefetchResMsg)
-    UpdateCacheCurrent(prefetchResMsg)
 }
