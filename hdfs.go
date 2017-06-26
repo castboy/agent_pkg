@@ -11,11 +11,13 @@ import (
 )
 
 type HdfsToLocalReqParams struct {
-    File string
-    Offset int64
-    Size int
+    Engine string
+    
+    File []string
+    Offset []int64
+    Size []int
 
-    XdrMark string
+    XdrMark []string
     
     Index int
 
@@ -23,7 +25,7 @@ type HdfsToLocalReqParams struct {
 }
 
 type HdfsToLocalRes struct {
-    File string
+    File []string
 
     Index int
 
@@ -49,33 +51,63 @@ func InitHdfsCli (namenode string) {
 func HdfsToLocal (idx int) {
     p := <-HdfsToLocalReqChs[idx]
     
-    wrSuccess := false
-    file := ""
+    var res HdfsToLocalRes
+    
+    if p.Engine == "waf" {
+        wrOK := false
+        file := make([]string, 1)
 
-    bytes, runTime := hdfsRd(p)
-    ok := isRightFile(bytes, p)
-    if ok {
-        file = p.File + "_" + strconv.FormatInt(p.Offset, 10) + "_" + 
-                strconv.Itoa(p.Size) + "_" + strconv.Itoa(runTime) 
-        wrSuccess = localWrite(file, bytes)
+        bytes, runTime := hdfsRd(p.File[0])
+        ok := isRightFile(bytes, p.File[0])
+        if ok {
+            file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
+                    strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
+            wrOK = localWrite(file[0], bytes)
+        }
+
+        res = HdfsToLocalRes{
+            File: file,
+            Index: p.Index,
+            Success: wrOk,
+        }
+    } else {
+        file := make([]string, 2)
+        file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
+                  strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
+        file[1] = p.File[1] + "_" + strconv.FormatInt(p.Offset[1], 10) + "_" + 
+                  strconv.Itoa(p.Size[1]) + "_" + strconv.Itoa(runTime) 
+        
+        bytes, runTime := hdfsRd(p.File[0])
+        ok1 := isRightFile(bytes, p.File[0])
+        
+        bytes, runTime := hdfsRd(p.File[1])
+        ok2 := isRightFile(bytes, p.File[1])
+        
+        wrOk := false
+        if ok1 && ok2 {
+            wrOK1 := localWrite(file[0], bytes)
+            wrOK2 := localWrite(file[1], bytes)
+            wrOk = true
+        }
+        res = HdfsToLocalRes{
+            File: file,
+            Index: p.Index,
+            Success: wrOk,
+        }
     }
     
-    res := HdfsToLocalRes{
-        File: file,
-        Index: p.Index,
-        Success: wrSuccess,
-    }
+
     
     p.HdfsToLocalResCh <- res
 }
 
-func hdfsRd (ch HdfsToLocalReqParams) (bytes []byte, runTime int) {
+func hdfsRd (file string, size int, offset int64) (bytes []byte, runTime int) {
     beginTime := time.Now().Nanosecond()
 
-    if fileIsExist(ch.File) {
-        file, _ := client.Open(ch.File)
-        bytes := make([]byte, ch.Size)
-        file.ReadAt(bytes, ch.Offset)
+    if fileIsExist(file) {
+        file, _ := client.Open(file)
+        bytes := make([]byte, size)
+        file.ReadAt(bytes, offset)
     }
 
     endTime := time.Now().Nanosecond()
@@ -91,10 +123,10 @@ func fileIsExist(file string) (bool) {
     return exist;
 }
 
-func isRightFile (hdfs []byte, ch HdfsToLocalReqParams) bool {
+func isRightFile (hdfs []byte, xdrMark string) bool {
     right := true
  
-    if ch.XdrMark != sha256Code(hdfs) {
+    if xdrMark != sha256Code(hdfs) {
         right = false
     }
  
