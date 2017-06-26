@@ -9,12 +9,14 @@ type HdfsToLocalResTag struct {
 }
 
 func DisposeRdHdfs (ch chan HdfsToLocalRes, prefetchResMsg PrefetchResMsg) {
+    engine := prefetchResMsg.Engine
     data := *prefetchResMsg.DataPtr
 
     for key, val := range data {
         file, offset, size, xdrMark, prtn := xdrFields(val)
         
         hdfsToLocalReqParams := HdfsToLocalReqParams{
+	    Engine: engine,
             File: file,
             Offset: offset,
             Size: size,
@@ -27,7 +29,7 @@ func DisposeRdHdfs (ch chan HdfsToLocalRes, prefetchResMsg PrefetchResMsg) {
     }
 }
 
-func xdrFields (bytes []byte) (string, int64, int, string, int) {
+func xdrFields (bytes []byte) ([]string, []int64, []int, string, int) {
     str := `{"App":{"FileLocation":{"File":"wmg","Offset":100,"Size":100,"Signature":"123456"},"ClassId":0,"Proto":0,"ProtoInfo":0,"Status":0},"Class":103,"Conn":{"Dport":19465,"Proto":6,"Sport":36807},"ConnEx":{"Dir":false,"Over":false},"ConnSt":{"FlowDown":223,"FlowUp":340,"IpFragDown":0,"IpFragUp":0,"PktDown":1,"PktUp":2},"ConnTime":{"End":1496735792797969,"Start":1496735792797969},"Dns":{"AuthCnttCount":"0","Domain":"","ExtraRecordCount":"0","IpCount":"0","Ipv4":"","Ipv6":"","PktValid":"false","ReqCount":"0","RspCode":"0","RspDelay":"0","RspRecordCount":"0"},"Ftp":{"FileCount":0,"FileSize":0,"RspTm":0,"State":0,"TransMode":0,"TransTm":0,"TransType":0,"UserCount":0},"Http":{"HttpRequest":{"File":"wmg","Offset":100,"Size":100,"Signature":"123456"},"Browser":0,"ContentLen":49,"FirstResponseTime":1496735792797969,"LastContentTime":1496735792797969,"Method":6,"Portal":0,"RequestTime":1496735792797969,"ServFlag":0,"ServTime":0,"StateCode":200,"Version":3},"Id":0,"Ipv4":false,"Mail":{"AcsType":"0","DomainInfo":"","Hdr":"","Len":"0","MsgType":"0","RecvAccount":"","RecverInfo":"","RspState":"0","UserName":""},"Offline_Tag":"offline","Proxy":{"Type":0},"QQ":{"Number":""},"Rtsp":{"AudeoStreamCount":0,"ClientBeginPort":0,"ClientEndPort":0,"ResDelay":0,"ServerBeginPort":0,"ServerEndPort":0,"VideoStreamCount":0},"ServSt":{"FlowDown":0,"FlowUp":0,"IpFragDown":0,"IpFragUp":0,"PktDown":0,"PktUp":0,"TcpDisorderDown":0,"TcpDisorderUp":0,"TcpRetranDown":0,"TcpRetranUp":0},"Sip":{"CallDir":0,"CallType":0,"HangupReason":0,"SignalType":0,"StreamCount":0},"Task_Id":"20","Tcp":{"AckCount":0,"AckDelay":0,"Close":0,"CloseReason":0,"DisorderDown":0,"DisorderUp":0,"FirstRequestDelay":908262217,"FirstResponseDely":0,"Mss":0,"Open":0,"ReportFlag":1,"RetranDown":0,"RetranUp":0,"SynAckCount":0,"SynAckDelay":0,"SynCount":0,"Window":0},"Time":1496735792797969,"Type":1,"Vendor":"","Vpn":{"Type":0}}`
 
 	var jsonParse interface{}
@@ -121,11 +123,18 @@ func WriteCache(prefetchResMsg PrefetchResMsg, data [][]byte) {
     }
 }
 
-func updateXdr (data [][]byte, index int, localFile string) []byte {
+func updateXdr (prefetchResMsg PrefetchResMsg, data [][]byte, index int, localFile string) []byte {
     bytes := data[index]
+    var appendBytes []byte
+	
+    if prefetchResMsg.Topic == "vds" {
+	appendStr := ",\"File\":\"" + localFile[0] + "\"}"
+        appendBytes = []byte(appendStr)
+    } else {
+	appendStr := ",\"File\":{\"request\":\"" + localFile[0] + "\"," + "\"response\":\"" + localFile[1] + "\"}}"
+        appendBytes = []byte(appendStr)
+    }
 
-    appendStr := ", \"File\": " + localFile + "}"
-    appendBytes := []byte(appendStr)
     
     bytes = bytes[ : len(bytes) - 1]
     for _, val := range appendBytes {
