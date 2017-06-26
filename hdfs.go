@@ -53,7 +53,7 @@ func HdfsToLocal (idx int) {
     
     var res HdfsToLocalRes
     
-    if p.Engine == "waf" {
+    if p.Engine == "vds" {
         wrOK := false
         file := make([]string, 1)
 
