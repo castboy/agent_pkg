@@ -15,7 +15,7 @@ type HdfsToLocalReqParams struct {
     File string
     Offset []int64
     Size []int
-    XdrMark string
+    XdrMark []string
     
     Index int
 
@@ -36,8 +36,8 @@ const (
 )
 
 var (
-    HttpHdfsToLocalReqChs [HttpPRTNNUM]chan HdfsToLocalReqParams
-    FileHdfsToLocalReqChs [FilePRTNNUM]chan HdfsToLocalReqParams
+    HttpHdfsToLocalReqChs [HTTPPRTNNUM]chan HdfsToLocalReqParams
+    FileHdfsToLocalReqChs [FILEPRTNNUM]chan HdfsToLocalReqParams
     
     client *hdfs.Client
 )
@@ -46,14 +46,14 @@ func InitHdfsCli (namenode string) {
     client, _ = hdfs.New(namenode)
 }
 
-func HttpHdfsToLocal (idex int) {
+func HttpHdfsToLocal (idx int) {
     p := <-FileHdfsToLocalReqChs[idx]
 
     reqBytes, reqRunTime := hdfsRd(p.File, p.Offset[0], p.Size[0])
-    reqRight := isRightFile(bytes, p.Signature[0])
+    reqRight := isRightFile(reqBytes, p.XdrMark[0])
 
     resBytes, resRunTime := hdfsRd(p.File, p.Offset[1], p.Size[1])
-    resRight := isRightFile(bytes, p.Signature[1])
+    resRight := isRightFile(resBytes, p.XdrMark[1])
     
     file := make([]string, 2)
     file[0] = p.File + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
@@ -62,9 +62,9 @@ func HttpHdfsToLocal (idex int) {
               strconv.Itoa(p.Size[1]) + "_" + strconv.Itoa(resRunTime) 
 
     wrOk := false
-    if httpReqRight && httpResRight {
-        wrReqOK := localWrite(file[0], bytes)
-        wrResOK := localWrite(file[1], bytes)
+    if reqRight && resRight {
+        wrReqOk := localWrite(file[0], reqBytes)
+        wrResOk := localWrite(file[1], resBytes)
         wrOk = wrReqOk && wrResOk
     }
     res := HdfsToLocalRes{
@@ -79,15 +79,15 @@ func HttpHdfsToLocal (idex int) {
 func FileHdfsToLocal (idx int) {
     p := <-FileHdfsToLocalReqChs[idx]
    
-    wrOK := false
+    wrOk := false
     file := make([]string, 1)
 
-    bytes, runTime := hdfsRd(p.File, p.)
-    ok := isRightFile(bytes, p.File[0])
+    bytes, runTime := hdfsRd(p.File, p.Offset[0], p.Size[0])
+    ok := isRightFile(bytes, p.XdrMark[0])
     if ok {
-        file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
+        file[0] = p.File + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
                 strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
-        wrOK = localWrite(file[0], bytes)
+        wrOk = localWrite(file[0], bytes)
     }
 
     res := HdfsToLocalRes{

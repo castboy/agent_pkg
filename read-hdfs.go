@@ -3,6 +3,7 @@ package agent_pkg
 import (
 	"strings"
 	"strconv"
+    "encoding/json"
 )
 
 type HdfsToLocalResTag struct {
@@ -15,7 +16,7 @@ type XdrProperty struct {
     Offset []int64
     Size []int
     XdrMark []string
-    PRTN int
+    Prtn int
 }
 
 func DisposeRdHdfs (ch chan HdfsToLocalRes, prefetchResMsg PrefetchResMsg) {
@@ -33,23 +34,23 @@ func DisposeRdHdfs (ch chan HdfsToLocalRes, prefetchResMsg PrefetchResMsg) {
 
 		hdfsToLocalReqParams := HdfsToLocalReqParams{
 		    Engine: engine,
-		    File: property.file,
-		    Offset: property.offset,
-		    Size: property.size,
-		    XdrMark: property.xdrMark,
+		    File: property.File,
+		    Offset: property.Offset,
+		    Size: property.Size,
+		    XdrMark: property.XdrMark,
 		    Index: key, 
 		    HdfsToLocalResCh: ch,
 		}
 
 		if engine == "vds" {  
-			FileHdfsToLocalReqChs[property.prtn] <- hdfsToLocalReqParams
+			FileHdfsToLocalReqChs[property.Prtn] <- hdfsToLocalReqParams
 		} else {
-			HttpHdfsToLocalReqChs[property.prtn] <- hdfsToLocalReqParams
+			HttpHdfsToLocalReqChs[property.Prtn] <- hdfsToLocalReqParams
 		}
 	}
 }
 
-func xdrFields (engine string, bytes []byte) XdrProperty {
+func xdrProperty (engine string, bytes []byte) XdrProperty {
 	var (
 		property XdrProperty
 		jsonParse interface{}
@@ -80,48 +81,54 @@ func xdrFields (engine string, bytes []byte) XdrProperty {
 						switch ll := l.(type) {
 						case string:
 							if engine == "vds" && i == "FileLocation" && z == "File" {
-								property.File = l
+								property.File = ll
 								
-								index := strings.Index(l, "/")
-								id := l[index - 1 : ]
-								property.PRTN = strconv.Atoi(id)
+								index := strings.Index(ll, "/")
+								id := ll[index - 1 : ]
+                                i, err := strconv.Atoi(id)
+                                if nil != err {
+                                }
+								property.Prtn = i 
 							}
 							if engine == "waf" && i == "RequestLocation" && z == "File" {
-								property.File = l
+								property.File = ll
 								
-								index := strings.Index(l, "/")
-								id := l[index - 1 : ]
-								property.PRTN = strconv.Atoi(id)								
+								index := strings.Index(ll, "/")
+								id := ll[index - 1 : ]
+                                i, err := strconv.Atoi(id)
+                                if nil != err {
+                                }
+								property.Prtn = i 
 							}
 							if engine == "vds" && i == "FileLocation" && z == "Signature" {
-								property.XdrMark = l
+								property.XdrMark[0] = ll
 							}
 							if engine == "waf" && i == "RequestLocation" && z == "Signature" {
-								property.XdrMark[0] = l
+								property.XdrMark[0] = ll
 							}
 							if engine == "waf" && i == "ResponseLocation" && z == "Signature" {
-								property.XdrMark[1] = l
+								property.XdrMark[1] = ll
 							}									
 						case float64:
 						case int64:
 							if engine == "vds" && i == "FileLocation" && z == "Offset" {
-								property.Offset[0] = l
+								property.Offset[0] = ll
 							}
 							if engine == "waf" && i == "RequestLocation" && z == "Offset" {
-								property.Offset[0] = l
+								property.Offset[0] = ll
 							}
 							if engine == "waf" && i == "ResponseLocation" && z == "Offset" {
-								property.Offset[1] = l
+								property.Offset[1] = ll
 							}							
 						case int:
 							if engine == "vds" && i == "FileLocation" && z == "Size" {
-								property.Size[0] = l
+								property.Size[0] = ll
 							}
 							if engine == "waf" && i == "RequestLocation" && z == "Size" {
-								property.Size[0] = l
+								property.Size[0] = ll
 							}	
 							if engine == "waf" && i == "ResponseLocation" && z == "Size" {
-								property.Size[1] = l
+								property.Size[1] = ll
 							}							
 						case bool:
 						case interface{}:
@@ -160,12 +167,12 @@ func CollectHdfsToLocalRes (prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRe
     return tags
 }
 
-func GetCache (tags []HdfsToLocalResTag, data [][]byte) [][]byte {
+func GetCache (prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResTag, data [][]byte) [][]byte {
     var cache [][]byte
 
     for key, val := range tags {
         if val.Success {
-            bytes := updateXdr(data, key, val.File)
+            bytes := updateXdr(prefetchResMsg, data, key, val.File)
             cache = append(cache, bytes)  
         }
     }
@@ -187,7 +194,7 @@ func WriteCache(prefetchResMsg PrefetchResMsg, data [][]byte) {
     }
 }
 
-func updateXdr (prefetchResMsg PrefetchResMsg, data [][]byte, index int, localFile string) []byte {
+func updateXdr (prefetchResMsg PrefetchResMsg, data [][]byte, index int, localFile []string) []byte {
     bytes := data[index]
     var appendBytes []byte
 	
@@ -224,16 +231,18 @@ func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
 }
 
 func RdHdfs (prefetchResMsg PrefetchResMsg) {
-    tags := make([]HdfsToLocalResTag, PRTNNUM)
-
     data := *prefetchResMsg.DataPtr
+
+    len := len(data)
+    tags := make([]HdfsToLocalResTag, len)
+
 
     hdfsToLocalResCh := make(chan HdfsToLocalRes)
 
     DisposeRdHdfs(hdfsToLocalResCh, prefetchResMsg)
 
     tags = CollectHdfsToLocalRes(prefetchResMsg, hdfsToLocalResCh, tags) 
-    cache := GetCache(tags, data)
+    cache := GetCache(prefetchResMsg, tags, data)
 
     WriteCache(prefetchResMsg, cache)
     UpdateCacheCurrent(prefetchResMsg)
