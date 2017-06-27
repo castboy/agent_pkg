@@ -10,24 +10,12 @@ import (
     "time"
 )
 
-type HttpHdfsToLocalReqParams struct {
+type HdfsToLocalReqParams struct {
     Engine string
     File []string
     Offset []int64
     Size []int
     XdrMark []string
-    
-    Index int
-
-    HdfsToLocalResCh chan HdfsToLocalRes 
-}
-
-type FileHdfsToLocalReqParams struct {
-    Engine string
-    File string
-    Offset int64
-    Size int
-    XdrMark string
     
     Index int
 
@@ -48,8 +36,8 @@ const (
 )
 
 var (
-    HttpHdfsToLocalReqChs [HttpPRTNNUM]chan HttpHdfsToLocalReqParams
-    FileHdfsToLocalReqChs [FilePRTNNUM]chan FileHdfsToLocalReqParams
+    HttpHdfsToLocalReqChs [HttpPRTNNUM]chan HdfsToLocalReqParams
+    FileHdfsToLocalReqChs [FilePRTNNUM]chan HdfsToLocalReqParams
     
     client *hdfs.Client
 )
