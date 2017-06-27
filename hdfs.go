@@ -10,14 +10,24 @@ import (
     "time"
 )
 
-type HdfsToLocalReqParams struct {
+type HttpHdfsToLocalReqParams struct {
     Engine string
-    
     File []string
     Offset []int64
     Size []int
-
     XdrMark []string
+    
+    Index int
+
+    HdfsToLocalResCh chan HdfsToLocalRes 
+}
+
+type FileHdfsToLocalReqParams struct {
+    Engine string
+    File string
+    Offset int64
+    Size int
+    XdrMark string
     
     Index int
 
@@ -33,71 +43,71 @@ type HdfsToLocalRes struct {
 }
 
 const (
-    PRTNNUM = 128
+    FILEPRTNNUM = 64
+    HTTPPRTNNUM = 64
 )
 
 var (
-    HdfsToLocalReqChs [PRTNNUM]chan HdfsToLocalReqParams
+    HttpHdfsToLocalReqChs [HttpPRTNNUM]chan HttpHdfsToLocalReqParams
+    FileHdfsToLocalReqChs [FilePRTNNUM]chan FileHdfsToLocalReqParams
     
     client *hdfs.Client
 )
-
-var HdfsToLocalResCh = make(chan HdfsToLocalRes, 1000)
 
 func InitHdfsCli (namenode string) {
     client, _ = hdfs.New(namenode)
 }
 
-func HdfsToLocal (idx int) {
-    p := <-HdfsToLocalReqChs[idx]
-    
-    var res HdfsToLocalRes
-    
-    if p.Engine == "vds" {
-        wrOK := false
-        file := make([]string, 1)
+func HttpHdfsToLocal (idex int) {
+    p := <-FileHdfsToLocalReqChs[idx]
 
-        bytes, runTime := hdfsRd(p.File[0])
-        ok := isRightFile(bytes, p.File[0])
-        if ok {
-            file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
-                    strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
-            wrOK = localWrite(file[0], bytes)
-        }
+    file := make([]string, 2)
+    file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
+              strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
+    file[1] = p.File[1] + "_" + strconv.FormatInt(p.Offset[1], 10) + "_" + 
+              strconv.Itoa(p.Size[1]) + "_" + strconv.Itoa(runTime) 
 
-        res = HdfsToLocalRes{
-            File: file,
-            Index: p.Index,
-            Success: wrOk,
-        }
-    } else {
-        file := make([]string, 2)
-        file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
-                  strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
-        file[1] = p.File[1] + "_" + strconv.FormatInt(p.Offset[1], 10) + "_" + 
-                  strconv.Itoa(p.Size[1]) + "_" + strconv.Itoa(runTime) 
-        
-        bytes, runTime := hdfsRd(p.File[0])
-        ok1 := isRightFile(bytes, p.File[0])
-        
-        bytes, runTime := hdfsRd(p.File[1])
-        ok2 := isRightFile(bytes, p.File[1])
-        
-        wrOk := false
-        if ok1 && ok2 {
-            wrOK1 := localWrite(file[0], bytes)
-            wrOK2 := localWrite(file[1], bytes)
-            wrOk = true
-        }
-        res = HdfsToLocalRes{
-            File: file,
-            Index: p.Index,
-            Success: wrOk,
-        }
+    bytes, runTime := hdfsRd(p.File[0])
+    ok1 := isRightFile(bytes, p.File[0])
+
+    bytes, runTime := hdfsRd(p.File[1])
+    ok2 := isRightFile(bytes, p.File[1])
+
+    wrOk := false
+    if ok1 && ok2 {
+        wrOK1 := localWrite(file[0], bytes)
+        wrOK2 := localWrite(file[1], bytes)
+        wrOk = true
     }
-    
+    res := HdfsToLocalRes{
+        File: file,
+        Index: p.Index,
+        Success: wrOk,
+    }
 
-    
+    p.HdfsToLocalResCh <- res
+}
+
+func FileHdfsToLocal (idx int) {
+    p := <-FileHdfsToLocalReqChs[idx]
+   
+    wrOK := false
+    file := make([]string, 1)
+
+    bytes, runTime := hdfsRd(p.File[0])
+    ok := isRightFile(bytes, p.File[0])
+    if ok {
+        file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
+                strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
+        wrOK = localWrite(file[0], bytes)
+    }
+
+    res := HdfsToLocalRes{
+        File: file,
+        Index: p.Index,
+        Success: wrOk,
+    }
+
     p.HdfsToLocalResCh <- res
 }
 
@@ -151,7 +161,10 @@ func localWrite (file string, bytes []byte) bool {
 }
 
 func HdfsToLocals () {
-    for i := 0; i < PRTNNUM; i++ {
-        go HdfsToLocal(i)
+    for i := 0; i < HTTPPRTNNUM; i++ {
+        go HttpHdfsToLocal(i)
+    }
+    for i := 0; i < FILEPRTNNUM; i++ {
+        go FileHdfsToLocal(i)
     }
 }
