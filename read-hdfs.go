@@ -1,6 +1,8 @@
 package agent_pkg
 
 import (
+	"strings"
+	"strconv"
 )
 
 type HdfsToLocalResTag struct {
@@ -9,7 +11,7 @@ type HdfsToLocalResTag struct {
 }
 
 type XdrProperty struct {
-    File []string
+    File string
     Offset []int64
     Size []int
     XdrMark string
@@ -47,10 +49,9 @@ func DisposeRdHdfs (ch chan HdfsToLocalRes, prefetchResMsg PrefetchResMsg) {
 	}
 }
 
-func xdrFields (bytes []byte) ([]string, []int64, []int, string, int) {
+func xdrFields (engine string, bytes []byte) XdrProperty {
 	var (
-		httpProperty HttpProperty
-		fileProperty FileProperty
+		property XdrProperty
 		jsonParse interface{}
 	)
 		
@@ -61,6 +62,7 @@ func xdrFields (bytes []byte) ([]string, []int64, []int, string, int) {
 		switch vv := v.(type) {
 		case string:
 		case float64:
+		case int64:
 		case int:
 		case bool:
 		case interface{}:
@@ -69,6 +71,7 @@ func xdrFields (bytes []byte) ([]string, []int64, []int, string, int) {
 				switch jj := j.(type) {
 				case string:
 				case float64:
+				case int64:
 				case int:
 				case bool:
 				case interface{}:
@@ -76,10 +79,45 @@ func xdrFields (bytes []byte) ([]string, []int64, []int, string, int) {
 					for z, l := range m {
 						switch ll := l.(type) {
 						case string:
-							fmt.Println(z, "is last-inner string", ll)
+							if engine == "vds" && i == "FileLocation" && z == "File" {
+								property.File = l
+								
+								index := strings.Index(l, "/")
+								id := l[index - 1 : ]
+								property.PRTN = strconv.Atoi(id)
+							} else if engine == "vds" && i == "FileLocation" && z == "Signature" {
+								property.XdrMark = l
+							}
+							if engine == "waf" && i == "RequestLocation" && z == "File" {
+								property.File = l
+								
+								index := strings.Index(l, "/")
+								id := l[index - 1 : ]
+								property.PRTN = strconv.Atoi(id)								
+							} else if engine == "waf" && i == "RequestLocation" && z == "Signature" {
+								property.XdrMark = l
+							}									
 						case float64:
+						case int64:
+							if engine == "vds" && i == "FileLocation" && z == "Offset" {
+								property.Offset[0] = l
+							}
+							if engine == "waf" && i == "RequestLocation" && z == "Offset" {
+								property.Offset[0] = l
+							}
+							if engine == "waf" && i == "ResponseLocation" && z == "Offset" {
+								property.Offset[1] = l
+							}							
 						case int:
-							fmt.Println(z, "is last-inner int", ll)
+							if engine == "vds" && i == "FileLocation" && z == "Size" {
+								property.Size[0] = l
+							}
+							if engine == "waf" && i == "RequestLocation" && z == "Size" {
+								property.Size[0] = l
+							}	
+							if engine == "waf" && i == "ResponseLocation" && z == "Size" {
+								property.Size[1] = l
+							}							
 						case bool:
 						case interface{}:
 						default:
@@ -91,7 +129,8 @@ func xdrFields (bytes []byte) ([]string, []int64, []int, string, int) {
 		default:
 		}
 	}
-    return file, offset, size, xdrMark, prtn
+
+    	return property
 }
 
 func CollectHdfsToLocalRes (prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRes, tags []HdfsToLocalResTag) []HdfsToLocalResTag {
