@@ -14,7 +14,7 @@ type XdrProperty struct {
     File string
     Offset []int64
     Size []int
-    XdrMark string
+    XdrMark []string
     PRTN int
 }
 
@@ -85,8 +85,6 @@ func xdrFields (engine string, bytes []byte) XdrProperty {
 								index := strings.Index(l, "/")
 								id := l[index - 1 : ]
 								property.PRTN = strconv.Atoi(id)
-							} else if engine == "vds" && i == "FileLocation" && z == "Signature" {
-								property.XdrMark = l
 							}
 							if engine == "waf" && i == "RequestLocation" && z == "File" {
 								property.File = l
@@ -94,8 +92,15 @@ func xdrFields (engine string, bytes []byte) XdrProperty {
 								index := strings.Index(l, "/")
 								id := l[index - 1 : ]
 								property.PRTN = strconv.Atoi(id)								
-							} else if engine == "waf" && i == "RequestLocation" && z == "Signature" {
+							}
+							if engine == "vds" && i == "FileLocation" && z == "Signature" {
 								property.XdrMark = l
+							}
+							if engine == "waf" && i == "RequestLocation" && z == "Signature" {
+								property.XdrMark[0] = l
+							}
+							if engine == "waf" && i == "ResponseLocation" && z == "Signature" {
+								property.XdrMark[1] = l
 							}									
 						case float64:
 						case int64:
