@@ -12,10 +12,10 @@ import (
 
 type HdfsToLocalReqParams struct {
     Engine string
-    File []string
+    File string
     Offset []int64
     Size []int
-    XdrMark []string
+    XdrMark string
     
     Index int
 
@@ -49,23 +49,23 @@ func InitHdfsCli (namenode string) {
 func HttpHdfsToLocal (idex int) {
     p := <-FileHdfsToLocalReqChs[idx]
 
+    reqBytes, reqRunTime := hdfsRd(p.File, p.Offset[0], p.Size[0])
+    reqRight := isRightFile(bytes, p.Signature[0])
+
+    resBytes, resRunTime := hdfsRd(p.File, p.Offset[1], p.Size[1])
+    resRight := isRightFile(bytes, p.Signature[1])
+    
     file := make([]string, 2)
-    file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
-              strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
-    file[1] = p.File[1] + "_" + strconv.FormatInt(p.Offset[1], 10) + "_" + 
-              strconv.Itoa(p.Size[1]) + "_" + strconv.Itoa(runTime) 
-
-    bytes, runTime := hdfsRd(p.File[0])
-    ok1 := isRightFile(bytes, p.File[0])
-
-    bytes, runTime := hdfsRd(p.File[1])
-    ok2 := isRightFile(bytes, p.File[1])
+    file[0] = p.File + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
+              strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(reqRunTime) 
+    file[1] = p.File + "_" + strconv.FormatInt(p.Offset[1], 10) + "_" + 
+              strconv.Itoa(p.Size[1]) + "_" + strconv.Itoa(resRunTime) 
 
     wrOk := false
-    if ok1 && ok2 {
-        wrOK1 := localWrite(file[0], bytes)
-        wrOK2 := localWrite(file[1], bytes)
-        wrOk = true
+    if httpReqRight && httpResRight {
+        wrReqOK := localWrite(file[0], bytes)
+        wrResOK := localWrite(file[1], bytes)
+        wrOk = wrReqOk && wrResOk
     }
     res := HdfsToLocalRes{
         File: file,
@@ -82,7 +82,7 @@ func FileHdfsToLocal (idx int) {
     wrOK := false
     file := make([]string, 1)
 
-    bytes, runTime := hdfsRd(p.File[0])
+    bytes, runTime := hdfsRd(p.File, p.)
     ok := isRightFile(bytes, p.File[0])
     if ok {
         file[0] = p.File[0] + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
@@ -99,7 +99,7 @@ func FileHdfsToLocal (idx int) {
     p.HdfsToLocalResCh <- res
 }
 
-func hdfsRd (file string, size int, offset int64) (bytes []byte, runTime int) {
+func hdfsRd (file string, offset int64, size int) (bytes []byte, runTime int) {
     beginTime := time.Now().Nanosecond()
 
     if fileIsExist(file) {
