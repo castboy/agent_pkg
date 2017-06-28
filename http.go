@@ -66,6 +66,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
     fmt.Println("Length of ManageCh:", len(ManageCh))
 
     Data := <-HandleCh
+    fmt.Println("http.go <-HandleCh")
     
     var data interface{}
     var dataSlice = make([]interface{}, 0)
@@ -105,6 +106,7 @@ func Manage() {
                 DisposeReq(req)
                 
             case res := <-PrefetchResCh:
+                fmt.Println("prefetch res", res)
                 RdHdfs(res)
 
             case start := <- StartOfflineCh:

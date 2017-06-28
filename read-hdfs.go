@@ -2,6 +2,7 @@ package agent_pkg
 
 import (
 	"strings"
+    "fmt"
 	"strconv"
     "encoding/json"
 )
@@ -17,6 +18,28 @@ type XdrProperty struct {
     Size []int
     XdrMark []string
     Prtn int
+}
+
+type XdrStr struct {
+    Type int
+    Data HttpFile
+}
+
+type HttpFile struct {
+    Http struct {
+        RequestLocatin LocationHdfs
+        ResponseLocation LocationHdfs
+    }
+    App struct {
+        FileLocation LocationHdfs
+    }
+}
+
+type LocationHdfs struct {
+    File      string `json:"File"`
+    Offset    int64  `json:"Offset"`
+    Size      int    `json:"Size"`
+    Signature string `json:"Signature"`
 }
 
 func DisposeRdHdfs (ch chan HdfsToLocalRes, prefetchResMsg PrefetchResMsg) {
@@ -51,98 +74,45 @@ func DisposeRdHdfs (ch chan HdfsToLocalRes, prefetchResMsg PrefetchResMsg) {
 }
 
 func xdrProperty (engine string, bytes []byte) XdrProperty {
-	var (
-		property XdrProperty
-		jsonParse interface{}
-	)
-		
-	json.Unmarshal(bytes, &jsonParse)
-	
-	m := jsonParse.(map[string]interface{})
-	for _, v := range m {
-		switch vv := v.(type) {
-		case string:
-		case float64:
-		case int64:
-		case int:
-		case bool:
-		case interface{}:
-			n := vv.(map[string]interface{})
-			for i, j := range n {
-				switch jj := j.(type) {
-				case string:
-				case float64:
-				case int64:
-				case int:
-				case bool:
-				case interface{}:
-					m := jj.(map[string]interface{})
-					for z, l := range m {
-						switch ll := l.(type) {
-						case string:
-							if engine == "vds" && i == "FileLocation" && z == "File" {
-								property.File = ll
-								
-								index := strings.Index(ll, "/")
-								id := ll[index - 1 : ]
-                                i, err := strconv.Atoi(id)
-                                if nil != err {
-                                }
-								property.Prtn = i 
-							}
-							if engine == "waf" && i == "RequestLocation" && z == "File" {
-								property.File = ll
-								
-								index := strings.Index(ll, "/")
-								id := ll[index - 1 : ]
-                                i, err := strconv.Atoi(id)
-                                if nil != err {
-                                }
-								property.Prtn = i 
-							}
-							if engine == "vds" && i == "FileLocation" && z == "Signature" {
-								property.XdrMark[0] = ll
-							}
-							if engine == "waf" && i == "RequestLocation" && z == "Signature" {
-								property.XdrMark[0] = ll
-							}
-							if engine == "waf" && i == "ResponseLocation" && z == "Signature" {
-								property.XdrMark[1] = ll
-							}									
-						case float64:
-						case int64:
-							if engine == "vds" && i == "FileLocation" && z == "Offset" {
-								property.Offset[0] = ll
-							}
-							if engine == "waf" && i == "RequestLocation" && z == "Offset" {
-								property.Offset[0] = ll
-							}
-							if engine == "waf" && i == "ResponseLocation" && z == "Offset" {
-								property.Offset[1] = ll
-							}							
-						case int:
-							if engine == "vds" && i == "FileLocation" && z == "Size" {
-								property.Size[0] = ll
-							}
-							if engine == "waf" && i == "RequestLocation" && z == "Size" {
-								property.Size[0] = ll
-							}	
-							if engine == "waf" && i == "ResponseLocation" && z == "Size" {
-								property.Size[1] = ll
-							}							
-						case bool:
-						case interface{}:
-						default:
-						}
-					}
-				default:
-				}
-			}
-		default:
-		}
-	}
+	var property XdrProperty
+	var xdrStr XdrStr 
 
-    	return property
+	json.Unmarshal(bytes, &xdrStr)
+
+    if engine == "waf" {
+        property.File = xdrStr.Data.Http.ResponseLocation.File
+        property.Offset = append(property.Offset, xdrStr.Data.Http.RequestLocatin.Offset)
+        property.Offset = append(property.Offset, xdrStr.Data.Http.ResponseLocation.Offset)
+        property.Size = append(property.Size, xdrStr.Data.Http.RequestLocatin.Size)
+        property.Size = append(property.Size, xdrStr.Data.Http.ResponseLocation.Size)
+        property.XdrMark = append(property.XdrMark, xdrStr.Data.Http.RequestLocatin.Signature)
+        property.XdrMark = append(property.XdrMark, xdrStr.Data.Http.ResponseLocation.Signature)
+
+        id := strings.LastIndex(property.File, "/")
+        prtnStr := property.File[id + 1 : ]
+        prtn, err := strconv.Atoi(prtnStr)
+        if nil != err {
+            fmt.Println("prtn-id err")
+        }
+
+        property.Prtn = prtn
+    } else {
+        property.File = xdrStr.Data.App.FileLocation.File
+        property.Offset = append(property.Offset, xdrStr.Data.App.FileLocation.Offset)
+        property.Size = append(property.Size, xdrStr.Data.App.FileLocation.Size)
+        property.XdrMark = append(property.XdrMark, xdrStr.Data.App.FileLocation.Signature)
+
+        id := strings.LastIndex(property.File, "/")
+        prtnStr := property.File[id - 1 : ]
+        prtn, err := strconv.Atoi(prtnStr)
+        if nil != err {
+            fmt.Println("prtn-id err")
+        }
+
+        property.Prtn = prtn
+    }
+
+    return property
 }
 
 func CollectHdfsToLocalRes (prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRes, tags []HdfsToLocalResTag) []HdfsToLocalResTag {
@@ -151,7 +121,7 @@ func CollectHdfsToLocalRes (prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRe
 
     for {
         res := <- ch
-
+        fmt.Println("ColletcHdfs:", res)
         index := res.Index
         tags[index] = HdfsToLocalResTag{
             File: res.File,
@@ -161,8 +131,10 @@ func CollectHdfsToLocalRes (prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRe
         statNum++
         if statNum == dataNum {
             break
-        }
+        } 
     }
+
+    fmt.Println("outer for")
 
     return tags
 }
@@ -236,12 +208,13 @@ func RdHdfs (prefetchResMsg PrefetchResMsg) {
     len := len(data)
     tags := make([]HdfsToLocalResTag, len)
 
-
-    hdfsToLocalResCh := make(chan HdfsToLocalRes)
+    hdfsToLocalResCh := make(chan HdfsToLocalRes, 100)
 
     DisposeRdHdfs(hdfsToLocalResCh, prefetchResMsg)
 
     tags = CollectHdfsToLocalRes(prefetchResMsg, hdfsToLocalResCh, tags) 
+
+    fmt.Println("tags:", tags)
     cache := GetCache(prefetchResMsg, tags, data)
 
     WriteCache(prefetchResMsg, cache)
