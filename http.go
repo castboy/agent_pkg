@@ -29,7 +29,7 @@ type StartOfflineMsg struct {
     Weight int    
 }
 
-type StopOfflineMsg struct {
+type OtherOfflineMsg struct {
     Engine string
     Topic string
 }
@@ -45,7 +45,9 @@ var ManageCh = make(chan ManageMsg, 10000)
 var PrefetchResCh = make(chan PrefetchResMsg)
 
 var StartOfflineCh = make(chan StartOfflineMsg)
-var StopOfflineCh = make(chan StopOfflineMsg)
+var StopOfflineCh = make(chan OtherOfflineMsg)
+var ShutdownOfflineCh = make(chan OtherOfflineMsg)
+var CompleteOfflineCh = make(chan OtherOfflineMsg)
 
 func Handle(w http.ResponseWriter, r *http.Request) {
     
@@ -102,11 +104,9 @@ func Manage() {
     for {
         select {
             case req := <-ManageCh:   
-                fmt.Println("req", req)
                 DisposeReq(req)
                 
             case res := <-PrefetchResCh:
-                fmt.Println("prefetch res", res)
                 RdHdfs(res)
 
             case start := <- StartOfflineCh:
@@ -114,43 +114,65 @@ func Manage() {
 
             case stop := <- StopOfflineCh:
                 StopOffline(stop)
+
+            case shutdown := <- ShutdownOfflineCh:
+                ShutdownOffline(shutdown)
+
+            case complete := <- CompleteOfflineCh:
+                CompleteOffline(complete)
         }
     }    
 }
 
-func OfflineStartHandle(w http.ResponseWriter, r *http.Request) {
+func OfflineHandle(w http.ResponseWriter, r *http.Request) {
     r.ParseForm()
-    engine := r.Form["type"][0]
+    msgType := r.Form["type"][0]
+    engine := r.Form["engine"][0]
     topic := r.Form["topic"][0]
-    weight, _ := strconv.Atoi(r.Form["weight"][0])
-    
-    fmt.Println("OfflineStart:  ", "engine:", engine, " topic:", topic, "weight:", weight)
-    startOfflineMsg := StartOfflineMsg {
-        Engine: engine,
-        Topic: topic,
-        Weight: weight,    
-    }
 
-    StartOfflineCh <- startOfflineMsg
-}
+    var weight int = -1
 
-func OfflineStopHandle(w http.ResponseWriter, r *http.Request) {
-    r.ParseForm()
-    engine := r.Form["type"][0]
-    topic := r.Form["topic"][0]
-    
-    fmt.Println("OfflineStop:  ", "engine:", engine, " topic:", topic)
-    stopOfflineMsg := StopOfflineMsg {
-        Engine: engine,
-        Topic: topic,
-    }
+    switch msgType {
+        case "start":
+            weight, _ = strconv.Atoi(r.Form["weight"][0])
+            msg := StartOfflineMsg {
+                Engine: engine,
+                Topic: topic,
+                Weight: weight,    
+            }
 
-    StopOfflineCh <- stopOfflineMsg
+            StartOfflineCh <- msg
+
+        case "stop":
+            msg := OtherOfflineMsg {
+                Engine: engine,
+                Topic: topic,
+            }
+
+            StopOfflineCh <- msg
+
+        case "shutdown":
+            msg := OtherOfflineMsg {
+                Engine: engine,
+                Topic: topic,
+            }
+
+            ShutdownOfflineCh <- msg
+
+        case "complete":
+            msg := OtherOfflineMsg {
+                Engine: engine,
+                Topic: topic,
+            }
+
+            CompleteOfflineCh <- msg
+    }    
+
+    fmt.Println("type: ", msgType, "   engine: ", engine, "   topic: ", topic, "    weight: ", weight)
 }
 
 func ListenReq(url string) {
      http.HandleFunc("/", Handle)  
-     http.HandleFunc("/start", OfflineStartHandle)  
-     http.HandleFunc("/stop", OfflineStopHandle)  
+     http.HandleFunc("/offline", OfflineHandle)  
      http.ListenAndServe(url, nil)  
 }

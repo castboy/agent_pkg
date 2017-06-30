@@ -93,6 +93,7 @@ func xdrProperty (engine string, bytes []byte) XdrProperty {
         prtn, err := strconv.Atoi(prtnStr)
         if nil != err {
             fmt.Println("prtn-id err")
+            fmt.Println("file name is: ", property.File)
         }
 
         property.Prtn = prtn

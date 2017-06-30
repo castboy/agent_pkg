@@ -35,6 +35,7 @@ const (
     FILEPRTNNUM = 64
     HTTPPRTNNUM = 64
     FILEROOT = "/tmp"
+    CHECKFILE = false
 )
 
 var (
@@ -128,14 +129,16 @@ func fileIsExist(file string) (bool) {
 }
 
 func isRightFile (hdfs []byte, xdrMark string) bool {
-    //right := true
+    right := true
  
-    //if xdrMark != sha256Code(hdfs) {
-    //    right = false
-    //}
+    if CHECKFILE {
+        if xdrMark != sha256Code(hdfs) {
+            right = false
+        }
+    } else {
+    }
  
-    //return right     
-    return true
+    return right     
 }
 
 func sha256Code (bytes []byte) string {

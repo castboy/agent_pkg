@@ -32,11 +32,37 @@ func StartOffline(msg StartOfflineMsg) {
     }
 }
 
-func StopOffline(msg StopOfflineMsg) {
+func StopOffline(msg OtherOfflineMsg) {
     startOffset, endOffset := Offset(msg.Topic, Partition)
     if msg.Engine == "waf" {
         Waf[msg.Topic] = Status{startOffset, Waf[msg.Topic].Engine, Waf[msg.Topic].Cache, endOffset, Waf[msg.Topic].Weight}    
     } else {
         Vds[msg.Topic] = Status{startOffset, Vds[msg.Topic].Engine, Vds[msg.Topic].Cache, endOffset, Vds[msg.Topic].Weight}    
     } 
+}
+
+func ShutdownOffline(msg OtherOfflineMsg) {
+    if msg.Engine == "waf" {
+        delete(wafConsumers, msg.Topic)
+        delete(Waf, msg.Topic)
+        delete(PrefetchMsgSwitchMap, msg.Topic)
+        delete(WafCacheInfoMap, msg.Topic)
+
+        PrefetchChMap[msg.Topic] <- PrefetchMsg{"", "", 0, true}
+
+        delete(PrefetchChMap, msg.Topic)
+    } else {
+        delete(vdsConsumers, msg.Topic)
+        delete(Vds, msg.Topic)
+        delete(PrefetchMsgSwitchMap, msg.Topic)
+        delete(VdsCacheInfoMap, msg.Topic)
+
+        PrefetchChMap[msg.Topic] <- PrefetchMsg{"", "", 0, true}
+
+        delete(PrefetchChMap, msg.Topic)
+    }
+}
+
+func CompleteOffline(msg OtherOfflineMsg) {
+    ShutdownOffline(msg)
 }

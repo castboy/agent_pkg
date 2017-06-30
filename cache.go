@@ -143,7 +143,7 @@ func SendPrefetchMsg(cacheAnalysisRes map[string] CacheAnalysisRes, manageMsg Ma
     for topic, v := range cacheAnalysisRes {
         if v.SendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
             //fmt.Println("send prefetchMsg:", topic)
-            PrefetchChMap[topic] <- PrefetchMsg{manageMsg.Engine, topic, AgentConf.MaxCache}   
+            PrefetchChMap[topic] <- PrefetchMsg{manageMsg.Engine, topic, AgentConf.MaxCache, false}   
 
             //fmt.Println(PrefetchMsg{manageMsg.Engine, topic, AgentConf.MaxCache})
             PrefetchMsgSwitchMap[topic] = false

@@ -9,6 +9,8 @@ type PrefetchMsg struct {
     Engine string
     Topic string
     Count int
+
+    Shutdown bool
 }
 
 var PrefetchMsgSwitchMap = make(map[string] bool)
@@ -55,6 +57,10 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
         prefetchMsg := <-prefetchCh   
         //fmt.Println("received PrefetchMsg:", prefetchMsg)
 
+        if prefetchMsg.Shutdown {
+            break
+        }
+
         var Data [][]byte
         ReadKafka(prefetchMsg, &Data)
         dataPtr := &Data
@@ -68,6 +74,8 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
         PrefetchResCh <- res 
                 
     }
+
+    fmt.Println("break out prefetch routine")
 }
 
 func InitPrefetch() {
