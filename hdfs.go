@@ -108,14 +108,23 @@ func FileHdfsToLocal (idx int) {
 }
 
 func hdfsRd (file string, offset int64, size int) (bytes []byte, runTime int) {
+    defer func()  {
+        if r := recover(); r != nil {
+            fmt.Printf("consume err: %v", r)    
+        }    
+    }()
+
     beginTime := time.Now().Nanosecond()
 
     f, _ := client.Open(file)
     bytes = make([]byte, size)
-    f.ReadAt(bytes, offset)
+    int, err := f.ReadAt(bytes, offset)
 
+    if nil != err {
+        fmt.Println(file, offset, size, int)
+    }
     endTime := time.Now().Nanosecond()
-    fmt.Println("hdfs-rd:", bytes)
+    //fmt.Println("hdfs-rd:", bytes)
     
     return bytes, endTime - beginTime 
 }
@@ -193,11 +202,11 @@ func pathExists(path string) (bool, error) {
 
 func HdfsToLocals () {
     for i := 0; i < HTTPPRTNNUM; i++ {
-        HttpHdfsToLocalReqChs[i] = make(chan HdfsToLocalReqParams) 
+        HttpHdfsToLocalReqChs[i] = make(chan HdfsToLocalReqParams, 100) 
         go HttpHdfsToLocal(i)
     }
     for i := 0; i < FILEPRTNNUM; i++ {
-        FileHdfsToLocalReqChs[i] = make(chan HdfsToLocalReqParams) 
+        FileHdfsToLocalReqChs[i] = make(chan HdfsToLocalReqParams, 100) 
         go FileHdfsToLocal(i)
     }
 }

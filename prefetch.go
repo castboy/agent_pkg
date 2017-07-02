@@ -55,7 +55,7 @@ func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 func Prefetch(prefetchCh chan PrefetchMsg) {
     for {
         prefetchMsg := <-prefetchCh   
-        //fmt.Println("received PrefetchMsg:", prefetchMsg)
+        fmt.Println("received PrefetchMsg:", prefetchMsg)
 
         if prefetchMsg.Shutdown {
             break
@@ -70,6 +70,8 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
             Topic: prefetchMsg.Topic,
             DataPtr: dataPtr,    
         }
+
+        fmt.Println("Prefetch res:", res)
 
         PrefetchResCh <- res 
                 

@@ -79,6 +79,7 @@ func xdrProperty (engine string, bytes []byte) XdrProperty {
 
 	json.Unmarshal(bytes, &xdrStr)
 
+
     if engine == "waf" {
         property.File = xdrStr.Data.Http.ResponseLocation.File
         property.Offset = append(property.Offset, xdrStr.Data.Http.RequestLocatin.Offset)
@@ -88,12 +89,14 @@ func xdrProperty (engine string, bytes []byte) XdrProperty {
         property.XdrMark = append(property.XdrMark, xdrStr.Data.Http.RequestLocatin.Signature)
         property.XdrMark = append(property.XdrMark, xdrStr.Data.Http.ResponseLocation.Signature)
 
+        //fmt.Printf("signature:%x", []byte(property.XdrMark[0]))
         id := strings.LastIndex(property.File, "/")
         prtnStr := property.File[id + 1 : ]
         prtn, err := strconv.Atoi(prtnStr)
+
+
         if nil != err {
-            fmt.Println("prtn-id err")
-            fmt.Println("file name is: ", property.File)
+            fmt.Println("prtn-id err:", property.File)
         }
 
         property.Prtn = prtn
@@ -107,12 +110,13 @@ func xdrProperty (engine string, bytes []byte) XdrProperty {
         prtnStr := property.File[id - 1 : ]
         prtn, err := strconv.Atoi(prtnStr)
         if nil != err {
-            fmt.Println("prtn-id err")
+            fmt.Println("prtn-id err:", property.File)
         }
 
         property.Prtn = prtn
     }
 
+    fmt.Println(property)
     return property
 }
 
@@ -122,7 +126,7 @@ func CollectHdfsToLocalRes (prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRe
 
     for {
         res := <- ch
-        fmt.Println("ColletcHdfs:", res)
+        //fmt.Println("ColletcHdfs:", res)
         index := res.Index
         tags[index] = HdfsToLocalResTag{
             File: res.File,
@@ -134,8 +138,6 @@ func CollectHdfsToLocalRes (prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRe
             break
         } 
     }
-
-    fmt.Println("outer for")
 
     return tags
 }
@@ -172,10 +174,10 @@ func updateXdr (prefetchResMsg PrefetchResMsg, data [][]byte, index int, localFi
     var appendBytes []byte
 	
     if prefetchResMsg.Topic == "vds" {
-	appendStr := ",\"File\":\"" + localFile[0] + "\"}"
+        appendStr := ",\"File\":\"" + localFile[0] + "\"}"
         appendBytes = []byte(appendStr)
     } else {
-	appendStr := ",\"File\":{\"request\":\"" + localFile[0] + "\"," + "\"response\":\"" + localFile[1] + "\"}}"
+        appendStr := ",\"File\":{\"request\":\"" + localFile[0] + "\"," + "\"response\":\"" + localFile[1] + "\"}}"
         appendBytes = []byte(appendStr)
     }
 
@@ -206,19 +208,30 @@ func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
 func RdHdfs (prefetchResMsg PrefetchResMsg) {
     data := *prefetchResMsg.DataPtr
 
+    fmt.Println(string(data[0]))
+    /*
+    for key, val := range data {
+        fmt.Println(key)
+    }
+    */
     len := len(data)
-    tags := make([]HdfsToLocalResTag, len)
 
-    hdfsToLocalResCh := make(chan HdfsToLocalRes, 100)
 
-    DisposeRdHdfs(hdfsToLocalResCh, prefetchResMsg)
+    if 0 != len {
+        tags := make([]HdfsToLocalResTag, len)
 
-    tags = CollectHdfsToLocalRes(prefetchResMsg, hdfsToLocalResCh, tags) 
+        hdfsToLocalResCh := make(chan HdfsToLocalRes, 100)
 
-    fmt.Println("tags:", tags)
-    cache := GetCache(prefetchResMsg, tags, data)
+        DisposeRdHdfs(hdfsToLocalResCh, prefetchResMsg)
 
-    WriteCache(prefetchResMsg, cache)
-    UpdateCacheCurrent(prefetchResMsg)
+        tags = CollectHdfsToLocalRes(prefetchResMsg, hdfsToLocalResCh, tags) 
+
+        //fmt.Println("tags:", tags)
+        cache := GetCache(prefetchResMsg, tags, data)
+
+        WriteCache(prefetchResMsg, cache)
+        UpdateCacheCurrent(prefetchResMsg)
+    }
 }
+
 

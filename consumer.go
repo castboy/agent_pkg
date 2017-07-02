@@ -103,6 +103,7 @@ func UpdateOffset () {
             os.Exit(0)
         }
     } 
+
     //fmt.Println("UpdateOffset: ", Waf, Vds)
     PrintUpdateOffset()
 }

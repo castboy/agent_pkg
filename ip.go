@@ -33,7 +33,6 @@ func GetLocalhost() {
             Localhost = ip
         }
     }
-    Localhost = "10.80.6.7"
     fmt.Println("Localhost   : ", Localhost)
 
 }
