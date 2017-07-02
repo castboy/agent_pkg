@@ -107,7 +107,7 @@ func xdrProperty (engine string, bytes []byte) XdrProperty {
         property.XdrMark = append(property.XdrMark, xdrStr.Data.App.FileLocation.Signature)
 
         id := strings.LastIndex(property.File, "/")
-        prtnStr := property.File[id - 1 : ]
+        prtnStr := property.File[id + 1 : ]
         prtn, err := strconv.Atoi(prtnStr)
         if nil != err {
             fmt.Println("prtn-id err:", property.File)
@@ -164,16 +164,21 @@ func WriteCache(prefetchResMsg PrefetchResMsg, data [][]byte) {
         WafCacheInfoMap[topic] = CacheInfo{0, count}
         CacheDataMap[topic] = data
     } else {
-        VdsCacheInfoMap[prefetchResMsg.Topic] = CacheInfo{0, count}
+        VdsCacheInfoMap[topic] = CacheInfo{0, count}
         CacheDataMap[topic] = data
     }
 }
 
 func updateXdr (prefetchResMsg PrefetchResMsg, data [][]byte, index int, localFile []string) []byte {
+    defer func()  {
+        if r := recover(); r != nil {
+            fmt.Printf("consume err: %v", r)    
+        }    
+    }()
     bytes := data[index]
     var appendBytes []byte
 	
-    if prefetchResMsg.Topic == "vds" {
+    if prefetchResMsg.Engine == "vds" {
         appendStr := ",\"File\":\"" + localFile[0] + "\"}"
         appendBytes = []byte(appendStr)
     } else {
@@ -209,18 +214,12 @@ func RdHdfs (prefetchResMsg PrefetchResMsg) {
     data := *prefetchResMsg.DataPtr
 
     fmt.Println(string(data[0]))
-    /*
-    for key, val := range data {
-        fmt.Println(key)
-    }
-    */
     len := len(data)
-
 
     if 0 != len {
         tags := make([]HdfsToLocalResTag, len)
 
-        hdfsToLocalResCh := make(chan HdfsToLocalRes, 100)
+        hdfsToLocalResCh := make(chan HdfsToLocalRes, len)
 
         DisposeRdHdfs(hdfsToLocalResCh, prefetchResMsg)
 
