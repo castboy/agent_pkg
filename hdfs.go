@@ -60,9 +60,9 @@ func HttpHdfsToLocal (idx int) {
         resRight := isRightFile(resBytes, p.XdrMark[1])
         
         file := make([]string, 2)
-        file[0] = p.File + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
+        file[0] = FILEROOT + p.File + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
                   strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(reqRunTime) 
-        file[1] = p.File + "_" + strconv.FormatInt(p.Offset[1], 10) + "_" + 
+        file[1] = FILEROOT + p.File + "_" + strconv.FormatInt(p.Offset[1], 10) + "_" + 
                   strconv.Itoa(p.Size[1]) + "_" + strconv.Itoa(resRunTime) 
 
         wrOk := false
@@ -92,7 +92,7 @@ func FileHdfsToLocal (idx int) {
         bytes, runTime := hdfsRd(p.File, p.Offset[0], p.Size[0])
         ok := isRightFile(bytes, p.XdrMark[0])
         if ok {
-            file[0] = p.File + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
+            file[0] = FILEROOT + p.File + "_" + strconv.FormatInt(p.Offset[0], 10) + "_" + 
                     strconv.Itoa(p.Size[0]) + "_" + strconv.Itoa(runTime) 
             wrOk = localWrite(file[0], bytes)
         }
@@ -159,7 +159,6 @@ func sha256Code (bytes []byte) string {
 func localWrite (file string, bytes []byte) bool {
     success := true
 
-    file = FILEROOT + file 
     id := strings.LastIndex(file, "/")
     dir := file[ : id ]
     
