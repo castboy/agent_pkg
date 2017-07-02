@@ -35,7 +35,7 @@ const (
     FILEPRTNNUM = 64
     HTTPPRTNNUM = 64
     FILEROOT = "/tmp"
-    CHECKFILE = false
+    CHECKFILE = true
 )
 
 var (

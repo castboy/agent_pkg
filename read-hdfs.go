@@ -92,14 +92,12 @@ func xdrProperty (engine string, bytes []byte) XdrProperty {
         //fmt.Printf("signature:%x", []byte(property.XdrMark[0]))
         id := strings.LastIndex(property.File, "/")
         prtnStr := property.File[id + 1 : ]
-        prtn, err := strconv.Atoi(prtnStr)
-
-
+        prtn, err := strconv.ParseFloat(prtnStr, 32)
         if nil != err {
             fmt.Println("prtn-id err:", property.File)
         }
 
-        property.Prtn = prtn
+        property.Prtn = int(prtn)
     } else {
         property.File = xdrStr.Data.App.FileLocation.File
         property.Offset = append(property.Offset, xdrStr.Data.App.FileLocation.Offset)
@@ -108,12 +106,12 @@ func xdrProperty (engine string, bytes []byte) XdrProperty {
 
         id := strings.LastIndex(property.File, "/")
         prtnStr := property.File[id + 1 : ]
-        prtn, err := strconv.Atoi(prtnStr)
+        prtn, err := strconv.ParseFloat(prtnStr, 32)
         if nil != err {
             fmt.Println("prtn-id err:", property.File)
         }
 
-        property.Prtn = prtn
+        property.Prtn = int(prtn)
     }
 
     fmt.Println(property)
@@ -213,7 +211,6 @@ func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
 func RdHdfs (prefetchResMsg PrefetchResMsg) {
     data := *prefetchResMsg.DataPtr
 
-    fmt.Println(string(data[0]))
     len := len(data)
 
     if 0 != len {
