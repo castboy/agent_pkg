@@ -47,8 +47,8 @@ func UpdateWafVds(status []byte) {
 	Waf = WafVds[0]
 	Vds = WafVds[1]
 
-    Waf["xdrHttp"] = Status{403361,403361,403361,403361, 1}
-    Vds["xdrFile"] = Status{132271,132271,132271,132271, 1}
+    Waf["xdrHttp"] = Status{403361, 403361, 403361, 403361, 1}
+    Vds["xdrFile"] = Status{132271, 132271, 132271, 132271, 1}
 
     PrintUpdateStatus()
 }

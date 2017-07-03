@@ -46,7 +46,7 @@ func Record(seconds int) {
 
 func InitEtcdCli() {
     cfg := clientv3.Config{
-        Endpoints:               []string{"http://10.80.6.8:2379"},
+        Endpoints:               []string{"http://10.88.1.103:2379"},
         DialTimeout: 5 * time.Second,
     }
     var err error = errors.New("this is a new error")

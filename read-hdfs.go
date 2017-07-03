@@ -211,7 +211,6 @@ func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
 func RdHdfs (prefetchResMsg PrefetchResMsg) {
     data := *prefetchResMsg.DataPtr
 
-    fmt.Println(string(data[0]))
     len := len(data)
 
     if 0 != len {
