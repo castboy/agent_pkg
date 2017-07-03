@@ -43,6 +43,9 @@ var (
 	client *hdfs.Client
 )
 
+var httpHdl = make(map[string]*hdfs.FileReader)
+var fileHdl = make(map[string]*hdfs.FileReader)
+
 func InitHdfsCli(namenode string) {
 	client, _ = hdfs.New(namenode)
 }
@@ -51,10 +54,16 @@ func HttpHdfsToLocal(idx int) {
 	for {
 		p := <-HttpHdfsToLocalReqChs[idx]
 
-		reqBytes, _ := hdfsRd(p.SrcFile, p.Offset[0], p.Size[0])
+		fHdl, exist := httpHdl[p.SrcFile]
+		if !exist {
+			f, _ := client.Open(p.SrcFile)
+			httpHdl[p.SrcFile] = f
+		}
+
+		reqBytes, _ := hdfsRd(fHdl, p.SrcFile, p.Offset[0], p.Size[0])
 		reqRight := isRightFile(reqBytes, p.XdrMark[0])
 
-		resBytes, _ := hdfsRd(p.SrcFile, p.Offset[1], p.Size[1])
+		resBytes, _ := hdfsRd(fHdl, p.SrcFile, p.Offset[1], p.Size[1])
 		resRight := isRightFile(resBytes, p.XdrMark[1])
 
 		wrOk := false
@@ -77,9 +86,15 @@ func FileHdfsToLocal(idx int) {
 	for {
 		p := <-FileHdfsToLocalReqChs[idx]
 
+		fHdl, exist := httpHdl[p.SrcFile]
+		if !exist {
+			f, _ := client.Open(p.SrcFile)
+			httpHdl[p.SrcFile] = f
+		}
+
 		wrOk := false
 
-		bytes, _ := hdfsRd(p.SrcFile, p.Offset[0], p.Size[0])
+		bytes, _ := hdfsRd(fHdl, p.SrcFile, p.Offset[0], p.Size[0])
 		ok := isRightFile(bytes, p.XdrMark[0])
 		if ok {
 			wrOk = localWrite(p.DstFile[0], bytes)
@@ -94,7 +109,7 @@ func FileHdfsToLocal(idx int) {
 	}
 }
 
-func hdfsRd(file string, offset int64, size int) (bytes []byte, runTime int) {
+func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte, runTime int) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("consume err: %v", r)
@@ -103,9 +118,8 @@ func hdfsRd(file string, offset int64, size int) (bytes []byte, runTime int) {
 
 	beginTime := time.Now().Nanosecond()
 
-	f, _ := client.Open(file)
 	bytes = make([]byte, size)
-	int, err := f.ReadAt(bytes, offset)
+	int, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
 		fmt.Println(file, offset, size, int)
