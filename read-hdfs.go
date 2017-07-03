@@ -199,6 +199,7 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 		cache := GetCache(prefetchResMsg, tags, data)
 
 		WriteCache(prefetchResMsg, cache)
-		UpdateCacheCurrent(prefetchResMsg)
 	}
+
+	UpdateCacheCurrent(prefetchResMsg)
 }
