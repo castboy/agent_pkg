@@ -60,6 +60,7 @@ func HttpHdfsToLocal(idx int) {
 			httpHdl[p.SrcFile] = f
 		}
 
+		fmt.Println("/n", httpHdl)
 		reqBytes, _ := hdfsRd(fHdl, p.SrcFile, p.Offset[0], p.Size[0])
 		reqRight := isRightFile(reqBytes, p.XdrMark[0])
 
@@ -86,10 +87,10 @@ func FileHdfsToLocal(idx int) {
 	for {
 		p := <-FileHdfsToLocalReqChs[idx]
 
-		fHdl, exist := httpHdl[p.SrcFile]
+		fHdl, exist := fileHdl[p.SrcFile]
 		if !exist {
 			f, _ := client.Open(p.SrcFile)
-			httpHdl[p.SrcFile] = f
+			fileHdl[p.SrcFile] = f
 		}
 
 		wrOk := false
