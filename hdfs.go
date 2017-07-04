@@ -43,71 +43,117 @@ var (
 	client *hdfs.Client
 )
 
-var httpHdl = make(map[string]*hdfs.FileReader)
-var fileHdl = make(map[string]*hdfs.FileReader)
+type HdfsFileHdl struct {
+	Hdl     *hdfs.FileReader
+	ReqTime int64
+}
 
 func InitHdfsCli(namenode string) {
 	client, _ = hdfs.New(namenode)
 }
 
-func HttpHdfsToLocal(idx int) {
+var ClearFileHdlChs [FILEPRTNNUM + HTTPPRTNNUM]chan int
+
+func SendClearFileHdlMsg(hours int) {
+	ticker := time.NewTicker(time.Hour * time.Duration(hours))
+	for _ = range ticker.C {
+		for _, ch := range ClearFileHdlChs {
+			ch <- hours
+		}
+	}
+
+}
+
+func HttpHdfs(idx int) {
+	fHdl := make(map[string]HdfsFileHdl)
+	ClearFileHdlChs[idx] = make(chan int)
+
 	for {
-		p := <-HttpHdfsToLocalReqChs[idx]
-
-		fHdl, exist := httpHdl[p.SrcFile]
-		if !exist {
-			f, _ := client.Open(p.SrcFile)
-			httpHdl[p.SrcFile] = f
+		select {
+		case msg := <-HttpHdfsToLocalReqChs[idx]:
+			HttpHdfsToLocal(fHdl, msg)
+		case msg := <-ClearFileHdlChs[idx]:
+			ClearFileHdl(fHdl, msg)
 		}
-
-		fmt.Println("/n", httpHdl)
-		reqBytes, _ := hdfsRd(fHdl, p.SrcFile, p.Offset[0], p.Size[0])
-		reqRight := isRightFile(reqBytes, p.XdrMark[0])
-
-		resBytes, _ := hdfsRd(fHdl, p.SrcFile, p.Offset[1], p.Size[1])
-		resRight := isRightFile(resBytes, p.XdrMark[1])
-
-		wrOk := false
-		if reqRight && resRight {
-			wrReqOk := localWrite(p.DstFile[0], reqBytes)
-			wrResOk := localWrite(p.DstFile[1], resBytes)
-			wrOk = wrReqOk && wrResOk
-			fmt.Println("wrOk:", wrOk)
-		}
-		res := HdfsToLocalRes{
-			Index:   p.Index,
-			Success: true,
-		}
-
-		p.HdfsToLocalResCh <- res
 	}
 }
 
-func FileHdfsToLocal(idx int) {
+func FileHdfs(idx int) {
+	fHdl := make(map[string]HdfsFileHdl)
+	ClearFileHdlChs[idx] = make(chan int)
+
 	for {
-		p := <-FileHdfsToLocalReqChs[idx]
-
-		fHdl, exist := fileHdl[p.SrcFile]
-		if !exist {
-			f, _ := client.Open(p.SrcFile)
-			fileHdl[p.SrcFile] = f
+		select {
+		case msg := <-FileHdfsToLocalReqChs[idx]:
+			FileHdfsToLocal(fHdl, msg)
+		case msg := <-ClearFileHdlChs[idx]:
+			ClearFileHdl(fHdl, msg)
 		}
-
-		wrOk := false
-
-		bytes, _ := hdfsRd(fHdl, p.SrcFile, p.Offset[0], p.Size[0])
-		ok := isRightFile(bytes, p.XdrMark[0])
-		if ok {
-			wrOk = localWrite(p.DstFile[0], bytes)
-		}
-
-		res := HdfsToLocalRes{
-			Index:   p.Index,
-			Success: wrOk,
-		}
-
-		p.HdfsToLocalResCh <- res
 	}
+}
+
+func ClearFileHdl(fileHdl map[string]HdfsFileHdl, hours int) {
+	timestamp := time.Now().Unix()
+
+	for key, val := range fileHdl {
+		if val.ReqTime+int64(hours*3600) < timestamp {
+			delete(fileHdl, key)
+		}
+	}
+}
+
+func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
+	fHdl, exist := fileHdl[p.SrcFile]
+	if !exist {
+		f, _ := client.Open(p.SrcFile)
+		timestamp := time.Now().Unix()
+		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
+	}
+
+	reqBytes, _ := hdfsRd(fHdl.Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+	reqRight := isRightFile(reqBytes, p.XdrMark[0])
+
+	resBytes, _ := hdfsRd(fHdl.Hdl, p.SrcFile, p.Offset[1], p.Size[1])
+	resRight := isRightFile(resBytes, p.XdrMark[1])
+
+	wrOk := false
+	if reqRight && resRight {
+		wrReqOk := localWrite(p.DstFile[0], reqBytes)
+		wrResOk := localWrite(p.DstFile[1], resBytes)
+		wrOk = wrReqOk && wrResOk
+		fmt.Println("wrOk:", wrOk)
+	}
+	res := HdfsToLocalRes{
+		Index:   p.Index,
+		Success: true,
+	}
+
+	p.HdfsToLocalResCh <- res
+
+}
+
+func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
+	fHdl, exist := fileHdl[p.SrcFile]
+	if !exist {
+		f, _ := client.Open(p.SrcFile)
+		timestamp := time.Now().Unix()
+		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
+	}
+
+	wrOk := false
+
+	bytes, _ := hdfsRd(fHdl.Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+	ok := isRightFile(bytes, p.XdrMark[0])
+	if ok {
+		wrOk = localWrite(p.DstFile[0], bytes)
+	}
+
+	res := HdfsToLocalRes{
+		Index:   p.Index,
+		Success: wrOk,
+	}
+
+	p.HdfsToLocalResCh <- res
 }
 
 func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte, runTime int) {
@@ -204,10 +250,10 @@ func pathExists(path string) (bool, error) {
 func HdfsToLocals() {
 	for i := 0; i < HTTPPRTNNUM; i++ {
 		HttpHdfsToLocalReqChs[i] = make(chan HdfsToLocalReqParams, 100)
-		go HttpHdfsToLocal(i)
+		go HttpHdfs(i)
 	}
 	for i := 0; i < FILEPRTNNUM; i++ {
 		FileHdfsToLocalReqChs[i] = make(chan HdfsToLocalReqParams, 100)
-		go FileHdfsToLocal(i)
+		go FileHdfs(i)
 	}
 }
