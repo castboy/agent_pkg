@@ -48,7 +48,10 @@ func ShutdownOffline(msg OtherOfflineMsg) {
         delete(PrefetchMsgSwitchMap, msg.Topic)
         delete(WafCacheInfoMap, msg.Topic)
 
-        PrefetchChMap[msg.Topic] <- PrefetchMsg{"", "", 0, true}
+        _, exist := PrefetchChMap[msg.Topic]
+        if exist {
+            PrefetchChMap[msg.Topic] <- PrefetchMsg{"", "", 0, true}
+        }
 
         delete(PrefetchChMap, msg.Topic)
     } else {
@@ -57,7 +60,10 @@ func ShutdownOffline(msg OtherOfflineMsg) {
         delete(PrefetchMsgSwitchMap, msg.Topic)
         delete(VdsCacheInfoMap, msg.Topic)
 
-        PrefetchChMap[msg.Topic] <- PrefetchMsg{"", "", 0, true}
+        _, exist := PrefetchChMap[msg.Topic]
+        if exist {
+            PrefetchChMap[msg.Topic] <- PrefetchMsg{"", "", 0, true}
+        }
 
         delete(PrefetchChMap, msg.Topic)
     }
