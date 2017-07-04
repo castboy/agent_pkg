@@ -186,6 +186,10 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 	len := len(data)
 
+    if 0 != len {
+        fmt.Println(string(data[0]))
+    }
+
 	if 0 != len {
 		tags := make([]HdfsToLocalResTag, len)
 
