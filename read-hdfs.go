@@ -109,13 +109,14 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 		prtnStr := property.SrcFile[id+1:]
 		prtn, err := strconv.ParseFloat(prtnStr, 32)
 		if nil != err {
+            fmt.Println(prtn)
 			fmt.Println("prtn-id err:", property.SrcFile)
 		}
 
 		property.Prtn = int(prtn)
 	}
 
-	fmt.Println(property)
+	//fmt.Println(property)
 	return property
 }
 
@@ -185,6 +186,10 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 	data := *prefetchResMsg.DataPtr
 
 	len := len(data)
+
+    if 0 != len {
+        fmt.Println(string(data[0]))
+    }
 
 	if 0 != len {
 		tags := make([]HdfsToLocalResTag, len)

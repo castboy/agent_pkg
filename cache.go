@@ -130,6 +130,8 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string] CacheAnalysisRes, manageMs
         for topic, v := range cacheAnalysisRes {
             current := Vds[topic].Engine
             readCount := int64(v.ReadCount)
+
+            fmt.Println(topic, current, readCount)
             Vds[topic] = Status{Vds[topic].First, current+readCount, Vds[topic].Cache, 
                                    Vds[topic].Last, Vds[topic].Weight} 
         }
