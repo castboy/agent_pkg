@@ -24,7 +24,7 @@ type HttpFile struct {
 	Http struct {
 		Request          string
 		Response         string
-		RequestLocatin   LocationHdfs
+		RequestLocation  LocationHdfs
 		ResponseLocation LocationHdfs
 	}
 	App struct {
@@ -82,11 +82,11 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 		property.SrcFile = httpFile.Http.ResponseLocation.File
 		property.DstFile = append(property.DstFile, httpFile.Http.Request)
 		property.DstFile = append(property.DstFile, httpFile.Http.Response)
-		property.Offset = append(property.Offset, httpFile.Http.RequestLocatin.Offset)
+		property.Offset = append(property.Offset, httpFile.Http.RequestLocation.Offset)
 		property.Offset = append(property.Offset, httpFile.Http.ResponseLocation.Offset)
-		property.Size = append(property.Size, httpFile.Http.RequestLocatin.Size)
+		property.Size = append(property.Size, httpFile.Http.RequestLocation.Size)
 		property.Size = append(property.Size, httpFile.Http.ResponseLocation.Size)
-		property.XdrMark = append(property.XdrMark, httpFile.Http.RequestLocatin.Signature)
+		property.XdrMark = append(property.XdrMark, httpFile.Http.RequestLocation.Signature)
 		property.XdrMark = append(property.XdrMark, httpFile.Http.ResponseLocation.Signature)
 
 		//fmt.Printf("signature:%x", []byte(property.XdrMark[0]))
@@ -186,9 +186,9 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 	len := len(data)
 
-    if 0 != len {
-        fmt.Println(string(data[0]))
-    }
+	if 0 != len {
+		fmt.Println(string(data[0]))
+	}
 
 	if 0 != len {
 		tags := make([]HdfsToLocalResTag, len)
