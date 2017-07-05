@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -165,10 +166,13 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 		if r := recover(); r != nil {
 			fmt.Printf("hdfsRd err: %v\n", r)
 			fmt.Println("file: ", file, "    offset: ", offset, "   size: ", size)
+			errInfo := "file: " + file + " offset: " + strconv.FormatInt(offset, 10) +
+				" size: " + strconv.Itoa(size)
+			Log("Err", errInfo)
 		}
 	}()
 
-    fmt.Println("file:", file)
+	fmt.Println("file:", file)
 	beginTime := time.Now().Nanosecond()
 
 	bytes = make([]byte, size)
