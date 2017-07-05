@@ -146,6 +146,9 @@ func GetCache(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResTag, data [][]
 	for key, val := range tags {
 		if val.Success {
 			cache = append(cache, data[key])
+		} else {
+			fmt.Println("err xdr:")
+			fmt.Println(data[key])
 		}
 	}
 
@@ -186,9 +189,9 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 	len := len(data)
 
-	if 0 != len {
-		fmt.Println(string(data[0]))
-	}
+	//	if 0 != len {
+	//		fmt.Println(string(data[0]))
+	//	}
 
 	if 0 != len {
 		tags := make([]HdfsToLocalResTag, len)
