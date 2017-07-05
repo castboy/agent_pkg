@@ -148,7 +148,7 @@ func GetCache(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResTag, data [][]
 			cache = append(cache, data[key])
 		} else {
 			fmt.Println("err xdr:")
-			fmt.Println(data[key])
+			fmt.Println(string(data[key]))
 		}
 	}
 

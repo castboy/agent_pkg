@@ -107,18 +107,17 @@ func ClearHdl(fileHdl map[string]HdfsFileHdl, hours int) {
 }
 
 func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
-	fHdl, exist := fileHdl[p.SrcFile]
+	_, exist := fileHdl[p.SrcFile]
 	if !exist {
 		f, _ := client.Open(p.SrcFile)
 		timestamp := time.Now().Unix()
 		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 	}
 
-	fmt.Println("len:", len(fileHdl))
-	reqBytes, _ := hdfsRd(fHdl.Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+	reqBytes, _ := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
 	reqRight := isRightFile(reqBytes, p.XdrMark[0])
 
-	resBytes, _ := hdfsRd(fHdl.Hdl, p.SrcFile, p.Offset[1], p.Size[1])
+	resBytes, _ := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1])
 	resRight := isRightFile(resBytes, p.XdrMark[1])
 
 	wrOk := false
@@ -138,7 +137,7 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 }
 
 func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
-	fHdl, exist := fileHdl[p.SrcFile]
+	_, exist := fileHdl[p.SrcFile]
 	if !exist {
 		f, _ := client.Open(p.SrcFile)
 		timestamp := time.Now().Unix()
@@ -147,7 +146,7 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 
 	wrOk := false
 
-	bytes, _ := hdfsRd(fHdl.Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+	bytes, _ := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
 	ok := isRightFile(bytes, p.XdrMark[0])
 	if ok {
 		wrOk = localWrite(p.DstFile[0], bytes)
@@ -169,6 +168,7 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 		}
 	}()
 
+    fmt.Println("file:", file)
 	beginTime := time.Now().Nanosecond()
 
 	bytes = make([]byte, size)
