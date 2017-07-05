@@ -114,7 +114,7 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 	}
 
-    fmt.Println("len:", len(fileHdl))
+	fmt.Println("len:", len(fileHdl))
 	reqBytes, _ := hdfsRd(fHdl.Hdl, p.SrcFile, p.Offset[0], p.Size[0])
 	reqRight := isRightFile(reqBytes, p.XdrMark[0])
 
@@ -130,7 +130,7 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	}
 	res := HdfsToLocalRes{
 		Index:   p.Index,
-		Success: true,
+		Success: wrOk,
 	}
 
 	p.HdfsToLocalResCh <- res
