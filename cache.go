@@ -131,7 +131,7 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string]CacheAnalysisRes, manageMsg
 		for topic, v := range cacheAnalysisRes {
 			current := Waf[topic].Engine
 			readCount := int64(v.ReadCount)
-			Waf[topic] = Status{Waf[topic].First, current + readCount, Waf[topic].Cache,
+			Waf[topic] = Status{Waf[topic].First, current + readCount, Waf[topic].Err, Waf[topic].Cache,
 				Waf[topic].Last, Waf[topic].Weight}
 		}
 		//fmt.Println("UpdateEngineCurrent", Waf)
@@ -139,7 +139,7 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string]CacheAnalysisRes, manageMsg
 		for topic, v := range cacheAnalysisRes {
 			current := Vds[topic].Engine
 			readCount := int64(v.ReadCount)
-			Vds[topic] = Status{Vds[topic].First, current + readCount, Vds[topic].Cache,
+			Vds[topic] = Status{Vds[topic].First, current + readCount, Vds[topic].Err, Vds[topic].Cache,
 				Vds[topic].Last, Vds[topic].Weight}
 		}
 		//fmt.Println("UpdateEngineCurrent", Vds)

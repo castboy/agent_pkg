@@ -140,19 +140,22 @@ func CollectHdfsToLocalRes(prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRes
 	return tags
 }
 
-func GetCache(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResTag, data [][]byte) [][]byte {
+func GetCacheAndErrDataNum(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResTag, data [][]byte) ([][]byte, int64) {
 	var cache [][]byte
+	var errNum int64 = 0
 
 	for key, val := range tags {
 		if val.Success {
 			cache = append(cache, data[key])
 		} else {
+			errNum++
+
 			fmt.Println("err xdr:")
 			fmt.Println(string(data[key]))
 		}
 	}
 
-	return cache
+	return cache, errNum
 }
 
 func WriteCache(prefetchResMsg PrefetchResMsg, data [][]byte) {
@@ -169,15 +172,15 @@ func WriteCache(prefetchResMsg PrefetchResMsg, data [][]byte) {
 	}
 }
 
-func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg) {
+func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg, errNum int64) {
 	topic := prefetchResMsg.Topic
 	count := int64(len(*prefetchResMsg.DataPtr))
 
 	if prefetchResMsg.Engine == "waf" {
-		Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Cache + count,
+		Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Err + errNum, Waf[topic].Cache + count,
 			Waf[topic].Last, Waf[topic].Weight}
 	} else {
-		Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Cache + count,
+		Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Err + errNum, Vds[topic].Cache + count,
 			Vds[topic].Last, Vds[topic].Weight}
 	}
 
@@ -189,10 +192,6 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 	len := len(data)
 
-	//	if 0 != len {
-	//		fmt.Println(string(data[0]))
-	//	}
-
 	if 0 != len {
 		tags := make([]HdfsToLocalResTag, len)
 
@@ -202,11 +201,11 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 		tags = CollectHdfsToLocalRes(prefetchResMsg, hdfsToLocalResCh, tags)
 
-		//fmt.Println("tags:", tags)
-		cache := GetCache(prefetchResMsg, tags, data)
+		cache, errNum := GetCacheAndErrDataNum(prefetchResMsg, tags, data)
 
 		WriteCache(prefetchResMsg, cache)
+
+		UpdateCacheCurrent(prefetchResMsg, errNum)
 	}
 
-	UpdateCacheCurrent(prefetchResMsg)
 }

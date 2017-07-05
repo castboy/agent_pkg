@@ -8,11 +8,12 @@ import (
 )
 
 type Status struct {
-	First   int64
+	First  int64
 	Engine int64
-	Cache int64
-	Last    int64
-	Weight  int
+	Err    int64
+	Cache  int64
+	Last   int64
+	Weight int
 }
 
 var WafVds [2]map[string]Status
@@ -23,49 +24,49 @@ var Vds map[string]Status
 func InitWafVds() {
 	Waf = make(map[string]Status, 1000)
 	Vds = make(map[string]Status, 1000)
-    
-    wafTopic := AgentConf.Topic[0]
-    vdsTopic := AgentConf.Topic[1]
 
-    Waf[wafTopic] = Status{0, 0, 0, 0, 10}
-    Vds[vdsTopic] = Status{0, 0, 0, 0, 10}
+	wafTopic := AgentConf.Topic[0]
+	vdsTopic := AgentConf.Topic[1]
 
-    WafVds[0] = Waf
-    WafVds[1] = Vds
+	Waf[wafTopic] = Status{0, 0, 0, 0, 0, 10}
+	Vds[vdsTopic] = Status{0, 0, 0, 0, 0, 10}
 
-    Waf["xdrHttp"] = Status{403361, 455725, 403361, 403361, 1}
-    Vds["xdrFile"] = Status{132271, 164208, 132271, 132271, 1}
+	WafVds[0] = Waf
+	WafVds[1] = Vds
 
-    fmt.Println("Init-Status : ", WafVds)
+	Waf["xdrHttp"] = Status{0, 455725, 0, 0, 0, 1}
+	Vds["xdrFile"] = Status{0, 164208, 0, 0, 0, 1}
+
+	fmt.Println("Init-Status : ", WafVds)
 }
 
 func UpdateWafVds(status []byte) {
 	Waf = make(map[string]Status, 1000)
 	Vds = make(map[string]Status, 1000)
-    err := json.Unmarshal(status, &WafVds)
-    if err != nil {
-        fmt.Println("UpdateWafVds Err")
-    }
+	err := json.Unmarshal(status, &WafVds)
+	if err != nil {
+		fmt.Println("UpdateWafVds Err")
+	}
 
 	Waf = WafVds[0]
 	Vds = WafVds[1]
 
-    Waf["xdrHttp"] = Status{403361, 455725, 403361, 403361, 1}
-    Vds["xdrFile"] = Status{132271, 164208, 132271, 132271, 1}
+	Waf["xdrHttp"] = Status{0, 455725, 0, 0, 0, 1}
+	Vds["xdrFile"] = Status{0, 164208, 0, 0, 0, 1}
 
-    PrintUpdateStatus()
+	PrintUpdateStatus()
 }
 
 func PrintUpdateStatus() {
-    fmt.Println("\n\nUpdateStatus:")
+	fmt.Println("\n\nUpdateStatus:")
 
-    fmt.Println("Waf")
-    for key, val := range Waf {
-        fmt.Println(key, "     ", val)
-    }
+	fmt.Println("Waf")
+	for key, val := range Waf {
+		fmt.Println(key, "     ", val)
+	}
 
-    fmt.Println("\nVds")
-    for key, val := range Vds {
-        fmt.Println(key, "     ", val)
-    }
+	fmt.Println("\nVds")
+	for key, val := range Vds {
+		fmt.Println(key, "     ", val)
+	}
 }
