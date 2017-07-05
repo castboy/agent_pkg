@@ -164,7 +164,8 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte, runTime int) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("consume err: %v", r)
+			fmt.Printf("hdfsRd err: %v\n", r)
+			fmt.Println("file: ", file, "    offset: ", offset, "   size: ", size)
 		}
 	}()
 
