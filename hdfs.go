@@ -165,10 +165,7 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("hdfsRd err: %v\n", r)
-			fmt.Println("file: ", file, "    offset: ", offset, "   size: ", size)
-			errInfo := "file: " + file + " offset: " + strconv.FormatInt(offset, 10) +
-				" size: " + strconv.Itoa(size)
-			Log("Err", errInfo)
+
 		}
 	}()
 
@@ -179,7 +176,10 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 	int, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
-		fmt.Println(file, offset, size, int)
+		fmt.Println("file: ", file, "    offset: ", offset, "   size: ", size)
+		errInfo := "file: " + file + " offset: " + strconv.FormatInt(offset, 10) +
+			" size: " + strconv.Itoa(size)
+		Log("Err", errInfo)
 	}
 	endTime := time.Now().Nanosecond()
 	//fmt.Println("hdfs-rd:", bytes)
