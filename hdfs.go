@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -115,10 +114,10 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 	}
 
-	reqBytes, _ := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+	reqBytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
 	reqRight := isRightFile(reqBytes, p.XdrMark[0])
 
-	resBytes, _ := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1])
+	resBytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1])
 	resRight := isRightFile(resBytes, p.XdrMark[1])
 
 	wrOk := false
@@ -147,7 +146,7 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 
 	wrOk := false
 
-	bytes, _ := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+	bytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
 	ok := isRightFile(bytes, p.XdrMark[0])
 	if ok {
 		wrOk = localWrite(p.DstFile[0], bytes)
@@ -161,30 +160,20 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	p.HdfsToLocalResCh <- res
 }
 
-func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte, runTime int) {
+func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("hdfsRd err: %v\n", r)
-
 		}
 	}()
 
-	fmt.Println("file:", file)
-	beginTime := time.Now().Nanosecond()
-
 	bytes = make([]byte, size)
-	int, err := fHdl.ReadAt(bytes, offset)
+	_, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
-		fmt.Println("file: ", file, "    offset: ", offset, "   size: ", size)
-		errInfo := "file: " + file + " offset: " + strconv.FormatInt(offset, 10) +
-			" size: " + strconv.Itoa(size)
-		Log("Err", errInfo)
 	}
-	endTime := time.Now().Nanosecond()
-	//fmt.Println("hdfs-rd:", bytes)
 
-	return bytes, endTime - beginTime
+	return bytes
 }
 
 func fileIsExist(file string) bool {

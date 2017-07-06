@@ -150,8 +150,8 @@ func GetCacheAndErrDataNum(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResT
 		} else {
 			errNum++
 
-			fmt.Println("err xdr:")
-			fmt.Println(string(data[key]))
+			Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++++++++++++")
+			Log("Err:", string(data[key]))
 		}
 	}
 
@@ -183,12 +183,11 @@ func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg, errNum int64) {
 		Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Err + errNum, Vds[topic].Cache + count,
 			Vds[topic].Last, Vds[topic].Weight}
 	}
-
-	PrefetchMsgSwitchMap[topic] = true
 }
 
 func RdHdfs(prefetchResMsg PrefetchResMsg) {
 	data := *prefetchResMsg.DataPtr
+	topic := prefetchResMsg.Topic
 
 	len := len(data)
 
@@ -207,5 +206,7 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 		UpdateCacheCurrent(prefetchResMsg, errNum)
 	}
+
+	PrefetchMsgSwitchMap[topic] = true
 
 }
