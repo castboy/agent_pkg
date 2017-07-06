@@ -151,7 +151,7 @@ func GetCacheAndErrDataNum(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResT
 			errNum++
 
 			Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++++++++++++")
-			Log("Err:", string(data[key]))
+			Log("Err", string(data[key]))
 		}
 	}
 

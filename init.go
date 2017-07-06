@@ -35,7 +35,7 @@ func InitWafVds() {
 	WafVds[1] = Vds
 
 	Waf["xdrHttp"] = Status{0, 455725, 0, 0, 0, 1}
-	Vds["xdrFile"] = Status{0, 164208, 0, 0, 0, 1}
+	Vds["xdrFile"] = Status{0, 181316, 0, 0, 0, 1}
 
 	fmt.Println("Init-Status : ", WafVds)
 }
@@ -52,7 +52,7 @@ func UpdateWafVds(status []byte) {
 	Vds = WafVds[1]
 
 	Waf["xdrHttp"] = Status{0, 455725, 0, 0, 0, 1}
-	Vds["xdrFile"] = Status{0, 164208, 0, 0, 0, 1}
+	Vds["xdrFile"] = Status{0, 181316, 0, 0, 0, 1}
 
 	PrintUpdateStatus()
 }
