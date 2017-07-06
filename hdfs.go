@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -148,6 +149,23 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 
 	bytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
 	ok := isRightFile(bytes, p.XdrMark[0])
+
+	if !ok {
+		errNum := 1
+		for {
+			bytes = hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+			ok := isRightFile(bytes, p.XdrMark[0])
+			if ok {
+				break
+			} else {
+				errNum++
+			}
+		}
+		errInfo := "file: " + p.SrcFile + " offset: " + strconv.FormatInt(p.Offset[0], 10) +
+			" size: " + strconv.Itoa(p.Size[0]) + " errNum: " + strconv.Itoa(errNum)
+		Log("Err", errInfo)
+	}
+
 	if ok {
 		wrOk = localWrite(p.DstFile[0], bytes)
 	}
