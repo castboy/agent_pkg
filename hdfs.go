@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	//	"strconv"
+	"strconv"
 	"strings"
 	"time"
 
@@ -195,6 +195,7 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 	_, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
+        Log("Err", "filename:" + file + ", total:" + strconv.FormatInt(fHdl.Stat().Size(), 10) + ",size:" + strconv.Itoa(size) + ", " +  err.Error() )
 	}
 
 	return bytes
