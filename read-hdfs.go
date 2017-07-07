@@ -158,34 +158,8 @@ func GetCacheAndErrDataNum(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResT
 	return cache, errNum
 }
 
-func WriteCache(prefetchResMsg PrefetchResMsg, data [][]byte) {
-	topic := prefetchResMsg.Topic
-	engine := prefetchResMsg.Engine
-	count := len(data)
-
-	if engine == "waf" {
-		WafCacheInfoMap[topic] = CacheInfo{0, count}
-		CacheDataMap[topic] = data
-	} else {
-		VdsCacheInfoMap[topic] = CacheInfo{0, count}
-		CacheDataMap[topic] = data
-	}
-}
-
-func UpdateCacheCurrent(prefetchResMsg PrefetchResMsg, errNum int64) {
-	topic := prefetchResMsg.Topic
-	count := int64(len(*prefetchResMsg.DataPtr))
-
-	if prefetchResMsg.Engine == "waf" {
-		Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Err + errNum, Waf[topic].Cache + count,
-			Waf[topic].Last, Waf[topic].Weight}
-	} else {
-		Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Err + errNum, Vds[topic].Cache + count,
-			Vds[topic].Last, Vds[topic].Weight}
-	}
-}
-
 func RdHdfs(prefetchResMsg PrefetchResMsg) {
+	engine := prefetchResMsg.Engine
 	data := *prefetchResMsg.DataPtr
 	topic := prefetchResMsg.Topic
 
@@ -202,11 +176,17 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 		cache, errNum := GetCacheAndErrDataNum(prefetchResMsg, tags, data)
 
-		WriteCache(prefetchResMsg, cache)
+		res := RdHdfsResMsg{
+			Engine:       engine,
+			Topic:        topic,
+			PrefetchNum:  len,
+			CacheDataPtr: &cache,
+			ErrNum:       errNum,
+		}
 
-		UpdateCacheCurrent(prefetchResMsg, errNum)
+		RdHdfsResCh <- res
+	} else {
+
 	}
-
-	PrefetchMsgSwitchMap[topic] = true
 
 }

@@ -3,46 +3,55 @@
 package agent_pkg
 
 import (
-    "fmt"
-    "io"
-    "net/http"
-    "strconv"
-    "encoding/json"
-    "regexp"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"regexp"
+	"strconv"
 )
 
 type ManageMsg struct {
-    Engine string
-    Count int
-    HandleCh chan *[][]byte
+	Engine   string
+	Count    int
+	HandleCh chan *[][]byte
 }
 
 type HttpRes struct {
-    Code int
-    Data interface{}    
-    Num int
+	Code int
+	Data interface{}
+	Num  int
 }
 
 type StartOfflineMsg struct {
-    Engine string
-    Topic string
-    Weight int    
+	Engine string
+	Topic  string
+	Weight int
 }
 
 type OtherOfflineMsg struct {
-    Engine string
-    Topic string
+	Engine string
+	Topic  string
 }
 
 type PrefetchResMsg struct {
-    Engine string
-    Topic string
-    DataPtr *[][]byte
+	Engine  string
+	Topic   string
+	DataPtr *[][]byte
+}
+
+type RdHdfsResMsg struct {
+	Engine       string
+	Topic        string
+	PrefetchNum  int
+	CacheDataPtr *[][]byte
+	ErrNum       int64
 }
 
 var ManageCh = make(chan ManageMsg, 10000)
 
 var PrefetchResCh = make(chan PrefetchResMsg)
+var RdHdfsResCh = make(chan RdHdfsResMsg)
 
 var StartOfflineCh = make(chan StartOfflineMsg)
 var StopOfflineCh = make(chan OtherOfflineMsg)
@@ -50,129 +59,131 @@ var ShutdownOfflineCh = make(chan OtherOfflineMsg)
 var CompleteOfflineCh = make(chan OtherOfflineMsg)
 
 func Handle(w http.ResponseWriter, r *http.Request) {
-    
-    match, _ := regexp.MatchString("/?type=(waf|vds)&count=([0-9]+$)", r.RequestURI)
-    if !match {
-        io.WriteString(w, "Usage of: http://ip:port/?type=waf/vds&count=num")     
-        return
-    }
 
-    r.ParseForm()
-    Engine := r.Form["type"][0]
-    Count, _ := strconv.Atoi(r.Form["count"][0])
-    
+	match, _ := regexp.MatchString("/?type=(waf|vds)&count=([0-9]+$)", r.RequestURI)
+	if !match {
+		io.WriteString(w, "Usage of: http://ip:port/?type=waf/vds&count=num")
+		return
+	}
 
-    HandleCh := make(chan *[][]byte)
+	r.ParseForm()
+	Engine := r.Form["type"][0]
+	Count, _ := strconv.Atoi(r.Form["count"][0])
 
-    ManageCh <- ManageMsg{Engine, Count, HandleCh}
-    fmt.Println("Length of ManageCh:", len(ManageCh))
+	HandleCh := make(chan *[][]byte)
 
-    Data := <-HandleCh
-    fmt.Println("http.go <-HandleCh")
-    
-    var data interface{}
-    var dataSlice = make([]interface{}, 0)
-    dataLen := len(*Data)
-    for i := 0; i < dataLen; i++ {
-        err := json.Unmarshal((*Data)[i], &data)    
-        if err != nil {
-            fmt.Println("Unmarshal Error")    
-        }
-        dataSlice = append(dataSlice, data) 
-    }
+	ManageCh <- ManageMsg{Engine, Count, HandleCh}
+	fmt.Println("Length of ManageCh:", len(ManageCh))
 
-    res := HttpRes{
-        Code: 10000,
-        Data: dataSlice,
-        Num: dataLen,
-    }
+	Data := <-HandleCh
+	fmt.Println("http.go <-HandleCh")
 
-    if dataLen == 0 {
-        res = HttpRes{
-            Code: 10000,
-            Data: nil,
-            Num: dataLen,
-        }
-    }
+	var data interface{}
+	var dataSlice = make([]interface{}, 0)
+	dataLen := len(*Data)
+	for i := 0; i < dataLen; i++ {
+		err := json.Unmarshal((*Data)[i], &data)
+		if err != nil {
+			fmt.Println("Unmarshal Error")
+		}
+		dataSlice = append(dataSlice, data)
+	}
 
-    byte, _ := json.Marshal(res)
+	res := HttpRes{
+		Code: 10000,
+		Data: dataSlice,
+		Num:  dataLen,
+	}
 
-    io.WriteString(w, string(byte))
+	if dataLen == 0 {
+		res = HttpRes{
+			Code: 10000,
+			Data: nil,
+			Num:  dataLen,
+		}
+	}
+
+	byte, _ := json.Marshal(res)
+
+	io.WriteString(w, string(byte))
 }
 
 func Manage() {
-    for {
-        select {
-            case req := <-ManageCh:   
-                DisposeReq(req)
-                
-            case res := <-PrefetchResCh:
-                RdHdfs(res)
+	for {
+		select {
+		case req := <-ManageCh:
+			DisposeReq(req)
 
-            case start := <- StartOfflineCh:
-                StartOffline(start)
+		case res := <-PrefetchResCh:
+			go RdHdfs(res)
 
-            case stop := <- StopOfflineCh:
-                StopOffline(stop)
+		case res := <-RdHdfsResCh:
+			WriteCacheAndUpdateCacheCurrent(res)
 
-            case shutdown := <- ShutdownOfflineCh:
-                ShutdownOffline(shutdown)
+		case start := <-StartOfflineCh:
+			StartOffline(start)
 
-            case complete := <- CompleteOfflineCh:
-                CompleteOffline(complete)
-        }
-    }    
+		case stop := <-StopOfflineCh:
+			StopOffline(stop)
+
+		case shutdown := <-ShutdownOfflineCh:
+			ShutdownOffline(shutdown)
+
+		case complete := <-CompleteOfflineCh:
+			CompleteOffline(complete)
+		}
+	}
 }
 
 func OfflineHandle(w http.ResponseWriter, r *http.Request) {
-    r.ParseForm()
-    msgType := r.Form["type"][0]
-    engine := r.Form["engine"][0]
-    topic := r.Form["topic"][0]
+	r.ParseForm()
+	msgType := r.Form["type"][0]
+	engine := r.Form["engine"][0]
+	topic := r.Form["topic"][0]
 
-    var weight int = -1
+	var weight int = -1
 
-    switch msgType {
-        case "start":
-            weight, _ = strconv.Atoi(r.Form["weight"][0])
-            msg := StartOfflineMsg {
-                Engine: engine,
-                Topic: topic,
-                Weight: weight,    
-            }
+	switch msgType {
+	case "start":
+		weight, _ = strconv.Atoi(r.Form["weight"][0])
+		msg := StartOfflineMsg{
+			Engine: engine,
+			Topic:  topic,
+			Weight: weight,
+		}
 
-            StartOfflineCh <- msg
+		StartOfflineCh <- msg
 
-        case "stop":
-            msg := OtherOfflineMsg {
-                Engine: engine,
-                Topic: topic,
-            }
+	case "stop":
+		msg := OtherOfflineMsg{
+			Engine: engine,
+			Topic:  topic,
+		}
 
-            StopOfflineCh <- msg
+		StopOfflineCh <- msg
 
-        case "shutdown":
-            msg := OtherOfflineMsg {
-                Engine: engine,
-                Topic: topic,
-            }
+	case "shutdown":
+		msg := OtherOfflineMsg{
+			Engine: engine,
+			Topic:  topic,
+		}
 
-            ShutdownOfflineCh <- msg
+		ShutdownOfflineCh <- msg
 
-        case "complete":
-            msg := OtherOfflineMsg {
-                Engine: engine,
-                Topic: topic,
-            }
+	case "complete":
+		msg := OtherOfflineMsg{
+			Engine: engine,
+			Topic:  topic,
+		}
 
-            CompleteOfflineCh <- msg
-    }    
+		CompleteOfflineCh <- msg
+	}
 
-    fmt.Println("type: ", msgType, "   engine: ", engine, "   topic: ", topic, "    weight: ", weight)
+	fmt.Println("type: ", msgType, "   engine: ", engine, "   topic: ", topic, "    weight: ", weight)
 }
 
 func ListenReq(url string) {
-     http.HandleFunc("/", Handle)  
-     http.HandleFunc("/offline", OfflineHandle)  
-     http.ListenAndServe(url, nil)  
+	http.HandleFunc("/", Handle)
+	http.HandleFunc("/offline", OfflineHandle)
+	http.ListenAndServe(url, nil)
 }
