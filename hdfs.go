@@ -50,7 +50,11 @@ type HdfsFileHdl struct {
 }
 
 func InitHdfsCli(namenode string) {
-	client, _ = hdfs.New(namenode)
+	var err error
+	client, err = hdfs.New(namenode)
+	if nil != err {
+		Log("Err", err.Error())
+	}
 }
 
 var ClearFileHdlChs [FILEPRTNNUM]chan int
@@ -110,7 +114,10 @@ func ClearHdl(fileHdl map[string]HdfsFileHdl, hours int) {
 func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	_, exist := fileHdl[p.SrcFile]
 	if !exist {
-		f, _ := client.Open(p.SrcFile)
+		f, err := client.Open(p.SrcFile)
+		if nil != err {
+			Log("Err", err.Error())
+		}
 		timestamp := time.Now().Unix()
 		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 	} else {
@@ -143,7 +150,10 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	_, exist := fileHdl[p.SrcFile]
 	if !exist {
-		f, _ := client.Open(p.SrcFile)
+		f, err := client.Open(p.SrcFile)
+		if nil != err {
+			Log("Err", err.Error())
+		}
 		timestamp := time.Now().Unix()
 		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 	} else {
@@ -195,7 +205,7 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 	_, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
-        Log("Err", "filename:" + file + ", total:" + strconv.FormatInt(fHdl.Stat().Size(), 10) + ",size:" + strconv.Itoa(size) + ", " +  err.Error() )
+		Log("Err", "filename:"+file+", total:"+strconv.FormatInt(fHdl.Stat().Size(), 10)+",size:"+strconv.Itoa(size)+", "+err.Error())
 	}
 
 	return bytes
