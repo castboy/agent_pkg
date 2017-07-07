@@ -3,8 +3,8 @@ package agent_pkg
 import (
 	"encoding/json"
 	"fmt"
+	"path"
 	"strconv"
-	"strings"
 )
 
 type HdfsToLocalResTag struct {
@@ -89,10 +89,8 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 		property.XdrMark = append(property.XdrMark, httpFile.Http.RequestLocation.Signature)
 		property.XdrMark = append(property.XdrMark, httpFile.Http.ResponseLocation.Signature)
 
-		//fmt.Printf("signature:%x", []byte(property.XdrMark[0]))
-		id := strings.LastIndex(property.SrcFile, "/")
-		prtnStr := property.SrcFile[id+1:]
-		prtn, err := strconv.ParseFloat(prtnStr, 32)
+		dir := path.Dir(property.SrcFile)
+		prtn, err := strconv.Atoi(path.Base(dir))
 		if nil != err {
 			fmt.Println("prtn-id err:", property.SrcFile)
 		}
@@ -105,9 +103,9 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 		property.Size = append(property.Size, httpFile.App.FileLocation.Size)
 		property.XdrMark = append(property.XdrMark, httpFile.App.FileLocation.Signature)
 
-		id := strings.LastIndex(property.SrcFile, "/")
-		prtnStr := property.SrcFile[id+1:]
-		prtn, err := strconv.ParseFloat(prtnStr, 32)
+		dir := path.Dir(property.SrcFile)
+		prtn, err := strconv.Atoi(path.Base(dir))
+
 		if nil != err {
 			fmt.Println("prtn-id err:", property.SrcFile)
 		}
@@ -186,7 +184,7 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 		RdHdfsResCh <- res
 	} else {
-        PrefetchMsgSwitchMap[topic] = true
+		PrefetchMsgSwitchMap[topic] = true
 	}
 
 }
