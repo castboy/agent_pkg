@@ -186,7 +186,7 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 		RdHdfsResCh <- res
 	} else {
-
+        PrefetchMsgSwitchMap[topic] = true
 	}
 
 }
