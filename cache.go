@@ -161,31 +161,35 @@ func SendPrefetchMsg(cacheAnalysisRes map[string]CacheAnalysisRes, manageMsg Man
 }
 
 func WriteCache(rdHdfsResMsg RdHdfsResMsg) {
-	topic := rdHdfsResMsg.Topic
-	engine := rdHdfsResMsg.Engine
-	count := len(*rdHdfsResMsg.CacheDataPtr)
-	data := *rdHdfsResMsg.CacheDataPtr
+	if 0 != rdHdfsResMsg.PrefetchNum {
+		topic := rdHdfsResMsg.Topic
+		engine := rdHdfsResMsg.Engine
+		count := len(*rdHdfsResMsg.CacheDataPtr)
+		data := *rdHdfsResMsg.CacheDataPtr
 
-	if engine == "waf" {
-		WafCacheInfoMap[topic] = CacheInfo{0, count}
-		CacheDataMap[topic] = data
-	} else {
-		VdsCacheInfoMap[topic] = CacheInfo{0, count}
-		CacheDataMap[topic] = data
+		if engine == "waf" {
+			WafCacheInfoMap[topic] = CacheInfo{0, count}
+			CacheDataMap[topic] = data
+		} else {
+			VdsCacheInfoMap[topic] = CacheInfo{0, count}
+			CacheDataMap[topic] = data
+		}
 	}
 }
 
 func UpdateCacheCurrent(rdHdfsResMsg RdHdfsResMsg) {
 	topic := rdHdfsResMsg.Topic
-	count := int64(rdHdfsResMsg.PrefetchNum)
-	errNum := rdHdfsResMsg.ErrNum
+	if 0 != rdHdfsResMsg.PrefetchNum {
+		count := int64(rdHdfsResMsg.PrefetchNum)
+		errNum := rdHdfsResMsg.ErrNum
 
-	if rdHdfsResMsg.Engine == "waf" {
-		Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Err + errNum, Waf[topic].Cache + count,
-			Waf[topic].Last, Waf[topic].Weight}
-	} else {
-		Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Err + errNum, Vds[topic].Cache + count,
-			Vds[topic].Last, Vds[topic].Weight}
+		if rdHdfsResMsg.Engine == "waf" {
+			Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Err + errNum, Waf[topic].Cache + count,
+				Waf[topic].Last, Waf[topic].Weight}
+		} else {
+			Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Err + errNum, Vds[topic].Cache + count,
+				Vds[topic].Last, Vds[topic].Weight}
+		}
 	}
 
 	PrefetchMsgSwitchMap[topic] = true

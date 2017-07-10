@@ -163,6 +163,8 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 	len := len(data)
 
+	var res RdHdfsResMsg
+
 	if 0 != len {
 		tags := make([]HdfsToLocalResTag, len)
 
@@ -174,7 +176,7 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 
 		cache, errNum := GetCacheAndErrDataNum(prefetchResMsg, tags, data)
 
-		res := RdHdfsResMsg{
+		res = RdHdfsResMsg{
 			Engine:       engine,
 			Topic:        topic,
 			PrefetchNum:  len,
@@ -182,9 +184,15 @@ func RdHdfs(prefetchResMsg PrefetchResMsg) {
 			ErrNum:       errNum,
 		}
 
-		RdHdfsResCh <- res
 	} else {
-		PrefetchMsgSwitchMap[topic] = true
+		res = RdHdfsResMsg{
+			Engine:       engine,
+			Topic:        topic,
+			PrefetchNum:  0,
+			CacheDataPtr: nil,
+			ErrNum:       0,
+		}
 	}
 
+	RdHdfsResCh <- res
 }
