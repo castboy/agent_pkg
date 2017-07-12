@@ -5,6 +5,9 @@ package agent_pkg
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+
+	"github.com/widuu/goini"
 )
 
 type Status struct {
@@ -18,31 +21,23 @@ type Status struct {
 
 var WafVds [2]map[string]Status
 
-var Waf map[string]Status
-var Vds map[string]Status
+var Waf = make(map[string]Status, 1000)
+var Vds = make(map[string]Status, 1000)
 
 func InitWafVds() {
-	Waf = make(map[string]Status, 1000)
-	Vds = make(map[string]Status, 1000)
-
 	wafTopic := AgentConf.Topic[0]
 	vdsTopic := AgentConf.Topic[1]
 
-	Waf[wafTopic] = Status{0, 0, 0, 0, 0, 10}
-	Vds[vdsTopic] = Status{0, 0, 0, 0, 0, 10}
+	OnlineWeightAndOffset(wafTopic, vdsTopic, "initOnlineWeight",
+		"initOnlineWeight", "initOnlineOffset", "initOnlineOffset")
 
 	WafVds[0] = Waf
 	WafVds[1] = Vds
-
-	Waf["xdrHttp"] = Status{0, 533954, 0, 0, 0, 1}
-	Vds["xdrFile"] = Status{0, 199126, 0, 0, 0, 1}
 
 	fmt.Println("Init-Status : ", WafVds)
 }
 
 func UpdateWafVds(status []byte) {
-	Waf = make(map[string]Status, 1000)
-	Vds = make(map[string]Status, 1000)
 	err := json.Unmarshal(status, &WafVds)
 	if err != nil {
 		fmt.Println("UpdateWafVds Err")
@@ -51,10 +46,36 @@ func UpdateWafVds(status []byte) {
 	Waf = WafVds[0]
 	Vds = WafVds[1]
 
-	Waf["xdrHttp"] = Status{0, 533954, 0, 0, 0, 1}
-	Vds["xdrFile"] = Status{0, 199126, 0, 0, 0, 1}
+	conf := goini.SetConfig("conf.ini")
+	wafTopic := conf.GetValue("onlineTopic", "waf")
+	vdsTopic := conf.GetValue("onlineTopic", "vds")
+
+	OnlineWeightAndOffset(wafTopic, vdsTopic, "initOnlineWeight",
+		"initOnlineWeight", "initOnlineOffset", "initOnlineOffset")
 
 	PrintUpdateStatus()
+}
+
+func OnlineWeightAndOffset(wafTopic, vdsTopic, wafWeight, vdsWeight, wafOffset, vdsOffset string) {
+	conf := goini.SetConfig("conf.ini")
+	wafOnlineWeight, _ := strconv.Atoi(conf.GetValue(wafWeight, "waf"))
+	vdsOnlineWeight, _ := strconv.Atoi(conf.GetValue(vdsWeight, "vds"))
+
+	wafOnlineOffset, _ := strconv.ParseInt(conf.GetValue(wafOffset, "waf"), 10, 64)
+	vdsOnlineOffset, _ := strconv.ParseInt(conf.GetValue(vdsOffset, "vds"), 10, 64)
+
+	if -1 == wafOnlineOffset {
+		Waf[wafTopic] = Status{0, 0, 0, 0, 0, wafOnlineWeight}
+	} else {
+		Waf[wafTopic] = Status{0, wafOnlineOffset, 0, 0, 0, wafOnlineWeight}
+	}
+
+	if -1 == vdsOnlineOffset {
+		Vds[vdsTopic] = Status{0, 0, 0, 0, 0, vdsOnlineWeight}
+	} else {
+		Vds[vdsTopic] = Status{0, vdsOnlineOffset, 0, 0, 0, vdsOnlineWeight}
+	}
+
 }
 
 func PrintUpdateStatus() {
