@@ -50,8 +50,8 @@ func UpdateWafVds(status []byte) {
 	wafTopic := conf.GetValue("onlineTopic", "waf")
 	vdsTopic := conf.GetValue("onlineTopic", "vds")
 
-	OnlineWeightAndOffset(wafTopic, vdsTopic, "initOnlineWeight",
-		"initOnlineWeight", "initOnlineOffset", "initOnlineOffset")
+	OnlineWeightAndOffset(wafTopic, vdsTopic, "updateOnlineWeight",
+		"updateOnlineWeight", "updateOnlineOffset", "updateOnlineOffset")
 
 	PrintUpdateStatus()
 }
