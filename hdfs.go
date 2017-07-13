@@ -50,10 +50,19 @@ type HdfsFileHdl struct {
 }
 
 func InitHdfsCli(namenode string) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("%v is not right namenode", r)
+			Log("Err", "namenode conf is error!!!")
+			os.Exit(0)
+		}
+	}()
+
 	var err error
 	client, err = hdfs.New(namenode)
 	if nil != err {
 		Log("Err", err.Error())
+		panic(namenode)
 	}
 }
 
