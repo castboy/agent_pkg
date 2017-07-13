@@ -59,7 +59,7 @@ func InitHdfsCli(namenode string) {
 	}()
 
 	var err error
-	client, err = hdfs.New(namenode)
+	client, err = hdfs.New(namenode + ":8020")
 	if nil != err {
 		Log("Err", err.Error())
 		panic(namenode)
