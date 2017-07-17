@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/optiopay/kafka"
 )
@@ -16,10 +17,23 @@ var wafConsumers map[string]kafka.Consumer
 var vdsConsumers map[string]kafka.Consumer
 
 func InitConsumer(topic string, partition int32, start int64) kafka.Consumer {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("initConsumer err: %v is not exist", r)
+		}
+	}()
+
 	conf := kafka.NewConsumerConf(topic, partition)
 	conf.StartOffset = start
 	conf.RetryLimit = 1
-	consumer, _ = broker.Consumer(conf)
+	consumer, err := broker.Consumer(conf)
+
+	fmt.Println("consumer:", consumer)
+
+	if err != nil {
+		fmt.Println("consumer:", consumer)
+		panic(topic + " or " + strconv.Itoa(int(partition)))
+	}
 
 	return consumer
 }
