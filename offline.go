@@ -42,7 +42,7 @@ func StartOffline(msg StartOfflineMsg) {
 
 func StopOffline(msg OtherOfflineMsg) {
 	startOffset, endOffset, startErr, endErr := Offset(msg.Topic, Partition)
-	if nil != startErr && nil != endErr {
+	if nil == startErr && nil == endErr {
 		if msg.Engine == "waf" {
 			Waf[msg.Topic] = Status{startOffset, Waf[msg.Topic].Engine, Waf[msg.Topic].Err, Waf[msg.Topic].Cache, endOffset, Waf[msg.Topic].Weight}
 		} else {
