@@ -2,11 +2,16 @@
 
 package agent_pkg
 
+import (
+    "fmt"
+)
+
 func StartOffline(msg StartOfflineMsg) {
 	if msg.Engine == "waf" {
 		startOffset, _, startErr, _ := Offset(msg.Topic, Partition)
 		consumer, err := InitConsumer(msg.Topic, Partition, startOffset)
-		if nil != startErr && nil != err {
+		if nil == startErr && nil == err {
+            fmt.Println(startErr, err)
 			wafConsumers[msg.Topic] = consumer
 			Waf[msg.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
 
@@ -21,7 +26,7 @@ func StartOffline(msg StartOfflineMsg) {
 	} else {
 		startOffset, _, startErr, _ := Offset(msg.Topic, Partition)
 		consumer, err := InitConsumer(msg.Topic, Partition, startOffset)
-		if nil != startErr && nil != err {
+		if nil == startErr && nil == err {
 			vdsConsumers[msg.Topic] = consumer
 			Vds[msg.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
 

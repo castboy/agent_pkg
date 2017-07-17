@@ -81,7 +81,7 @@ func InitConsumers(partition int32) {
 func UpdateOffset() {
 	for k, v := range Waf {
 		startOffset, endOffset, startErr, endErr := Offset(k, Partition)
-		if nil != startErr && nil != endErr {
+		if nil == startErr && nil == endErr {
 			if startOffset > v.Engine {
 				Waf[k] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
 			} else {
@@ -99,7 +99,7 @@ func UpdateOffset() {
 
 	for k, v := range Vds {
 		startOffset, endOffset, startErr, endErr := Offset(k, Partition)
-		if nil != startErr && nil != endErr {
+		if nil == startErr && nil == endErr {
 			if startOffset > v.Engine {
 				Vds[k] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
 			} else {
