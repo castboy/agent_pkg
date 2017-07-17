@@ -6,53 +6,41 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/optiopay/kafka"
 )
 
 var broker kafka.Client
-var consumer kafka.Consumer
-var wafConsumers map[string]kafka.Consumer
-var vdsConsumers map[string]kafka.Consumer
+var wafConsumers = make(map[string]kafka.Consumer)
+var vdsConsumers = make(map[string]kafka.Consumer)
 
-func InitConsumer(topic string, partition int32, start int64) kafka.Consumer {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("initConsumer err: %v is not exist", r)
-		}
-	}()
-
+func InitConsumer(topic string, partition int32, start int64) (kafka.Consumer, error) {
 	conf := kafka.NewConsumerConf(topic, partition)
 	conf.StartOffset = start
 	conf.RetryLimit = 1
 	consumer, err := broker.Consumer(conf)
 
-	fmt.Println("consumer:", consumer)
-
 	if err != nil {
-		fmt.Println("consumer:", consumer)
-		panic(topic + " or " + strconv.Itoa(int(partition)))
+		errLog := fmt.Sprintf("cannot initConsumer of %s %d partition", topic, partition)
+		Log("Err", errLog)
 	}
 
-	return consumer
+	return consumer, err
 }
 
-func Offset(topic string, partition int32) (int64, int64) {
-	start, err := broker.OffsetEarliest(topic, partition)
-	if err != nil {
-		log.Fatalf("cannot get start %s", err)
-		errLog := "cannot get start of" + topic + "-partition" + string(partition)
+func Offset(topic string, partition int32) (int64, int64, error, error) {
+	start, startErr := broker.OffsetEarliest(topic, partition)
+	if startErr != nil {
+		errLog := fmt.Sprintf("cannot get start of %s %d partition", topic, partition)
 		Log("Err", errLog)
 	}
-	end, err := broker.OffsetLatest(topic, partition)
-	if err != nil {
-		log.Fatalf("cannot get end %s", err)
-		errLog := "cannot get end of" + topic + "-partition" + string(partition)
+	end, endErr := broker.OffsetLatest(topic, partition)
+	if endErr != nil {
+		errLog := fmt.Sprintf("cannot get end of %s %d partition", topic, partition)
 		Log("Err", errLog)
 	}
 
-	return start, end
+	return start, end, startErr, endErr
 }
 
 func InitBroker(localhost string) {
@@ -63,60 +51,69 @@ func InitBroker(localhost string) {
 	var err error
 	broker, err = kafka.Dial(kafkaAddrs, conf)
 	if err != nil {
-		log.Fatalf("cannot connect to kafka cluster: %s", err)
 		errLog := "cannot connect to kafka cluster"
 		Log("Err", errLog)
+		log.Fatalf("cannot connect to kafka cluster: %s", err)
 	}
 
 	defer broker.Close()
 }
 
 func InitConsumers(partition int32) {
-	wafConsumers = make(map[string]kafka.Consumer)
-	vdsConsumers = make(map[string]kafka.Consumer)
-
 	for k, v := range Waf {
-		wafConsumers[k] = InitConsumer(k, partition, v.Engine)
+		consumer, err := InitConsumer(k, partition, v.Engine)
+		if nil != err {
+			wafConsumers[k] = consumer
+			delete(Waf, k)
+		}
 	}
 
 	for k, v := range Vds {
-		vdsConsumers[k] = InitConsumer(k, partition, v.Engine)
+		consumer, err := InitConsumer(k, partition, v.Engine)
+		if nil != err {
+			vdsConsumers[k] = consumer
+			delete(Vds, k)
+		}
 	}
 
 }
 
 func UpdateOffset() {
 	for k, v := range Waf {
-		startOffset, endOffset := Offset(k, Partition)
-		if startOffset > v.Engine {
-			Waf[k] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
-		} else {
-			Waf[k] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
+		startOffset, endOffset, startErr, endErr := Offset(k, Partition)
+		if nil != startErr && nil != endErr {
+			if startOffset > v.Engine {
+				Waf[k] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
+			} else {
+				Waf[k] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
+			}
+			if v.Engine > endOffset {
+				fmt.Println("Waf", Waf)
+				fmt.Println("conf err: xdrHttp msg-offset requested out of kafka msg-offset")
+				errLog := "conf err: xdrHttp msg-offset requested out of kafka msg-offset"
+				Log("Err", errLog)
+				os.Exit(0)
+			}
 		}
-		if v.Engine > endOffset {
-			fmt.Println("Waf", Waf)
-			fmt.Println("conf err: xdrHttp msg-offset requested out of kafka msg-offset")
-			errLog := "conf err: xdrHttp msg-offset requested out of kafka msg-offset"
-			Log("Err", errLog)
-			os.Exit(0)
-		}
-
 	}
 
 	for k, v := range Vds {
-		startOffset, endOffset := Offset(k, Partition)
-		if startOffset > v.Engine {
-			Vds[k] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
-		} else {
-			Vds[k] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
+		startOffset, endOffset, startErr, endErr := Offset(k, Partition)
+		if nil != startErr && nil != endErr {
+			if startOffset > v.Engine {
+				Vds[k] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
+			} else {
+				Vds[k] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
+			}
+			if v.Engine > endOffset {
+				fmt.Println("Vds", Vds)
+				fmt.Println("conf err: xdrFile msg-offset requested out of kafka msg-offset")
+				errLog := "conf err: xdrFile msg-offset requested out of kafka msg-offset"
+				Log("Err", errLog)
+				os.Exit(0)
+			}
 		}
-		if v.Engine > endOffset {
-			fmt.Println("Vds", Vds)
-			fmt.Println("conf err: xdrFile msg-offset requested out of kafka msg-offset")
-			errLog := "conf err: xdrFile msg-offset requested out of kafka msg-offset"
-			Log("Err", errLog)
-			os.Exit(0)
-		}
+
 	}
 
 	//fmt.Println("UpdateOffset: ", Waf, Vds)
