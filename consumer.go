@@ -61,16 +61,18 @@ func InitConsumers(partition int32) {
 	for k, v := range Waf {
 		consumer, err := InitConsumer(k, partition, v.Engine)
 		if nil != err {
-			wafConsumers[k] = consumer
 			delete(Waf, k)
+		} else {
+			wafConsumers[k] = consumer
 		}
 	}
 
 	for k, v := range Vds {
 		consumer, err := InitConsumer(k, partition, v.Engine)
 		if nil != err {
-			vdsConsumers[k] = consumer
 			delete(Vds, k)
+		} else {
+			vdsConsumers[k] = consumer
 		}
 	}
 
