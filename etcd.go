@@ -28,9 +28,9 @@ var AgentConf Conf
 func ParseConf(bytes []byte) {
 	err := json.Unmarshal(bytes, &AgentConf)
 	if err != nil {
-		fmt.Println("ParseConf Error")
-		errLog := "ParseConf Error"
+		errLog := fmt.Sprintf("ParseConf Error: %s", err.Error())
 		Log("Err", errLog)
+		log.Fatalf(errLog)
 	} else {
 		fmt.Println("Cluster-Conf: ", AgentConf)
 	}
@@ -53,9 +53,9 @@ func InitEtcdCli(endpoint string) {
 	var err error = errors.New("this is a new error")
 	EtcdCli, err = clientv3.New(cfg)
 	if err != nil {
-		log.Fatal(err)
-		errLog := "InitEtcdCli Err"
+		errLog := fmt.Sprintf("InitEtcdCli Err: %s", err.Error())
 		Log("Err", errLog)
+		log.Fatalf(errLog)
 	}
 	//defer EtcdCli.Close()
 }
@@ -65,8 +65,7 @@ func EtcdSet(k, v string) {
 	_, err := EtcdCli.Put(ctx, k, v)
 	cancel()
 	if err != nil {
-		fmt.Println("EtcdSetErr")
-		errLog := "EtcdSetErr"
+		errLog := fmt.Sprintf("EtcdSet Err: %s", err.Error())
 		Log("Err", errLog)
 	} else {
 	}

@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -50,19 +50,12 @@ type HdfsFileHdl struct {
 }
 
 func InitHdfsCli(namenode string) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("%v is not right namenode", r)
-			Log("Err", "namenode conf is error!!!")
-			os.Exit(0)
-		}
-	}()
-
 	var err error
 	client, err = hdfs.New(namenode + ":8020")
 	if nil != err {
-		Log("Err", err.Error())
-		panic(namenode)
+		errLog := fmt.Sprintf("Init Hdfs Client Err: %s", err.Error())
+		Log("Err", errLog)
+		log.Fatalf(errLog)
 	}
 }
 
@@ -125,10 +118,12 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	if !exist {
 		f, err := client.Open(p.SrcFile)
 		if nil != err {
-			Log("Err", err.Error())
+			errLog := fmt.Sprintf("Hdfs Open Err: %s", err.Error())
+			Log("Err", errLog)
+		} else {
+			timestamp := time.Now().Unix()
+			fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 		}
-		timestamp := time.Now().Unix()
-		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 	} else {
 		timestamp := time.Now().Unix()
 		fileHdl[p.SrcFile] = HdfsFileHdl{fileHdl[p.SrcFile].Hdl, timestamp}
@@ -161,10 +156,12 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	if !exist {
 		f, err := client.Open(p.SrcFile)
 		if nil != err {
-			Log("Err", err.Error())
+			errLog := fmt.Sprintf("Hdfs Open Err: %s", err.Error())
+			Log("Err", errLog)
+		} else {
+			timestamp := time.Now().Unix()
+			fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 		}
-		timestamp := time.Now().Unix()
-		fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
 	} else {
 		timestamp := time.Now().Unix()
 		fileHdl[p.SrcFile] = HdfsFileHdl{fileHdl[p.SrcFile].Hdl, timestamp}
@@ -204,17 +201,13 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 }
 
 func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("hdfsRd err: %v\n", r)
-		}
-	}()
-
 	bytes = make([]byte, size)
 	_, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
-		Log("Err", "filename:"+file+", total:"+strconv.FormatInt(fHdl.Stat().Size(), 10)+",size:"+strconv.Itoa(size)+", "+err.Error())
+		errLog := fmt.Sprintf("Read Hdfs Err: file %s is %d bytes, but you want %d bytes from offset %d, %s",
+			file, fHdl.Stat().Size(), size, offset, err.Error())
+		Log("Err", errLog)
 	}
 
 	return bytes

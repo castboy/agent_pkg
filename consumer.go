@@ -5,7 +5,6 @@ package agent_pkg
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/optiopay/kafka"
 )
@@ -45,14 +44,13 @@ func Offset(topic string, partition int32) (int64, int64, error, error) {
 
 func InitBroker(localhost string) {
 	var kafkaAddrs []string = []string{localhost + ":9092", localhost + ":9093"}
-	conf := kafka.NewBrokerConf("wmg-test-client")
+	conf := kafka.NewBrokerConf("agent")
 	conf.AllowTopicCreation = false
 
 	var err error
 	broker, err = kafka.Dial(kafkaAddrs, conf)
 	if err != nil {
-		errLog := "cannot connect to kafka cluster"
-		Log("Err", errLog)
+		Log("Err", "cannot connect to kafka cluster")
 		log.Fatalf("cannot connect to kafka cluster: %s", err)
 	}
 
@@ -88,11 +86,9 @@ func UpdateOffset() {
 				Waf[k] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
 			}
 			if v.Engine > endOffset {
-				fmt.Println("Waf", Waf)
-				fmt.Println("conf err: xdrHttp msg-offset requested out of kafka msg-offset")
 				errLog := "conf err: xdrHttp msg-offset requested out of kafka msg-offset"
 				Log("Err", errLog)
-				os.Exit(0)
+				log.Fatal(errLog)
 			}
 		}
 	}
@@ -106,11 +102,9 @@ func UpdateOffset() {
 				Vds[k] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
 			}
 			if v.Engine > endOffset {
-				fmt.Println("Vds", Vds)
-				fmt.Println("conf err: xdrFile msg-offset requested out of kafka msg-offset")
 				errLog := "conf err: xdrFile msg-offset requested out of kafka msg-offset"
 				Log("Err", errLog)
-				os.Exit(0)
+				log.Fatal(errLog)
 			}
 		}
 
