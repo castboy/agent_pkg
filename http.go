@@ -11,9 +11,16 @@ import (
 	"strconv"
 )
 
-type ManageMsg struct {
+type NormalReqMsg struct {
 	Engine   string
 	Count    int
+	HandleCh chan *[][]byte
+}
+
+type RuleBindingReqMsg struct {
+	Engine   string
+	Count    int
+	Topic    string
 	HandleCh chan *[][]byte
 }
 
@@ -48,7 +55,8 @@ type RdHdfsResMsg struct {
 	ErrNum       int64
 }
 
-var ManageCh = make(chan ManageMsg, 10000)
+var NormalReqCh = make(chan NormalReqMsg, 10000)
+var RuleBindingReqCh = make(chan RuleBindingReqMsg, 10000)
 
 var PrefetchResCh = make(chan PrefetchResMsg)
 var RdHdfsResCh = make(chan RdHdfsResMsg)
@@ -66,14 +74,26 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	HandleCh := make(chan *[][]byte)
+
 	r.ParseForm()
+
 	Engine := r.Form["type"][0]
 	Count, _ := strconv.Atoi(r.Form["count"][0])
 
-	HandleCh := make(chan *[][]byte)
+	var isNormalReq bool
+	paramsNum := len(r.Form)
+	if 2 == paramsNum {
+		isNormalReq = true
+	}
 
-	ManageCh <- ManageMsg{Engine, Count, HandleCh}
-	fmt.Println("Length of ManageCh:", len(ManageCh))
+	if isNormalReq {
+		NormalReqCh <- NormalReqMsg{Engine, Count, HandleCh}
+		fmt.Println("Length of ManageCh:", len(NormalReqCh))
+	} else {
+		Topic := r.Form["topic"][0]
+		RuleBindingReqCh <- RuleBindingReqMsg{Engine, Count, Topic, HandleCh}
+	}
 
 	Data := <-HandleCh
 	fmt.Println("http.go <-HandleCh")
@@ -111,8 +131,11 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 func Manage() {
 	for {
 		select {
-		case req := <-ManageCh:
-			DisposeReq(req)
+		case req := <-NormalReqCh:
+			DisposeNormalReq(req)
+
+		case req := <-RuleBindingReqCh:
+			DisposeRuleBindingReq(req)
 
 		case res := <-PrefetchResCh:
 			go RdHdfs(res)
@@ -137,13 +160,18 @@ func Manage() {
 
 func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	msgType := r.Form["type"][0]
+	signal := r.Form["type"][0]
 	engine := r.Form["engine"][0]
 	topic := r.Form["topic"][0]
+	task := r.Form["task"][0]
 
-	var weight int = -1
+	msg := OtherOfflineMsg{
+		Engine: engine,
+		Topic:  topic,
+	}
 
-	switch msgType {
+	var weight int
+	switch signal {
 	case "start":
 		weight, _ = strconv.Atoi(r.Form["weight"][0])
 		msg := StartOfflineMsg{
@@ -155,31 +183,17 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		StartOfflineCh <- msg
 
 	case "stop":
-		msg := OtherOfflineMsg{
-			Engine: engine,
-			Topic:  topic,
-		}
-
 		StopOfflineCh <- msg
 
 	case "shutdown":
-		msg := OtherOfflineMsg{
-			Engine: engine,
-			Topic:  topic,
-		}
-
 		ShutdownOfflineCh <- msg
 
 	case "complete":
-		msg := OtherOfflineMsg{
-			Engine: engine,
-			Topic:  topic,
-		}
-
 		CompleteOfflineCh <- msg
 	}
 
-	fmt.Println("type: ", msgType, "   engine: ", engine, "   topic: ", topic, "    weight: ", weight)
+	fmt.Sprintf("signal:%s; engine:%s; topic:%s; weight:%s; task:%s",
+		signal, engine, topic, weight, task)
 }
 
 func ListenReq(url string) {
