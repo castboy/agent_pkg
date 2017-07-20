@@ -38,18 +38,18 @@ func InitCacheDataMap() {
 	}
 }
 
-func AnalysisCache(normalReqMsg NormalReqMsg) map[string]CacheAnalysisRes {
+func AnalysisCache(req NormalReq) map[string]CacheAnalysisRes {
 	Res := make(map[string]CacheAnalysisRes)
 
 	weightSum := 0
-	if normalReqMsg.Engine == "waf" {
+	if req.Engine == "waf" {
 		for _, v := range Waf {
 			weightSum += v.Weight
 		}
 		if 0 != weightSum {
 			for topic, cacheInfo := range WafCacheInfoMap {
 				Remainder := cacheInfo.End - cacheInfo.Current
-				Deserve := (normalReqMsg.Count / weightSum) * Waf[topic].Weight
+				Deserve := (req.Count / weightSum) * Waf[topic].Weight
 				if Remainder > Deserve {
 					Res[topic] = CacheAnalysisRes{Deserve, false}
 				} else {
@@ -68,7 +68,7 @@ func AnalysisCache(normalReqMsg NormalReqMsg) map[string]CacheAnalysisRes {
 		if 0 != weightSum {
 			for topic, cacheInfo := range VdsCacheInfoMap {
 				Remainder := cacheInfo.End - cacheInfo.Current
-				Deserve := (normalReqMsg.Count / weightSum) * Vds[topic].Weight
+				Deserve := (req.Count / weightSum) * Vds[topic].Weight
 				if Remainder > Deserve {
 					Res[topic] = CacheAnalysisRes{Deserve, false}
 				} else {
@@ -85,10 +85,10 @@ func AnalysisCache(normalReqMsg NormalReqMsg) map[string]CacheAnalysisRes {
 	return Res
 }
 
-func ReadCache(cacheAnalysisRes map[string]CacheAnalysisRes, normalReqMsg NormalReqMsg) {
+func ReadCache(cacheAnalysisRes map[string]CacheAnalysisRes, req NormalReq) {
 	httpRes := make([][]byte, 0)
 
-	if normalReqMsg.Engine == "waf" {
+	if req.Engine == "waf" {
 		for topic, v := range cacheAnalysisRes {
 			current := WafCacheInfoMap[topic].Current
 			for i := 0; i < v.ReadCount; i++ {
@@ -104,12 +104,12 @@ func ReadCache(cacheAnalysisRes map[string]CacheAnalysisRes, normalReqMsg Normal
 		}
 	}
 
-	normalReqMsg.HandleCh <- &httpRes
+	req.HandleCh <- &httpRes
 }
 
-func UpdateCacheStatus(cacheAnalysisRes map[string]CacheAnalysisRes, normalReqMsg NormalReqMsg) {
+func UpdateCacheStatus(cacheAnalysisRes map[string]CacheAnalysisRes, req NormalReq) {
 	fmt.Println("UpdataCacheStatus")
-	if normalReqMsg.Engine == "waf" {
+	if req.Engine == "waf" {
 		for topic, v := range cacheAnalysisRes {
 			current := WafCacheInfoMap[topic].Current
 			WafCacheInfoMap[topic] = CacheInfo{current + v.ReadCount, WafCacheInfoMap[topic].End}
@@ -125,9 +125,9 @@ func UpdateCacheStatus(cacheAnalysisRes map[string]CacheAnalysisRes, normalReqMs
 
 }
 
-func UpdateEngineCurrent(cacheAnalysisRes map[string]CacheAnalysisRes, normalReqMsg NormalReqMsg) {
+func UpdateEngineCurrent(cacheAnalysisRes map[string]CacheAnalysisRes, req NormalReq) {
 	//fmt.Println("UpdateEngineCurrent")
-	if normalReqMsg.Engine == "waf" {
+	if req.Engine == "waf" {
 		for topic, v := range cacheAnalysisRes {
 			current := Waf[topic].Engine
 			readCount := int64(v.ReadCount)
@@ -146,26 +146,26 @@ func UpdateEngineCurrent(cacheAnalysisRes map[string]CacheAnalysisRes, normalReq
 	}
 }
 
-func SendPrefetchMsg(cacheAnalysisRes map[string]CacheAnalysisRes, normalReqMsg NormalReqMsg) {
+func SendPrefetchMsg(cacheAnalysisRes map[string]CacheAnalysisRes, req NormalReq) {
 	//fmt.Println("SendPrefetchMsg")
 	//fmt.Println("MaxCache:", AgentConf.MaxCache)
 	for topic, v := range cacheAnalysisRes {
 		if v.SendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
 			//fmt.Println("send prefetchMsg:", topic)
-			PrefetchChMap[topic] <- PrefetchMsg{normalReqMsg.Engine, topic, AgentConf.MaxCache, false}
+			PrefetchChMap[topic] <- PrefetchMsg{req.Engine, topic, AgentConf.MaxCache, false}
 
-			//fmt.Println(PrefetchMsg{normalReqMsg.Engine, topic, AgentConf.MaxCache})
+			//fmt.Println(PrefetchMsg{req.Engine, topic, AgentConf.MaxCache})
 			PrefetchMsgSwitchMap[topic] = false
 		}
 	}
 }
 
-func WriteCache(rdHdfsResMsg RdHdfsResMsg) {
-	if 0 != rdHdfsResMsg.PrefetchNum {
-		topic := rdHdfsResMsg.Topic
-		engine := rdHdfsResMsg.Engine
-		count := len(*rdHdfsResMsg.CacheDataPtr)
-		data := *rdHdfsResMsg.CacheDataPtr
+func WriteCache(res RdHdfsRes) {
+	if 0 != res.PrefetchNum {
+		topic := res.Base.Topic
+		engine := res.Base.Engine
+		count := len(*res.CacheDataPtr)
+		data := *res.CacheDataPtr
 
 		if engine == "waf" {
 			WafCacheInfoMap[topic] = CacheInfo{0, count}
@@ -177,13 +177,13 @@ func WriteCache(rdHdfsResMsg RdHdfsResMsg) {
 	}
 }
 
-func UpdateCacheCurrent(rdHdfsResMsg RdHdfsResMsg) {
-	topic := rdHdfsResMsg.Topic
-	if 0 != rdHdfsResMsg.PrefetchNum {
-		count := int64(rdHdfsResMsg.PrefetchNum)
-		errNum := rdHdfsResMsg.ErrNum
+func UpdateCacheCurrent(res RdHdfsRes) {
+	topic := res.Base.Topic
+	if 0 != res.PrefetchNum {
+		count := int64(res.PrefetchNum)
+		errNum := res.ErrNum
 
-		if rdHdfsResMsg.Engine == "waf" {
+		if res.Engine == "waf" {
 			Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Err + errNum, Waf[topic].Cache + count,
 				Waf[topic].Last, Waf[topic].Weight}
 		} else {
@@ -195,24 +195,24 @@ func UpdateCacheCurrent(rdHdfsResMsg RdHdfsResMsg) {
 	PrefetchMsgSwitchMap[topic] = true
 }
 
-func DisposeNormalReq(normalReqMsg NormalReqMsg) {
-	res := AnalysisCache(normalReqMsg)
+func DisposeNormalReq(req NormalReq) {
+	res := AnalysisCache(req)
 	//fmt.Println("analysisCacheRes", res)
-	ReadCache(res, normalReqMsg)
-	UpdateCacheStatus(res, normalReqMsg)
-	UpdateEngineCurrent(res, normalReqMsg)
-	SendPrefetchMsg(res, normalReqMsg)
+	ReadCache(res, req)
+	UpdateCacheStatus(res, req)
+	UpdateEngineCurrent(res, req)
+	SendPrefetchMsg(res, req)
 }
 
-func WriteCacheAndUpdateCacheCurrent(rdHdfsResMsg RdHdfsResMsg) {
-	WriteCache(rdHdfsResMsg)
-	UpdateCacheCurrent(rdHdfsResMsg)
+func WriteCacheAndUpdateCacheCurrent(res RdHdfsRes) {
+	WriteCache(res)
+	UpdateCacheCurrent(res)
 }
 
-func AnalysisRuleBindingCache(ruleBindingReqMsg RuleBindingReqMsg) CacheAnalysisRes {
-	engine := ruleBindingReqMsg.Engine
-	topic := ruleBindingReqMsg.Topic
-	deserve := ruleBindingReqMsg.Count
+func AnalysisRuleBindingCache(req RuleBindingReq) CacheAnalysisRes {
+	engine := req.Base.Engine
+	topic := req.Base.Topic
+	deserve := req.Count
 
 	var remainder int
 	var res CacheAnalysisRes
@@ -232,10 +232,10 @@ func AnalysisRuleBindingCache(ruleBindingReqMsg RuleBindingReqMsg) CacheAnalysis
 	return res
 }
 
-func ReadRuleBindingCache(analysisCacheRes CacheAnalysisRes, ruleBindingReqMsg RuleBindingReqMsg) {
-	engine := ruleBindingReqMsg.Engine
-	topic := ruleBindingReqMsg.Topic
-	readCount := analysisCacheRes.ReadCount
+func ReadRuleBindingCache(res CacheAnalysisRes, req RuleBindingReq) {
+	engine := req.Base.Engine
+	topic := req.Base.Topic
+	readCount := res.ReadCount
 
 	httpRes := make([][]byte, 0)
 	var current int
@@ -250,13 +250,13 @@ func ReadRuleBindingCache(analysisCacheRes CacheAnalysisRes, ruleBindingReqMsg R
 		httpRes = append(httpRes, CacheDataMap[topic][current+i])
 	}
 
-	ruleBindingReqMsg.HandleCh <- &httpRes
+	req.HandleCh <- &httpRes
 }
 
-func UpdateRuleBindingCacheStatus(analysisCacheRes CacheAnalysisRes, ruleBindingReqMsg RuleBindingReqMsg) {
-	engine := ruleBindingReqMsg.Engine
-	topic := ruleBindingReqMsg.Topic
-	readCount := analysisCacheRes.ReadCount
+func UpdateRuleBindingCacheStatus(res CacheAnalysisRes, req RuleBindingReq) {
+	engine := req.Base.Engine
+	topic := req.Base.Topic
+	readCount := res.ReadCount
 
 	if engine == "waf" {
 		current := WafCacheInfoMap[topic].Current
@@ -267,10 +267,10 @@ func UpdateRuleBindingCacheStatus(analysisCacheRes CacheAnalysisRes, ruleBinding
 	}
 }
 
-func UpdateRuleBindingEngineCurrent(analysisCacheRes CacheAnalysisRes, ruleBindingReqMsg RuleBindingReqMsg) {
-	engine := ruleBindingReqMsg.Engine
-	topic := ruleBindingReqMsg.Topic
-	readCount := int64(analysisCacheRes.ReadCount)
+func UpdateRuleBindingEngineCurrent(res CacheAnalysisRes, req RuleBindingReq) {
+	engine := req.Base.Engine
+	topic := req.Base.Topic
+	readCount := int64(res.ReadCount)
 
 	if engine == "waf" {
 		current := Waf[topic].Engine
@@ -283,10 +283,10 @@ func UpdateRuleBindingEngineCurrent(analysisCacheRes CacheAnalysisRes, ruleBindi
 	}
 }
 
-func SendRuleBindingPrefetchMsg(analysisCacheRes CacheAnalysisRes, ruleBindingReqMsg RuleBindingReqMsg) {
-	engine := ruleBindingReqMsg.Engine
-	topic := ruleBindingReqMsg.Topic
-	sendPrefetchMsg := analysisCacheRes.SendPrefetchMsg
+func SendRuleBindingPrefetchMsg(res CacheAnalysisRes, req RuleBindingReq) {
+	engine := req.Base.Engine
+	topic := req.Base.Topic
+	sendPrefetchMsg := res.SendPrefetchMsg
 
 	if sendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
 		PrefetchChMap[topic] <- PrefetchMsg{engine, topic, AgentConf.MaxCache, false}
@@ -295,10 +295,10 @@ func SendRuleBindingPrefetchMsg(analysisCacheRes CacheAnalysisRes, ruleBindingRe
 	}
 }
 
-func DisposeRuleBindingReq(ruleBindingReqMsg RuleBindingReqMsg) {
-	res := AnalysisRuleBindingCache(ruleBindingReqMsg)
-	ReadRuleBindingCache(res, ruleBindingReqMsg)
-	UpdateRuleBindingCacheStatus(res, ruleBindingReqMsg)
-	UpdateRuleBindingEngineCurrent(res, ruleBindingReqMsg)
-	SendRuleBindingPrefetchMsg(res, ruleBindingReqMsg)
+func DisposeRuleBindingReq(req RuleBindingReq) {
+	res := AnalysisRuleBindingCache(req)
+	ReadRuleBindingCache(res, req)
+	UpdateRuleBindingCacheStatus(res, req)
+	UpdateRuleBindingEngineCurrent(res, req)
+	SendRuleBindingPrefetchMsg(res, req)
 }

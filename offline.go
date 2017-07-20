@@ -2,45 +2,42 @@
 
 package agent_pkg
 
-import (
-    "fmt"
-)
+//	"fmt"
 
-func StartOffline(msg StartOfflineMsg) {
-	if msg.Engine == "waf" {
-		startOffset, _, startErr, _ := Offset(msg.Topic, Partition)
-		consumer, err := InitConsumer(msg.Topic, Partition, startOffset)
+func StartOffline(msg Start) {
+	if msg.Base.Engine == "waf" {
+		startOffset, _, startErr, _ := Offset(msg.Base.Topic, Partition)
+		consumer, err := InitConsumer(msg.Base.Topic, Partition, startOffset)
 		if nil == startErr && nil == err {
-            fmt.Println(startErr, err)
-			wafConsumers[msg.Topic] = consumer
-			Waf[msg.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
+			wafConsumers[msg.Base.Topic] = consumer
+			Waf[msg.Base.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
 
-			PrefetchMsgSwitchMap[msg.Topic] = true
+			PrefetchMsgSwitchMap[msg.Base.Topic] = true
 
-			PrefetchChMap[msg.Topic] = make(chan PrefetchMsg, 100)
-			go Prefetch(PrefetchChMap[msg.Topic])
+			PrefetchChMap[msg.Base.Topic] = make(chan PrefetchMsg, 100)
+			go Prefetch(PrefetchChMap[msg.Base.Topic])
 
-			WafCacheInfoMap[msg.Topic] = CacheInfo{0, 0}
+			WafCacheInfoMap[msg.Base.Topic] = CacheInfo{0, 0}
 		}
 
 	} else {
-		startOffset, _, startErr, _ := Offset(msg.Topic, Partition)
-		consumer, err := InitConsumer(msg.Topic, Partition, startOffset)
+		startOffset, _, startErr, _ := Offset(msg.Base.Topic, Partition)
+		consumer, err := InitConsumer(msg.Base.Topic, Partition, startOffset)
 		if nil == startErr && nil == err {
-			vdsConsumers[msg.Topic] = consumer
-			Vds[msg.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
+			vdsConsumers[msg.Base.Topic] = consumer
+			Vds[msg.Base.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
 
-			PrefetchMsgSwitchMap[msg.Topic] = true
+			PrefetchMsgSwitchMap[msg.Base.Topic] = true
 
-			PrefetchChMap[msg.Topic] = make(chan PrefetchMsg, 100)
-			go Prefetch(PrefetchChMap[msg.Topic])
+			PrefetchChMap[msg.Base.Topic] = make(chan PrefetchMsg, 100)
+			go Prefetch(PrefetchChMap[msg.Base.Topic])
 
-			VdsCacheInfoMap[msg.Topic] = CacheInfo{0, 0}
+			VdsCacheInfoMap[msg.Base.Topic] = CacheInfo{0, 0}
 		}
 	}
 }
 
-func StopOffline(msg OtherOfflineMsg) {
+func StopOffline(msg Base) {
 	startOffset, endOffset, startErr, endErr := Offset(msg.Topic, Partition)
 	if nil == startErr && nil == endErr {
 		if msg.Engine == "waf" {
@@ -52,7 +49,7 @@ func StopOffline(msg OtherOfflineMsg) {
 
 }
 
-func ShutdownOffline(msg OtherOfflineMsg) {
+func ShutdownOffline(msg Base) {
 	if msg.Engine == "waf" {
 		delete(wafConsumers, msg.Topic)
 		delete(Waf, msg.Topic)
@@ -80,6 +77,6 @@ func ShutdownOffline(msg OtherOfflineMsg) {
 	}
 }
 
-func CompleteOffline(msg OtherOfflineMsg) {
+func CompleteOffline(msg Base) {
 	ShutdownOffline(msg)
 }

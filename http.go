@@ -11,60 +11,50 @@ import (
 	"strconv"
 )
 
-type NormalReqMsg struct {
-	Engine   string
-	Count    int
-	HandleCh chan *[][]byte
-}
-
-type RuleBindingReqMsg struct {
-	Engine   string
-	Count    int
-	Topic    string
-	HandleCh chan *[][]byte
-}
-
-type HttpRes struct {
-	Code int
-	Data interface{}
-	Num  int
-}
-
-type StartOfflineMsg struct {
+type Base struct {
 	Engine string
 	Topic  string
+}
+
+type Start struct {
+	Base
 	Weight int
 }
 
-type OtherOfflineMsg struct {
-	Engine string
-	Topic  string
+type NormalReq struct {
+	Engine   string
+	Count    int
+	HandleCh chan *[][]byte
 }
 
-type PrefetchResMsg struct {
-	Engine  string
-	Topic   string
+type RuleBindingReq struct {
+	Base
+	Count    int
+	HandleCh chan *[][]byte
+}
+
+type PrefetchRes struct {
+	Base
 	DataPtr *[][]byte
 }
 
-type RdHdfsResMsg struct {
-	Engine       string
-	Topic        string
+type RdHdfsRes struct {
+	Base
 	PrefetchNum  int
 	CacheDataPtr *[][]byte
 	ErrNum       int64
 }
 
-var NormalReqCh = make(chan NormalReqMsg, 10000)
-var RuleBindingReqCh = make(chan RuleBindingReqMsg, 10000)
+var NormalReqCh = make(chan NormalReq, 10000)
+var RuleBindingReqCh = make(chan RuleBindingReq, 10000)
 
-var PrefetchResCh = make(chan PrefetchResMsg)
-var RdHdfsResCh = make(chan RdHdfsResMsg)
+var PrefetchResCh = make(chan PrefetchRes)
+var RdHdfsResCh = make(chan RdHdfsRes)
 
-var StartOfflineCh = make(chan StartOfflineMsg)
-var StopOfflineCh = make(chan OtherOfflineMsg)
-var ShutdownOfflineCh = make(chan OtherOfflineMsg)
-var CompleteOfflineCh = make(chan OtherOfflineMsg)
+var StartOfflineCh = make(chan Start)
+var StopOfflineCh = make(chan Base)
+var ShutdownOfflineCh = make(chan Base)
+var CompleteOfflineCh = make(chan Base)
 
 func Handle(w http.ResponseWriter, r *http.Request) {
 
@@ -76,30 +66,38 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	HandleCh := make(chan *[][]byte)
 
+	var engine, topic string
+	var count int
 	r.ParseForm()
-
-	Engine := r.Form["type"][0]
-	Count, _ := strconv.Atoi(r.Form["count"][0])
+	if _, ok := r.Form["type"]; ok {
+		engine = r.Form["type"][0]
+	}
+	if _, ok := r.Form["count"]; ok {
+		count, _ = strconv.Atoi(r.Form["count"][0])
+	}
+	if _, ok := r.Form["topic"]; ok {
+		topic = r.Form["topic"][0]
+	}
 
 	var isNormalReq bool
-	paramsNum := len(r.Form)
-	if 2 == paramsNum {
+	if "" == topic {
 		isNormalReq = true
 	}
 
 	if isNormalReq {
-		NormalReqCh <- NormalReqMsg{Engine, Count, HandleCh}
-		fmt.Println("Length of ManageCh:", len(NormalReqCh))
+		NormalReqCh <- NormalReq{engine, count, HandleCh}
+		fmt.Println("Length of NormalReqCh:", len(NormalReqCh))
 	} else {
-		Topic := r.Form["topic"][0]
-		RuleBindingReqCh <- RuleBindingReqMsg{Engine, Count, Topic, HandleCh}
+		RuleBindingReqCh <- RuleBindingReq{Base{engine, topic}, count, HandleCh}
+		fmt.Println("Length of RuleBindingReqCh:", len(RuleBindingReqCh))
 	}
 
 	Data := <-HandleCh
-	fmt.Println("http.go <-HandleCh")
+	fmt.Println("Data := <-HandleCh")
 
 	var data interface{}
 	var dataSlice = make([]interface{}, 0)
+
 	dataLen := len(*Data)
 	for i := 0; i < dataLen; i++ {
 		err := json.Unmarshal((*Data)[i], &data)
@@ -109,19 +107,17 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		dataSlice = append(dataSlice, data)
 	}
 
-	res := HttpRes{
-		Code: 10000,
-		Data: dataSlice,
-		Num:  dataLen,
+	if 0 == dataLen {
+		data = dataSlice
+	} else {
+		data = nil
 	}
 
-	if dataLen == 0 {
-		res = HttpRes{
-			Code: 10000,
-			Data: nil,
-			Num:  dataLen,
-		}
-	}
+	res := struct {
+		Code int
+		Data interface{}
+		Num  int
+	}{10000, data, dataLen}
 
 	byte, _ := json.Marshal(res)
 
@@ -160,26 +156,31 @@ func Manage() {
 
 func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	signal := r.Form["type"][0]
-	engine := r.Form["engine"][0]
-	topic := r.Form["topic"][0]
-	task := r.Form["task"][0]
-
-	msg := OtherOfflineMsg{
-		Engine: engine,
-		Topic:  topic,
-	}
 
 	var weight int
+	var signal, engine, topic, task string
+
+	if _, ok := r.Form["signal"]; ok {
+		signal = r.Form["signal"][0]
+	}
+	if _, ok := r.Form["engine"]; ok {
+		engine = r.Form["engine"][0]
+	}
+	if _, ok := r.Form["topic"]; ok {
+		topic = r.Form["topic"][0]
+	}
+	if _, ok := r.Form["task"]; ok {
+		task = r.Form["task"][0]
+	}
+	if _, ok := r.Form["weight"]; ok {
+		weight, _ = strconv.Atoi(r.Form["weight"][0])
+	}
+
+	msg := Base{engine, topic}
+
 	switch signal {
 	case "start":
-		weight, _ = strconv.Atoi(r.Form["weight"][0])
-		msg := StartOfflineMsg{
-			Engine: engine,
-			Topic:  topic,
-			Weight: weight,
-		}
-
+		msg := Start{Base{engine, topic}, weight}
 		StartOfflineCh <- msg
 
 	case "stop":
@@ -192,7 +193,7 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		CompleteOfflineCh <- msg
 	}
 
-	fmt.Sprintf("signal:%s; engine:%s; topic:%s; weight:%s; task:%s",
+	fmt.Printf("signal:%s; engine:%s; topic:%s; weight:%s; task:%s",
 		signal, engine, topic, weight, task)
 }
 

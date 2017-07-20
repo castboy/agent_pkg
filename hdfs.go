@@ -250,7 +250,7 @@ func localWrite(file string, bytes []byte) bool {
 	if !isExist {
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
-			fmt.Printf("%s", err)
+			fmt.Printf("%s", err.Error())
 		} else {
 			fmt.Print("Create Directory OK!")
 		}

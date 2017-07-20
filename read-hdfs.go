@@ -40,9 +40,9 @@ type LocationHdfs struct {
 	Signature string `json:"Signature"`
 }
 
-func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchResMsg PrefetchResMsg) {
-	engine := prefetchResMsg.Engine
-	data := *prefetchResMsg.DataPtr
+func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) {
+	engine := prefetchRes.Base.Engine
+	data := *prefetchRes.DataPtr
 
 	for key, val := range data {
 		var property XdrProperty
@@ -117,8 +117,8 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 	return property
 }
 
-func CollectHdfsToLocalRes(prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRes, tags []HdfsToLocalResTag) []HdfsToLocalResTag {
-	dataNum := len(*prefetchResMsg.DataPtr)
+func CollectHdfsToLocalRes(prefetchRes PrefetchRes, ch chan HdfsToLocalRes, tags []HdfsToLocalResTag) []HdfsToLocalResTag {
+	dataNum := len(*prefetchRes.DataPtr)
 	statNum := 0
 
 	for {
@@ -138,7 +138,7 @@ func CollectHdfsToLocalRes(prefetchResMsg PrefetchResMsg, ch chan HdfsToLocalRes
 	return tags
 }
 
-func GetCacheAndErrDataNum(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResTag, data [][]byte) ([][]byte, int64) {
+func GetCacheAndErrDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, data [][]byte) ([][]byte, int64) {
 	var cache [][]byte
 	var errNum int64 = 0
 
@@ -156,42 +156,29 @@ func GetCacheAndErrDataNum(prefetchResMsg PrefetchResMsg, tags []HdfsToLocalResT
 	return cache, errNum
 }
 
-func RdHdfs(prefetchResMsg PrefetchResMsg) {
-	engine := prefetchResMsg.Engine
-	data := *prefetchResMsg.DataPtr
-	topic := prefetchResMsg.Topic
+func RdHdfs(prefetchRes PrefetchRes) {
+	engine := prefetchRes.Base.Engine
+	data := *prefetchRes.DataPtr
+	topic := prefetchRes.Base.Topic
 
 	len := len(data)
 
-	var res RdHdfsResMsg
+	var res RdHdfsRes
 
 	if 0 != len {
 		tags := make([]HdfsToLocalResTag, len)
 
 		hdfsToLocalResCh := make(chan HdfsToLocalRes, len)
 
-		DisposeRdHdfs(hdfsToLocalResCh, prefetchResMsg)
+		DisposeRdHdfs(hdfsToLocalResCh, prefetchRes)
 
-		tags = CollectHdfsToLocalRes(prefetchResMsg, hdfsToLocalResCh, tags)
+		tags = CollectHdfsToLocalRes(prefetchRes, hdfsToLocalResCh, tags)
 
-		cache, errNum := GetCacheAndErrDataNum(prefetchResMsg, tags, data)
+		cache, errNum := GetCacheAndErrDataNum(prefetchRes, tags, data)
 
-		res = RdHdfsResMsg{
-			Engine:       engine,
-			Topic:        topic,
-			PrefetchNum:  len,
-			CacheDataPtr: &cache,
-			ErrNum:       errNum,
-		}
-
+		res = RdHdfsRes{Base{engine, topic}, len, &cache, errNum}
 	} else {
-		res = RdHdfsResMsg{
-			Engine:       engine,
-			Topic:        topic,
-			PrefetchNum:  0,
-			CacheDataPtr: nil,
-			ErrNum:       0,
-		}
+		res = RdHdfsRes{Base{engine, topic}, 0, nil, 0}
 	}
 
 	RdHdfsResCh <- res
