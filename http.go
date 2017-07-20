@@ -57,7 +57,6 @@ var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
 
 func Handle(w http.ResponseWriter, r *http.Request) {
-
 	match, _ := regexp.MatchString("/?type=(waf|vds)&count=([0-9]+$)", r.RequestURI)
 	if !match {
 		io.WriteString(w, "Usage of: http://ip:port/?type=waf/vds&count=num")
@@ -158,22 +157,26 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 
 	var weight int
+	var err error
 	var signal, engine, topic, task string
 
-	if _, ok := r.Form["signal"]; ok {
-		signal = r.Form["signal"][0]
+	if val, ok := r.Form["signal"]; ok {
+		signal = val[0]
 	}
-	if _, ok := r.Form["engine"]; ok {
-		engine = r.Form["engine"][0]
+	if val, ok := r.Form["engine"]; ok {
+		engine = val[0]
 	}
-	if _, ok := r.Form["topic"]; ok {
-		topic = r.Form["topic"][0]
+	if val, ok := r.Form["topic"]; ok {
+		topic = val[0]
 	}
-	if _, ok := r.Form["task"]; ok {
-		task = r.Form["task"][0]
+	if val, ok := r.Form["task"]; ok {
+		task = val[0]
 	}
-	if _, ok := r.Form["weight"]; ok {
-		weight, _ = strconv.Atoi(r.Form["weight"][0])
+	if val, ok := r.Form["weight"]; ok {
+		weight, err = strconv.Atoi(val[0])
+		if nil != err {
+			weight = 1
+		}
 	}
 
 	msg := Base{engine, topic}
@@ -182,15 +185,24 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	case "start":
 		msg := Start{Base{engine, topic}, weight}
 		StartOfflineCh <- msg
+		if "ruleBinding" == task {
+			NewWafInstance("conf", "instance", msg.Base.Topic, "10.88.1.102", 8090)
+		}
 
 	case "stop":
 		StopOfflineCh <- msg
 
 	case "shutdown":
 		ShutdownOfflineCh <- msg
+		if "ruleBinding" == task {
+			KillWafInstance("instance", msg.Topic)
+		}
 
 	case "complete":
 		CompleteOfflineCh <- msg
+		if "ruleBinding" == task {
+			KillWafInstance("instance", msg.Topic)
+		}
 	}
 
 	fmt.Printf("signal:%s; engine:%s; topic:%s; weight:%s; task:%s",
