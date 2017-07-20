@@ -107,7 +107,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		dataSlice = append(dataSlice, data)
 	}
 
-	if 0 == dataLen {
+	if 0 != dataLen {
 		data = dataSlice
 	} else {
 		data = nil
