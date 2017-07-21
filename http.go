@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
+	//"regexp"
 	"strconv"
 )
 
@@ -57,11 +57,11 @@ var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
 
 func Handle(w http.ResponseWriter, r *http.Request) {
-	match, _ := regexp.MatchString("/?type=(waf|vds)&count=([0-9]+$)", r.RequestURI)
-	if !match {
-		io.WriteString(w, "Usage of: http://ip:port/?type=waf/vds&count=num")
-		return
-	}
+	//match, _ := regexp.MatchString("/?type=(waf|vds)&count=([0-9]+$)", r.RequestURI)
+	//if !match {
+	//	io.WriteString(w, "Usage of: http://ip:port/?type=waf/vds&count=num")
+	//	return
+	//}
 
 	HandleCh := make(chan *[][]byte)
 
@@ -186,7 +186,7 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		msg := Start{Base{engine, topic}, weight}
 		StartOfflineCh <- msg
 		if "ruleBinding" == task {
-			NewWafInstance("conf", "instance", msg.Base.Topic, "10.88.1.102", 8090)
+			NewWafInstance("/home/NewWafInstance/src", "/home/NewWafInstance", msg.Base.Topic, "10.88.1.103", 8091)
 		}
 
 	case "stop":
@@ -205,7 +205,7 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Printf("signal:%s; engine:%s; topic:%s; weight:%s; task:%s",
+	fmt.Printf("signal:%s; engine:%s; topic:%s; weight:%d; task:%s\n",
 		signal, engine, topic, weight, task)
 }
 

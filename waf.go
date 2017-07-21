@@ -32,7 +32,7 @@ type Logs struct {
 }
 
 func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
-	CopyPkg(src, dst)
+	CopyPkg(src, dst + "/" + topic)
 	AppendRule(dst, topic)
 	ReqRule(dst, topic, srvIp, srvPort)
 	JsonFile(dst, topic)
