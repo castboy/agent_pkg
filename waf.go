@@ -32,14 +32,30 @@ type Logs struct {
 }
 
 func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
-	CopyPkg(src, dst + "/" + topic)
+	CopyPkg(src, dst, topic)
 	AppendRule(dst, topic)
 	ReqRule(dst, topic, srvIp, srvPort)
 	JsonFile(dst, topic)
 	NewWaf(dst, topic)
 }
 
-func CopyPkg(src, dst string) {
+func CopyPkg(src, dst, topic string) {
+	dst = dst + "/" + topic
+	err := os.MkdirAll(dst, 0777)
+	if err != nil {
+		fmt.Printf("%s", err.Error())
+	} else {
+		fmt.Print("Create Directory OK!")
+	}
+
+	dst = dst + "/" + topic + "/conf/rule"
+	err = os.MkdirAll(dst, 0777)
+	if err != nil {
+		fmt.Printf("%s", err.Error())
+	} else {
+		fmt.Print("Create Directory OK!")
+	}
+
 	copyDir(src, dst)
 }
 

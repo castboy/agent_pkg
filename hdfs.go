@@ -271,18 +271,6 @@ func localWrite(file string, bytes []byte) bool {
 	return success
 }
 
-func pathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-
-	return false, err
-}
-
 func HdfsToLocals() {
 	for i := 0; i < HTTPPRTNNUM; i++ {
 		HttpHdfsToLocalReqChs[i] = make(chan HdfsToLocalReqParams, 100)

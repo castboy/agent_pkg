@@ -124,3 +124,15 @@ func AppendWr(file string, content string) {
 		fmt.Printf("Write File %s Err", file)
 	}
 }
+
+func pathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, err
+}
