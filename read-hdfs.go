@@ -49,8 +49,16 @@ func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) {
 
 		if engine == "vds" {
 			property = xdrProperty("vds", val)
+            if property.Prtn > 1000 {
+                Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++")
+                Log("Err", string(data[key]))
+            }
 		} else {
 			property = xdrProperty("waf", val)
+            if property.Prtn > 1000 {
+                Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++")
+                Log("Err", string(data[key]))
+            }
 		}
 
 		hdfsToLocalReqParams := HdfsToLocalReqParams{

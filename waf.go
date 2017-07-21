@@ -34,6 +34,7 @@ type Logs struct {
 func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
 	CopyPkg(src, dst, topic)
 	AppendRule(dst, topic)
+    fmt.Println("after AppendRule")
 	ReqRule(dst, topic, srvIp, srvPort)
 	JsonFile(dst, topic)
 	NewWaf(dst, topic)
@@ -48,7 +49,9 @@ func CopyPkg(src, dst, topic string) {
 		fmt.Print("Create Directory OK!")
 	}
 
-	dst = dst + "/" + topic + "/conf/rule"
+	copyDir(src, dst)
+
+	dst = dst + "/conf/rules"
 	err = os.MkdirAll(dst, 0777)
 	if err != nil {
 		fmt.Printf("%s", err.Error())
@@ -56,7 +59,6 @@ func CopyPkg(src, dst, topic string) {
 		fmt.Print("Create Directory OK!")
 	}
 
-	copyDir(src, dst)
 }
 
 func AppendRule(instance, topic string) {
@@ -66,7 +68,8 @@ func AppendRule(instance, topic string) {
 }
 
 func ReqRule(instance, topic, srvIp string, srvPort int) {
-	url := fmt.Sprintf("http://%s:%d/offlineRule?task=%s", srvIp, srvPort, topic)
+	url := fmt.Sprintf("http://%s:%d/rule?topic=%s", srvIp, srvPort, topic)
+    fmt.Println(url)
 	res, err := http.Get(url)
 	if nil != err {
 		errLog := fmt.Sprintf("RuleReq Err: %s", err.Error())
@@ -85,12 +88,15 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 	json.Unmarshal(body, &ruleRes)
 
 	rule := ruleRes.Rule
+    fmt.Println("rule", rule)
 
-	dir := fmt.Sprintf("%s/%s", instance, topic)
+	dir := fmt.Sprintf("%s/%s/conf/rules", instance, topic)
+    fmt.Println(dir)
 	file := fmt.Sprintf("%s.conf", topic)
+    fmt.Println(file)
 	ok := WriteFile(dir, file, []byte(rule))
 	if !ok {
-
+        fmt.Println("write .conf err")
 	}
 }
 
@@ -131,8 +137,8 @@ func JsonFile(instance, topic string) {
 }
 
 func NewWaf(instance, topic string) {
-	file := []string{fmt.Sprintf("%s/%s/conf/bz_waf.json", instance, topic)}
-	ok := execCommand("/opt/bz_beta/bin/bz_waf -c ", file)
+	file := []string{"-c", fmt.Sprintf("%s/%s/conf/bz_waf.json", instance, topic)}
+	ok := execCommand("/opt/bz_beta/bin/bz_waf", file)
 	if !ok {
 
 	}
