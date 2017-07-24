@@ -22,19 +22,19 @@ func InitCacheInfoMap() {
 	CacheInfoMap["waf"] = make(map[string]CacheInfo)
 	CacheInfoMap["vds"] = make(map[string]CacheInfo)
 
-	for topic, _ := range Waf {
+	for topic, _ := range status["waf"] {
 		CacheInfoMap["waf"][topic] = CacheInfo{}
 	}
-	for topic, _ := range Vds {
+	for topic, _ := range status["vds"] {
 		CacheInfoMap["vds"][topic] = CacheInfo{}
 	}
 }
 
 func InitCacheDataMap() {
-	for topic, _ := range Waf {
+	for topic, _ := range status["waf"] {
 		CacheDataMap[topic] = make([][]byte, AgentConf.MaxCache)
 	}
-	for topic, _ := range Vds {
+	for topic, _ := range status["vds"] {
 		CacheDataMap[topic] = make([][]byte, AgentConf.MaxCache)
 	}
 }
@@ -43,26 +43,15 @@ func AnalysisCache(req NormalReq) map[string]CacheAnalysisRes {
 	Res := make(map[string]CacheAnalysisRes)
 
 	weightSum := 0
-
-	if req.Engine == "waf" {
-		for _, v := range Waf {
-			weightSum += v.Weight
-		}
-	} else {
-		for _, v := range Vds {
-			weightSum += v.Weight
-		}
+	for _, v := range status[req.Engine] {
+		weightSum += v.Weight
 	}
 
 	Deserve := 0
 	if 0 != weightSum {
 		for topic, cacheInfo := range CacheInfoMap[req.Engine] {
 			Remainder := cacheInfo.End - cacheInfo.Current
-			if req.Engine == "waf" {
-				Deserve = (req.Count / weightSum) * Waf[topic].Weight
-			} else {
-				Deserve = (req.Count / weightSum) * Vds[topic].Weight
-			}
+			Deserve = (req.Count / weightSum) * status[req.Engine][topic].Weight
 
 			if Remainder > Deserve {
 				Res[topic] = CacheAnalysisRes{Deserve, false}
@@ -101,23 +90,12 @@ func UpdateCacheStatus(cacheAnalysisRes map[string]CacheAnalysisRes, req NormalR
 }
 
 func UpdateEngineCurrent(cacheAnalysisRes map[string]CacheAnalysisRes, req NormalReq) {
-	//fmt.Println("UpdateEngineCurrent")
-	if req.Engine == "waf" {
-		for topic, v := range cacheAnalysisRes {
-			current := Waf[topic].Engine
-			readCount := int64(v.ReadCount)
-			Waf[topic] = Status{Waf[topic].First, current + readCount, Waf[topic].Err, Waf[topic].Cache,
-				Waf[topic].Last, Waf[topic].Weight}
-		}
-		//fmt.Println("UpdateEngineCurrent", Waf)
-	} else {
-		for topic, v := range cacheAnalysisRes {
-			current := Vds[topic].Engine
-			readCount := int64(v.ReadCount)
-			Vds[topic] = Status{Vds[topic].First, current + readCount, Vds[topic].Err, Vds[topic].Cache,
-				Vds[topic].Last, Vds[topic].Weight}
-		}
-		//fmt.Println("UpdateEngineCurrent", Vds)
+	for topic, v := range cacheAnalysisRes {
+		current := status[req.Engine][topic].Engine
+		readCount := int64(v.ReadCount)
+		status[req.Engine][topic] = Status{status[req.Engine][topic].First, current + readCount,
+			status[req.Engine][topic].Err, status[req.Engine][topic].Cache,
+			status[req.Engine][topic].Last, status[req.Engine][topic].Weight}
 	}
 }
 
@@ -153,13 +131,9 @@ func UpdateCacheCurrent(res RdHdfsRes) {
 		count := int64(res.PrefetchNum)
 		errNum := res.ErrNum
 
-		if res.Engine == "waf" {
-			Waf[topic] = Status{Waf[topic].First, Waf[topic].Engine, Waf[topic].Err + errNum, Waf[topic].Cache + count,
-				Waf[topic].Last, Waf[topic].Weight}
-		} else {
-			Vds[topic] = Status{Vds[topic].First, Vds[topic].Engine, Vds[topic].Err + errNum, Vds[topic].Cache + count,
-				Vds[topic].Last, Vds[topic].Weight}
-		}
+		status[res.Engine][topic] = Status{status[res.Engine][topic].First, status[res.Engine][topic].Engine,
+			status[res.Engine][topic].Err + errNum, status[res.Engine][topic].Cache + count,
+			status[res.Engine][topic].Last, status[res.Engine][topic].Weight}
 	}
 
 	PrefetchMsgSwitchMap[topic] = true
@@ -225,15 +199,10 @@ func UpdateRuleBindingEngineCurrent(res CacheAnalysisRes, req RuleBindingReq) {
 	topic := req.Base.Topic
 	readCount := int64(res.ReadCount)
 
-	if engine == "waf" {
-		current := Waf[topic].Engine
-		Waf[topic] = Status{Waf[topic].First, current + readCount, Waf[topic].Err, Waf[topic].Cache,
-			Waf[topic].Last, Waf[topic].Weight}
-	} else {
-		current := Vds[topic].Engine
-		Vds[topic] = Status{Vds[topic].First, current + readCount, Vds[topic].Err, Vds[topic].Cache,
-			Vds[topic].Last, Vds[topic].Weight}
-	}
+	current := status[engine][topic].Engine
+	status[engine][topic] = Status{status[engine][topic].First, current + readCount,
+		status[engine][topic].Err, status[engine][topic].Cache,
+		status[engine][topic].Last, status[engine][topic].Weight}
 }
 
 func SendRuleBindingPrefetchMsg(res CacheAnalysisRes, req RuleBindingReq) {

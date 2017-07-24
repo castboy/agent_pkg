@@ -10,11 +10,7 @@ func StartOffline(msg Start) {
 	consumer, err := InitConsumer(msg.Base.Topic, Partition, startOffset)
 	if nil == startErr && nil == err {
 		Consumers[msg.Base.Engine][msg.Base.Topic] = consumer
-		if msg.Base.Engine == "waf" {
-			Waf[msg.Base.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
-		} else {
-			Vds[msg.Base.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
-		}
+		status[msg.Base.Engine][msg.Base.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
 
 		PrefetchMsgSwitchMap[msg.Base.Topic] = true
 
@@ -28,22 +24,16 @@ func StartOffline(msg Start) {
 func StopOffline(msg Base) {
 	startOffset, endOffset, startErr, endErr := Offset(msg.Topic, Partition)
 	if nil == startErr && nil == endErr {
-		if msg.Engine == "waf" {
-			Waf[msg.Topic] = Status{startOffset, Waf[msg.Topic].Engine, Waf[msg.Topic].Err, Waf[msg.Topic].Cache, endOffset, Waf[msg.Topic].Weight}
-		} else {
-			Vds[msg.Topic] = Status{startOffset, Vds[msg.Topic].Engine, Vds[msg.Topic].Err, Vds[msg.Topic].Cache, endOffset, Vds[msg.Topic].Weight}
-		}
+		status[msg.Engine][msg.Topic] = Status{startOffset, status[msg.Engine][msg.Topic].Engine,
+			status[msg.Engine][msg.Topic].Err, status[msg.Engine][msg.Topic].Cache,
+			endOffset, status[msg.Engine][msg.Topic].Weight}
 	}
 
 }
 
 func ShutdownOffline(msg Base) {
 	delete(Consumers[msg.Engine], msg.Topic)
-	if msg.Engine == "waf" {
-		delete(Waf, msg.Topic)
-	} else {
-		delete(Vds, msg.Topic)
-	}
+	delete(status[msg.Engine], msg.Topic)
 	delete(PrefetchMsgSwitchMap, msg.Topic)
 	delete(CacheInfoMap[msg.Engine], msg.Topic)
 

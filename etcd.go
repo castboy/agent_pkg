@@ -38,6 +38,9 @@ func ParseConf(bytes []byte) {
 
 func Record(seconds int) {
 	for {
+		WafVds[0] = status["waf"]
+		WafVds[1] = status["vds"]
+
 		byte, _ := json.Marshal(WafVds)
 		EtcdSet("apt/agent/status/"+Localhost, string(byte))
 

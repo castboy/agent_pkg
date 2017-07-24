@@ -20,9 +20,10 @@ type Status struct {
 }
 
 var WafVds [2]map[string]Status
+var Waf = make(map[string]Status)
+var Vds = make(map[string]Status)
 
-var Waf = make(map[string]Status, 1000)
-var Vds = make(map[string]Status, 1000)
+var status = make(map[string]map[string]Status)
 
 func InitWafVds() {
 	wafTopic := AgentConf.Topic[0]
@@ -30,9 +31,6 @@ func InitWafVds() {
 
 	OnlineWeightAndOffset(wafTopic, vdsTopic, "initOnlineWeight",
 		"initOnlineWeight", "initOnlineOffset", "initOnlineOffset")
-
-	WafVds[0] = Waf
-	WafVds[1] = Vds
 
 	fmt.Println("Init-Status : ", WafVds)
 }
@@ -43,8 +41,8 @@ func UpdateWafVds(status []byte) {
 		fmt.Println("UpdateWafVds Err")
 	}
 
-	Waf = WafVds[0]
-	Vds = WafVds[1]
+	//	status["waf"] = WafVds[0]
+	//	status["vds"] = WafVds[1]
 
 	conf := goini.SetConfig("conf.ini")
 	wafTopic := conf.GetValue("onlineTopic", "waf")
@@ -64,16 +62,19 @@ func OnlineWeightAndOffset(wafTopic, vdsTopic, wafWeight, vdsWeight, wafOffset, 
 	wafOnlineOffset, _ := strconv.ParseInt(conf.GetValue(wafOffset, "waf"), 10, 64)
 	vdsOnlineOffset, _ := strconv.ParseInt(conf.GetValue(vdsOffset, "vds"), 10, 64)
 
+	status["waf"] = make(map[string]Status)
+	status["vds"] = make(map[string]Status)
+
 	if -1 == wafOnlineOffset {
-		Waf[wafTopic] = Status{0, 0, 0, 0, 0, wafOnlineWeight}
+		status["waf"][wafTopic] = Status{0, 0, 0, 0, 0, wafOnlineWeight}
 	} else {
-		Waf[wafTopic] = Status{0, wafOnlineOffset, 0, 0, 0, wafOnlineWeight}
+		status["waf"][wafTopic] = Status{0, wafOnlineOffset, 0, 0, 0, wafOnlineWeight}
 	}
 
 	if -1 == vdsOnlineOffset {
-		Vds[vdsTopic] = Status{0, 0, 0, 0, 0, vdsOnlineWeight}
+		status["vds"][vdsTopic] = Status{0, 0, 0, 0, 0, vdsOnlineWeight}
 	} else {
-		Vds[vdsTopic] = Status{0, vdsOnlineOffset, 0, 0, 0, vdsOnlineWeight}
+		status["vds"][vdsTopic] = Status{0, vdsOnlineOffset, 0, 0, 0, vdsOnlineWeight}
 	}
 
 }
@@ -82,12 +83,12 @@ func PrintUpdateStatus() {
 	fmt.Println("\n\nUpdateStatus:")
 
 	fmt.Println("Waf")
-	for key, val := range Waf {
+	for key, val := range status["waf"] {
 		fmt.Println(key, "     ", val)
 	}
 
 	fmt.Println("\nVds")
-	for key, val := range Vds {
+	for key, val := range status["vds"] {
 		fmt.Println(key, "     ", val)
 	}
 }

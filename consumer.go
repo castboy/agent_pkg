@@ -60,60 +60,36 @@ func InitConsumers(partition int32) {
 	Consumers["waf"] = make(map[string]kafka.Consumer)
 	Consumers["vds"] = make(map[string]kafka.Consumer)
 
-	for k, v := range Waf {
-		consumer, err := InitConsumer(k, partition, v.Engine)
-		if nil != err {
-			delete(Waf, k)
-		} else {
-			Consumers["waf"][k] = consumer
+	for engine, val := range status {
+		for topic, v := range val {
+			consumer, err := InitConsumer(topic, partition, v.Engine)
+			if nil != err {
+				delete(val, topic)
+			} else {
+				Consumers[engine][topic] = consumer
+			}
 		}
 	}
-
-	for k, v := range Vds {
-		consumer, err := InitConsumer(k, partition, v.Engine)
-		if nil != err {
-			delete(Vds, k)
-		} else {
-			Consumers["vds"][k] = consumer
-		}
-	}
-
 }
 
 func UpdateOffset() {
-	for k, v := range Waf {
-		startOffset, endOffset, startErr, endErr := Offset(k, Partition)
-		if nil == startErr && nil == endErr {
-			if startOffset > v.Engine {
-				Waf[k] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
-			} else {
-				Waf[k] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
-			}
-			if v.Engine > endOffset {
-				errLog := "conf err: xdrHttp msg-offset requested out of kafka msg-offset"
-				Log("Err", errLog)
-				log.Fatal(errLog)
+	for engine, val := range status {
+		for topic, v := range val {
+			startOffset, endOffset, startErr, endErr := Offset(topic, Partition)
+			if nil == startErr && nil == endErr {
+				if startOffset > v.Engine {
+					status[engine][topic] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
+				} else {
+					status[engine][topic] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
+				}
+				if v.Engine > endOffset {
+					errLog := "conf err: xdrHttp msg-offset requested out of kafka msg-offset"
+					Log("Err", errLog)
+					log.Fatal(errLog)
+				}
 			}
 		}
 	}
-
-	for k, v := range Vds {
-		startOffset, endOffset, startErr, endErr := Offset(k, Partition)
-		if nil == startErr && nil == endErr {
-			if startOffset > v.Engine {
-				Vds[k] = Status{startOffset, startOffset, 0, startOffset, endOffset, v.Weight}
-			} else {
-				Vds[k] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
-			}
-			if v.Engine > endOffset {
-				errLog := "conf err: xdrFile msg-offset requested out of kafka msg-offset"
-				Log("Err", errLog)
-				log.Fatal(errLog)
-			}
-		}
-
-	}
-
 	//fmt.Println("UpdateOffset: ", Waf, Vds)
 	PrintUpdateOffset()
 }
@@ -122,12 +98,12 @@ func PrintUpdateOffset() {
 	fmt.Println("\n\nUpdateOffset:")
 
 	fmt.Println("Waf")
-	for key, val := range Waf {
+	for key, val := range status["waf"] {
 		fmt.Println(key, "     ", val)
 	}
 
 	fmt.Println("\nVds")
-	for key, val := range Vds {
+	for key, val := range status["vds"] {
 		fmt.Println(key, "     ", val)
 	}
 }
