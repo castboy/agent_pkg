@@ -40,7 +40,7 @@ func Record(seconds int) {
 	for {
 		WafVds[0] = status["waf"]
 		WafVds[1] = status["vds"]
-		WafVds[2] = status["vds"]
+		WafVds[2] = status["rule"]
 
 		byte, _ := json.Marshal(WafVds)
 		EtcdSet("apt/agent/status/"+Localhost, string(byte))

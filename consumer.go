@@ -59,6 +59,7 @@ func InitBroker(localhost string) {
 func InitConsumers(partition int32) {
 	Consumers["waf"] = make(map[string]kafka.Consumer)
 	Consumers["vds"] = make(map[string]kafka.Consumer)
+	Consumers["rule"] = make(map[string]kafka.Consumer)
 
 	for engine, val := range status {
 		for topic, v := range val {
