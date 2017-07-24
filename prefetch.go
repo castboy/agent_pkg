@@ -34,22 +34,12 @@ func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 		}
 	}()
 
-	if prefetchMsg.Engine == "waf" {
-		for i := 0; i < prefetchMsg.Count; i++ {
-			msg, err := wafConsumers[prefetchMsg.Topic].Consume()
-			if err != nil {
-				panic("no data in: " + prefetchMsg.Topic)
-			}
-			*data = append(*data, msg.Value)
+	for i := 0; i < prefetchMsg.Count; i++ {
+		msg, err := Consumers[prefetchMsg.Engine][prefetchMsg.Topic].Consume()
+		if err != nil {
+			panic("no data in: " + prefetchMsg.Topic)
 		}
-	} else {
-		for i := 0; i < prefetchMsg.Count; i++ {
-			msg, err := vdsConsumers[prefetchMsg.Topic].Consume()
-			if err != nil {
-				panic("no data in: " + prefetchMsg.Topic)
-			}
-			*data = append(*data, msg.Value)
-		}
+		*data = append(*data, msg.Value)
 	}
 }
 
