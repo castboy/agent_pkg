@@ -21,6 +21,7 @@ var CacheDataMap = make(map[string][][]byte)
 func InitCacheInfoMap() {
 	CacheInfoMap["waf"] = make(map[string]CacheInfo)
 	CacheInfoMap["vds"] = make(map[string]CacheInfo)
+	CacheInfoMap["rule"] = make(map[string]CacheInfo)
 
 	for engine, val := range status {
 		for topic, _ := range val {
