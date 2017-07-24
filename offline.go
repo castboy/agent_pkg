@@ -17,7 +17,7 @@ func StartOffline(msg Start) {
 			PrefetchChMap[msg.Base.Topic] = make(chan PrefetchMsg, 100)
 			go Prefetch(PrefetchChMap[msg.Base.Topic])
 
-			WafCacheInfoMap[msg.Base.Topic] = CacheInfo{0, 0}
+			CacheInfoMap[msg.Base.Engine][msg.Base.Topic] = CacheInfo{0, 0}
 		}
 
 	} else {
@@ -32,7 +32,7 @@ func StartOffline(msg Start) {
 			PrefetchChMap[msg.Base.Topic] = make(chan PrefetchMsg, 100)
 			go Prefetch(PrefetchChMap[msg.Base.Topic])
 
-			VdsCacheInfoMap[msg.Base.Topic] = CacheInfo{0, 0}
+			CacheInfoMap[msg.Base.Engine][msg.Base.Topic] = CacheInfo{0, 0}
 		}
 	}
 }
@@ -54,7 +54,7 @@ func ShutdownOffline(msg Base) {
 		delete(wafConsumers, msg.Topic)
 		delete(Waf, msg.Topic)
 		delete(PrefetchMsgSwitchMap, msg.Topic)
-		delete(WafCacheInfoMap, msg.Topic)
+		delete(CacheInfoMap[msg.Engine], msg.Topic)
 
 		_, exist := PrefetchChMap[msg.Topic]
 		if exist {
@@ -66,7 +66,7 @@ func ShutdownOffline(msg Base) {
 		delete(vdsConsumers, msg.Topic)
 		delete(Vds, msg.Topic)
 		delete(PrefetchMsgSwitchMap, msg.Topic)
-		delete(VdsCacheInfoMap, msg.Topic)
+		delete(CacheInfoMap[msg.Engine], msg.Topic)
 
 		_, exist := PrefetchChMap[msg.Topic]
 		if exist {
