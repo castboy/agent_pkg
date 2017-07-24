@@ -5,19 +5,29 @@ package agent_pkg
 //	"fmt"
 
 func StartOffline(msg Start) {
+	var start interface{} = msg
+	var engine, topic string
 
-	startOffset, _, startErr, _ := Offset(msg.Base.Topic, Partition)
-	consumer, err := InitConsumer(msg.Base.Topic, Partition, startOffset)
+	if val, ok := start.(Start); ok {
+		engine = val.Base.Engine
+		topic = val.Base.Topic
+	} else {
+		engine = msg.Engine
+		topic = msg.Topic
+	}
+
+	startOffset, _, startErr, _ := Offset(topic, Partition)
+	consumer, err := InitConsumer(topic, Partition, startOffset)
 	if nil == startErr && nil == err {
-		Consumers[msg.Base.Engine][msg.Base.Topic] = consumer
-		status[msg.Base.Engine][msg.Base.Topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
+		Consumers[engine][topic] = consumer
+		status[engine][topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
 
-		PrefetchMsgSwitchMap[msg.Base.Topic] = true
+		PrefetchMsgSwitchMap[topic] = true
 
-		PrefetchChMap[msg.Base.Topic] = make(chan PrefetchMsg, 100)
-		go Prefetch(PrefetchChMap[msg.Base.Topic])
+		PrefetchChMap[topic] = make(chan PrefetchMsg, 100)
+		go Prefetch(PrefetchChMap[topic])
 
-		CacheInfoMap[msg.Base.Engine][msg.Base.Topic] = CacheInfo{0, 0}
+		CacheInfoMap[engine][topic] = CacheInfo{0, 0}
 	}
 }
 

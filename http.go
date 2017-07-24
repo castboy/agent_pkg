@@ -183,10 +183,13 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 
 	switch signal {
 	case "start":
-		msg := Start{Base{engine, topic}, weight}
-		StartOfflineCh <- msg
 		if "ruleBinding" == task {
+			msg := Start{Base{"rule", topic}, weight}
+			StartOfflineCh <- msg
 			NewWafInstance("/home/NewWafInstance/src", "/home/NewWafInstance", msg.Base.Topic, "10.88.1.103", 8091)
+		} else {
+			msg := Start{Base{engine, topic}, weight}
+			StartOfflineCh <- msg
 		}
 
 	case "stop":
@@ -201,7 +204,7 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	case "complete":
 		CompleteOfflineCh <- msg
 		if "ruleBinding" == task {
-			KillWafInstance("instance", msg.Topic)
+			KillWafInstance("/home/NewWafInstance", msg.Topic)
 		}
 	}
 

@@ -19,7 +19,7 @@ type Status struct {
 	Weight int
 }
 
-var WafVds [2]map[string]Status
+var WafVds [3]map[string]Status
 var Waf = make(map[string]Status)
 var Vds = make(map[string]Status)
 
@@ -64,6 +64,7 @@ func OnlineWeightAndOffset(wafTopic, vdsTopic, wafWeight, vdsWeight, wafOffset, 
 
 	status["waf"] = make(map[string]Status)
 	status["vds"] = make(map[string]Status)
+	status["rule"] = make(map[string]Status)
 
 	if -1 == wafOnlineOffset {
 		status["waf"][wafTopic] = Status{0, 0, 0, 0, 0, wafOnlineWeight}
