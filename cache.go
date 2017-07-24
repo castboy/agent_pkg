@@ -22,20 +22,18 @@ func InitCacheInfoMap() {
 	CacheInfoMap["waf"] = make(map[string]CacheInfo)
 	CacheInfoMap["vds"] = make(map[string]CacheInfo)
 
-	for topic, _ := range status["waf"] {
-		CacheInfoMap["waf"][topic] = CacheInfo{}
-	}
-	for topic, _ := range status["vds"] {
-		CacheInfoMap["vds"][topic] = CacheInfo{}
+	for engine, val := range status {
+		for topic, _ := range val {
+			CacheInfoMap[engine][topic] = CacheInfo{}
+		}
 	}
 }
 
 func InitCacheDataMap() {
-	for topic, _ := range status["waf"] {
-		CacheDataMap[topic] = make([][]byte, AgentConf.MaxCache)
-	}
-	for topic, _ := range status["vds"] {
-		CacheDataMap[topic] = make([][]byte, AgentConf.MaxCache)
+	for _, val := range status {
+		for topic, _ := range val {
+			CacheDataMap[topic] = make([][]byte, AgentConf.MaxCache)
+		}
 	}
 }
 
