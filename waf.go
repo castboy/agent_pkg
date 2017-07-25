@@ -88,7 +88,6 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 	json.Unmarshal(body, &ruleRes)
 
 	rule := ruleRes.Rule
-	fmt.Println("rule", rule)
 
 	dir := fmt.Sprintf("%s/%s/conf/rules", instance, topic)
 	fmt.Println(dir)
@@ -103,7 +102,7 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 func JsonFile(instance, topic string) {
 	file := fmt.Sprintf("%s/%s/conf/modsecurity.conf", instance, topic)
 	pid := fmt.Sprintf("%s/%s/conf/bz_waf.pid", instance, topic)
-	url := fmt.Sprintf("http://localhost:8081/?type=rule&task=%s&count=100", topic)
+	url := fmt.Sprintf("http://localhost:8081/?type=rule&topic=%s&count=100", topic)
 
 	bzWaf := BzWaf{
 		Daemon:    false,
