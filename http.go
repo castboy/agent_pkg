@@ -195,6 +195,7 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	}
 	if "" == topic {
 		io.WriteString(w, "params `topic` is needed\n")
+		return
 	}
 
 	if val, ok := r.Form["weight"]; ok {
