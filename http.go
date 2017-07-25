@@ -61,28 +61,41 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	var engine, topic string
 	var count int
+	var err error
+
 	r.ParseForm()
+
 	if _, ok := r.Form["type"]; ok {
 		engine = r.Form["type"][0]
 	}
-	if _, ok := r.Form["count"]; ok {
-		count, _ = strconv.Atoi(r.Form["count"][0])
+	if ok := paramsCheck(engine, engineOptions); !ok {
+		io.WriteString(w, "params `type` err\n")
+		return
 	}
+
+	if _, ok := r.Form["count"]; ok {
+		count, err = strconv.Atoi(r.Form["count"][0])
+		if nil != err {
+			count = 100
+			io.WriteString(w, "params `count` err, set `100` default\n")
+		}
+	}
+
 	if _, ok := r.Form["topic"]; ok {
 		topic = r.Form["topic"][0]
 	}
 
-	var isNormalReq bool
-	if "" == topic {
-		isNormalReq = true
+	var isRuleBindingReq bool
+	if "" != topic && "rule" == engine {
+		isRuleBindingReq = true
 	}
 
-	if isNormalReq {
-		NormalReqCh <- NormalReq{engine, count, HandleCh}
-		fmt.Println("Length of NormalReqCh:", len(NormalReqCh))
-	} else {
+	if isRuleBindingReq {
 		RuleBindingReqCh <- RuleBindingReq{Base{engine, topic}, count, HandleCh}
 		fmt.Println("Length of RuleBindingReqCh:", len(RuleBindingReqCh))
+	} else {
+		NormalReqCh <- NormalReq{engine, count, HandleCh}
+		fmt.Println("Length of NormalReqCh:", len(NormalReqCh))
 	}
 
 	Data := <-HandleCh
@@ -187,6 +200,11 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	res := fmt.Sprintf("received offline msg below: signal-%s type-%s topic-%s weight-%d\n",
+		signal, engine, topic, weight)
+
+	io.WriteString(w, res)
+
 	start := Start{}
 	other := Base{engine, topic}
 
@@ -220,10 +238,6 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	res := fmt.Sprintf("received offline msg below: signal-%s type-%s topic-%s weight-%d\n",
-		signal, engine, topic, weight)
-
-	io.WriteString(w, res)
 }
 
 func paramsCheck(param string, options []string) bool {
