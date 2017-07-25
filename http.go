@@ -160,7 +160,7 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		signal = val[0]
 	}
 	if ok := paramsCheck(signal, signalOptions); !ok {
-		io.WriteString(w, "params `signal` err")
+		io.WriteString(w, "params `signal` err\n")
 		return
 	}
 
@@ -168,7 +168,7 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		engine = val[0]
 	}
 	if ok := paramsCheck(engine, engineOptions); !ok {
-		io.WriteString(w, "params `type` err")
+		io.WriteString(w, "params `type` err\n")
 		return
 	}
 
@@ -176,14 +176,14 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		topic = val[0]
 	}
 	if "" == topic {
-		io.WriteString(w, "params `topic` is needed")
+		io.WriteString(w, "params `topic` is needed\n")
 	}
 
 	if val, ok := r.Form["weight"]; ok {
 		weight, err = strconv.Atoi(val[0])
 		if nil != err {
 			weight = 1
-			io.WriteString(w, "params `weight` err, set `1` default")
+			io.WriteString(w, "params `weight` err, set `1` default\n")
 		}
 	}
 
