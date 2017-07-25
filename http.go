@@ -206,11 +206,6 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	res := fmt.Sprintf("received offline msg below: signal-%s type-%s topic-%s weight-%d\n",
-		signal, engine, topic, weight)
-
-	io.WriteString(w, res)
-
 	start := Start{}
 	other := Base{engine, topic}
 
@@ -244,6 +239,10 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	res := fmt.Sprintf("received offline msg below: signal-%s type-%s topic-%s weight-%d\n",
+		signal, engine, topic, weight)
+
+	io.WriteString(w, res)
 }
 
 func paramsCheck(param string, options []string) bool {
