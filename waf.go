@@ -146,7 +146,8 @@ func NewWaf(instance, topic string) {
 
 func KillWafInstance(instance, topic string) {
 	KillWaf(instance, topic)
-	RmConf(topic)
+	RmConf(instance, topic)
+    fmt.Println("RmConf:", topic)
 }
 
 func KillWaf(instance, topic string) {
@@ -158,9 +159,15 @@ func KillWaf(instance, topic string) {
 	}
 	pid := string(out)
 
-	exec.Command("kill", "-9", pid)
+	cmd = exec.Command("kill", "-9", pid)
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(err)
+	}
+    fmt.Println(out)
 }
 
-func RmConf(topic string) {
-	os.RemoveAll(topic)
+func RmConf(instance, topic string) {
+    path := fmt.Sprintf("%s/%s", instance, topic)
+	os.RemoveAll(path)
 }
