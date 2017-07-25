@@ -149,7 +149,7 @@ func KillWafInstance(instance, topic string) {
 }
 
 func KillWaf(instance, topic string) {
-	sh := fmt.Sprintf("cat %s/%s/conf/bz_waf.pid | kill -9", instance, topic)
+	sh := fmt.Sprintf("kill -9 $(cat %s/%s/conf/bz_waf.pid)", instance, topic)
 	ok := execCommand(sh, []string{})
 	if !ok {
 
