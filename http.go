@@ -56,6 +56,9 @@ var StopOfflineCh = make(chan Base)
 var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
 
+var signals = []string{"start", "stop", "complete", "shutdown"}
+var types = []string{"waf", "vds", "rule"}
+
 func Handle(w http.ResponseWriter, r *http.Request) {
 	HandleCh := make(chan *[][]byte)
 
@@ -68,7 +71,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	if _, ok := r.Form["type"]; ok {
 		engine = r.Form["type"][0]
 	}
-	if ok := paramsCheck(engine, engineOptions); !ok {
+	if ok := paramsCheck(engine, types); !ok {
 		io.WriteString(w, "params `type` err\n")
 		return
 	}
@@ -166,13 +169,11 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	var weight int
 	var err error
 	var signal, engine, topic string
-	signalOptions := []string{"start", "stop", "complete", "shutdown"}
-	engineOptions := []string{"waf", "vds", "rule"}
 
 	if val, ok := r.Form["signal"]; ok {
 		signal = val[0]
 	}
-	if ok := paramsCheck(signal, signalOptions); !ok {
+	if ok := paramsCheck(signal, signals); !ok {
 		io.WriteString(w, "params `signal` err\n")
 		return
 	}
@@ -180,7 +181,7 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	if val, ok := r.Form["type"]; ok {
 		engine = val[0]
 	}
-	if ok := paramsCheck(engine, engineOptions); !ok {
+	if ok := paramsCheck(engine, types); !ok {
 		io.WriteString(w, "params `type` err\n")
 		return
 	}
