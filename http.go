@@ -89,8 +89,12 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var isRuleBindingReq bool
-	if "" != topic && "rule" == engine {
-		isRuleBindingReq = true
+	if "rule" == engine {
+		if topicIsExist(topic) {
+			isRuleBindingReq = true
+		} else {
+			return
+		}
 	}
 
 	if isRuleBindingReq {
@@ -245,6 +249,18 @@ func paramsCheck(param string, options []string) bool {
 	var ok bool
 	for _, val := range options {
 		if param == val {
+			ok = true
+			break
+		}
+	}
+
+	return ok
+}
+
+func topicIsExist(topic string) bool {
+	var ok bool
+	for key, _ := range status["rule"] {
+		if topic == key {
 			ok = true
 			break
 		}
