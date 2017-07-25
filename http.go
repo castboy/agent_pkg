@@ -153,54 +153,89 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	var weight int
 	var err error
 	var signal, engine, topic string
+	signalOptions := []string{"start", "stop", "complete", "shutdown"}
+	engineOptions := []string{"waf", "vds", "rule"}
 
 	if val, ok := r.Form["signal"]; ok {
 		signal = val[0]
 	}
+	if ok := paramsCheck(signal, signalOptions); !ok {
+		io.WriteString(w, "params `signal` err")
+		return
+	}
+
 	if val, ok := r.Form["type"]; ok {
 		engine = val[0]
 	}
+	if ok := paramsCheck(engine, engineOptions); !ok {
+		io.WriteString(w, "params `type` err")
+		return
+	}
+
 	if val, ok := r.Form["topic"]; ok {
 		topic = val[0]
 	}
+	if "" == topic {
+		io.WriteString(w, "params `topic` is needed")
+	}
+
 	if val, ok := r.Form["weight"]; ok {
 		weight, err = strconv.Atoi(val[0])
 		if nil != err {
 			weight = 1
+			io.WriteString(w, "params `weight` err, set `1` default")
 		}
 	}
 
-	msg := Base{engine, topic}
+	start := Start{}
+	other := Base{engine, topic}
+
+	if "start" == signal && "rule" == engine {
+		start = Start{Base{"rule", topic}, -1}
+	}
+	if "start" == signal && "rule" != engine {
+		start = Start{Base{engine, topic}, weight}
+	}
 
 	switch signal {
 	case "start":
+		StartOfflineCh <- start
 		if "rule" == engine {
-			msg := Start{Base{"rule", topic}, -1}
-			StartOfflineCh <- msg
-			NewWafInstance("/home/NewWafInstance/src", "/home/NewWafInstance", msg.Base.Topic, "10.88.1.103", 8091)
-		} else {
-			msg := Start{Base{engine, topic}, weight}
-			StartOfflineCh <- msg
+			NewWafInstance("/home/NewWafInstance/src", "/home/NewWafInstance", start.Base.Topic, "10.88.1.103", 8091)
 		}
 
 	case "stop":
-		StopOfflineCh <- msg
+		StopOfflineCh <- other
 
 	case "shutdown":
-		ShutdownOfflineCh <- msg
+		ShutdownOfflineCh <- other
 		if "rule" == engine {
-			KillWafInstance("instance", msg.Topic)
+			KillWafInstance("instance", other.Topic)
 		}
 
 	case "complete":
-		CompleteOfflineCh <- msg
+		CompleteOfflineCh <- other
 		if "rule" == engine {
-			KillWafInstance("/home/NewWafInstance", msg.Topic)
+			KillWafInstance("/home/NewWafInstance", other.Topic)
 		}
 	}
 
-	fmt.Printf("signal:%s; engine:%s; topic:%s; weight:%d;\n",
+	res := fmt.Sprintf("received offline msg below: signal-%s type-%s topic-%s weight-%d\n",
 		signal, engine, topic, weight)
+
+	io.WriteString(w, res)
+}
+
+func paramsCheck(param string, options []string) bool {
+	var ok bool
+	for _, val := range options {
+		if param == val {
+			ok = true
+			break
+		}
+	}
+
+	return ok
 }
 
 func ListenReq(url string) {
