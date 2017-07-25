@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 )
 
 type BzWaf struct {
@@ -149,11 +150,15 @@ func KillWafInstance(instance, topic string) {
 }
 
 func KillWaf(instance, topic string) {
-	sh := fmt.Sprintf("kill -9 $(cat %s/%s/conf/bz_waf.pid)", instance, topic)
-	ok := execCommand(sh, []string{})
-	if !ok {
-
+	pidFile := fmt.Sprintf("%s/%s/conf/bz_waf.pid", instance, topic)
+	cmd := exec.Command("cat", pidFile)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println(err)
 	}
+	pid := string(out)
+
+	exec.Command("kill", "-9", pid)
 }
 
 func RmConf(topic string) {
