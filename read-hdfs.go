@@ -86,6 +86,8 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 
 	json.Unmarshal(bytes, &httpFile)
 
+    fmt.Println(string(bytes))
+
 	if engine == "waf" {
 		property.SrcFile = httpFile.Http.ResponseLocation.File
 		property.DstFile = append(property.DstFile, httpFile.Http.Request)
@@ -99,6 +101,9 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 
 		dir := path.Dir(property.SrcFile)
 		prtn, err := strconv.Atoi(path.Base(dir))
+
+        fmt.Println("prtn:", path.Base(dir))
+
 		if nil != err {
 			fmt.Println("prtn-id err:", property.SrcFile)
 		}
@@ -113,6 +118,8 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 
 		dir := path.Dir(property.SrcFile)
 		prtn, err := strconv.Atoi(path.Base(dir))
+
+        fmt.Println("prtn:", path.Base(dir))
 
 		if nil != err {
 			fmt.Println("prtn-id err:", property.SrcFile)
