@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -75,23 +74,17 @@ func EtcdSet(k, v string) {
 	}
 }
 
-func EtcdGet(key string) []byte {
+func EtcdGet(key string) (bytes []byte, ok bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			errInfo := "configuration item: " + key + " does not exist!"
-			fmt.Println(errInfo)
-			Log("Err", errInfo)
-			os.Exit(0)
+			bytes = []byte{}
+			ok = false
 		}
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-	resp, err := EtcdCli.Get(ctx, key)
+	resp, _ := EtcdCli.Get(ctx, key)
 	cancel()
-	if err != nil {
-		panic("")
-	}
-	bytes := resp.Kvs[0].Value
 
-	return bytes
+	return resp.Kvs[0].Value, true
 }
