@@ -18,6 +18,7 @@ type Conf struct {
 	MaxCache      int
 	Partition     map[string]int32
 	Topic         []string
+	HdfsNameNode  string
 }
 
 var EtcdCli *clientv3.Client
