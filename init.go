@@ -26,19 +26,9 @@ func InitWafVds() {
 
 	InitStatusMap()
 
-	start, _, startErr, stopErr := Offset(wafTopic, Partition)
-	if nil == startErr && nil == stopErr {
-		status["waf"][wafTopic] = Status{start, 0, 0, 0, -1, 1}
-	} else {
-		status["waf"][wafTopic] = Status{0, 0, 0, 0, -1, 1}
-	}
+	status["waf"][wafTopic] = Status{0, 0, 0, 0, -1, 1}
 
-	start, _, startErr, stopErr = Offset(vdsTopic, Partition)
-	if nil == startErr && nil == stopErr {
-		status["waf"][vdsTopic] = Status{start, 0, 0, 0, -1, 1}
-	} else {
-		status["waf"][vdsTopic] = Status{0, 0, 0, 0, -1, 1}
-	}
+	status["vds"][vdsTopic] = Status{0, 0, 0, 0, -1, 1}
 
 	fmt.Println("Init-Status : ", WafVds)
 }
