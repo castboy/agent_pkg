@@ -49,16 +49,16 @@ func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) {
 
 		if engine == "vds" {
 			property = xdrProperty("vds", val)
-            if property.Prtn > 1000 {
-                Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++")
-                Log("Err", string(data[key]))
-            }
+			if property.Prtn > 1000 {
+				Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++")
+				Log("Err", string(data[key]))
+			}
 		} else {
 			property = xdrProperty("waf", val)
-            if property.Prtn > 1000 {
-                Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++")
-                Log("Err", string(data[key]))
-            }
+			if property.Prtn > 1000 {
+				Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++")
+				Log("Err", string(data[key]))
+			}
 		}
 
 		hdfsToLocalReqParams := HdfsToLocalReqParams{
@@ -86,7 +86,7 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 
 	json.Unmarshal(bytes, &httpFile)
 
-    fmt.Println(string(bytes))
+	fmt.Println(string(bytes))
 
 	if engine == "waf" {
 		property.SrcFile = httpFile.Http.ResponseLocation.File
@@ -102,10 +102,9 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 		dir := path.Dir(property.SrcFile)
 		prtn, err := strconv.Atoi(path.Base(dir))
 
-        fmt.Println("prtn:", path.Base(dir))
-
 		if nil != err {
-			fmt.Println("prtn-id err:", property.SrcFile)
+			Log("Err", "prtn-id err, origin-xdr below")
+			Log("Err", string(bytes))
 		}
 
 		property.Prtn = int(prtn)
@@ -119,10 +118,9 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 		dir := path.Dir(property.SrcFile)
 		prtn, err := strconv.Atoi(path.Base(dir))
 
-        fmt.Println("prtn:", path.Base(dir))
-
 		if nil != err {
-			fmt.Println("prtn-id err:", property.SrcFile)
+			Log("Err", "prtn-id err, origin-xdr below")
+			Log("Err", string(bytes))
 		}
 
 		property.Prtn = int(prtn)
