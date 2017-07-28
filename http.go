@@ -42,7 +42,7 @@ type RdHdfsRes struct {
 	Base
 	PrefetchNum  int
 	CacheDataPtr *[][]byte
-	ErrNum       int64
+	ErrNum       int
 }
 
 var NormalReqCh = make(chan NormalReq, 10000)

@@ -40,24 +40,29 @@ type LocationHdfs struct {
 	Signature string `json:"Signature"`
 }
 
-func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) {
+func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) int {
 	engine := prefetchRes.Base.Engine
 	data := *prefetchRes.DataPtr
+
+	var readHdfsNum int
+	var err error
 
 	for key, val := range data {
 		var property XdrProperty
 
 		if engine == "vds" {
-			property = xdrProperty("vds", val)
-			if property.Prtn > 1000 {
-				Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++")
-				Log("Err", string(data[key]))
+			property, err = xdrProperty("vds", val)
+			if nil != err || property.Prtn < 0 || property.Prtn >= FILEPRTNNUM {
+				Log("Err", "prtn-id err, origin-xdr below")
+				Log("Err", string(val))
+				break
 			}
 		} else {
-			property = xdrProperty("waf", val)
-			if property.Prtn > 1000 {
-				Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++")
-				Log("Err", string(data[key]))
+			property, err = xdrProperty("waf", val)
+			if nil != err || property.Prtn < 0 || property.Prtn >= HTTPPRTNNUM {
+				Log("Err", "prtn-id err, origin-xdr below")
+				Log("Err", string(val))
+				break
 			}
 		}
 
@@ -77,12 +82,18 @@ func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) {
 		} else {
 			HttpHdfsToLocalReqChs[property.Prtn] <- hdfsToLocalReqParams
 		}
+
+		readHdfsNum++
 	}
+
+	return readHdfsNum
 }
 
-func xdrProperty(engine string, bytes []byte) XdrProperty {
+func xdrProperty(engine string, bytes []byte) (XdrProperty, error) {
 	var property XdrProperty
 	var httpFile HttpFile
+	var prtn int
+	var err error
 
 	json.Unmarshal(bytes, &httpFile)
 
@@ -100,12 +111,7 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 		property.XdrMark = append(property.XdrMark, httpFile.Http.ResponseLocation.Signature)
 
 		dir := path.Dir(property.SrcFile)
-		prtn, err := strconv.Atoi(path.Base(dir))
-
-		if nil != err {
-			Log("Err", "prtn-id err, origin-xdr below")
-			Log("Err", string(bytes))
-		}
+		prtn, err = strconv.Atoi(path.Base(dir))
 
 		property.Prtn = int(prtn)
 	} else {
@@ -116,57 +122,50 @@ func xdrProperty(engine string, bytes []byte) XdrProperty {
 		property.XdrMark = append(property.XdrMark, httpFile.App.FileLocation.Signature)
 
 		dir := path.Dir(property.SrcFile)
-		prtn, err := strconv.Atoi(path.Base(dir))
-
-		if nil != err {
-			Log("Err", "prtn-id err, origin-xdr below")
-			Log("Err", string(bytes))
-		}
+		prtn, err = strconv.Atoi(path.Base(dir))
 
 		property.Prtn = int(prtn)
 	}
 
-	fmt.Println(property)
-	return property
+	return property, err
 }
 
-func CollectHdfsToLocalRes(prefetchRes PrefetchRes, ch chan HdfsToLocalRes, tags []HdfsToLocalResTag) []HdfsToLocalResTag {
-	dataNum := len(*prefetchRes.DataPtr)
+func CollectHdfsToLocalRes(ch chan HdfsToLocalRes, tags []HdfsToLocalResTag, readHdfsNum int) []HdfsToLocalResTag {
 	statNum := 0
 
 	for {
+		if statNum == readHdfsNum {
+			break
+		}
+
 		res := <-ch
-		//fmt.Println("ColletcHdfs:", res)
+
 		index := res.Index
 		tags[index] = HdfsToLocalResTag{
 			Success: res.Success,
 		}
 
 		statNum++
-		if statNum == dataNum {
-			break
-		}
 	}
 
 	return tags
 }
 
-func GetCacheAndErrDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, data [][]byte) ([][]byte, int64) {
+func GetCacheAndRightDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, data [][]byte) ([][]byte, int) {
 	var cache [][]byte
-	var errNum int64 = 0
+	var rightNum int
 
 	for key, val := range tags {
 		if val.Success {
 			cache = append(cache, data[key])
+			rightNum++
 		} else {
-			errNum++
-
 			Log("Err", "Err xdr ++++++++++++++++++++++++++++++++++++++++++++++")
 			Log("Err", string(data[key]))
 		}
 	}
 
-	return cache, errNum
+	return cache, rightNum
 }
 
 func RdHdfs(prefetchRes PrefetchRes) {
@@ -183,13 +182,13 @@ func RdHdfs(prefetchRes PrefetchRes) {
 
 		hdfsToLocalResCh := make(chan HdfsToLocalRes, len)
 
-		DisposeRdHdfs(hdfsToLocalResCh, prefetchRes)
+		readHdfsNum := DisposeRdHdfs(hdfsToLocalResCh, prefetchRes)
 
-		tags = CollectHdfsToLocalRes(prefetchRes, hdfsToLocalResCh, tags)
+		tags = CollectHdfsToLocalRes(hdfsToLocalResCh, tags, readHdfsNum)
 
-		cache, errNum := GetCacheAndErrDataNum(prefetchRes, tags, data)
+		cache, rightNum := GetCacheAndRightDataNum(prefetchRes, tags, data)
 
-		res = RdHdfsRes{Base{engine, topic}, len, &cache, errNum}
+		res = RdHdfsRes{Base{engine, topic}, len, &cache, len - rightNum}
 	} else {
 		res = RdHdfsRes{Base{engine, topic}, 0, nil, 0}
 	}

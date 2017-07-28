@@ -10,7 +10,7 @@ import (
 type Status struct {
 	First  int64
 	Engine int64
-	Err    int64
+	Err    int
 	Cache  int64
 	Last   int64
 	Weight int
