@@ -150,7 +150,7 @@ func Manage() {
 			go RdHdfs(res)
 
 		case res := <-RdHdfsResCh:
-			WriteCacheAndUpdateCacheCurrent(res)
+			WriteBufferAndUpdateBufferOffset(res)
 
 		case start := <-StartOfflineCh:
 			StartOffline(start)

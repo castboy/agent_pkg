@@ -10,7 +10,7 @@ import (
 )
 
 var broker kafka.Client
-var Consumers = make(map[string]map[string]kafka.Consumer)
+var consumers = make(map[string]map[string]kafka.Consumer)
 
 func InitConsumer(topic string, partition int32, start int64) (kafka.Consumer, error) {
 	conf := kafka.NewConsumerConf(topic, partition)
@@ -57,9 +57,9 @@ func InitBroker(localhost string) {
 }
 
 func InitConsumers(partition int32) {
-	Consumers["waf"] = make(map[string]kafka.Consumer)
-	Consumers["vds"] = make(map[string]kafka.Consumer)
-	Consumers["rule"] = make(map[string]kafka.Consumer)
+	consumers["waf"] = make(map[string]kafka.Consumer)
+	consumers["vds"] = make(map[string]kafka.Consumer)
+	consumers["rule"] = make(map[string]kafka.Consumer)
 
 	for engine, val := range status {
 		for topic, v := range val {
@@ -67,7 +67,7 @@ func InitConsumers(partition int32) {
 			if nil != err {
 				delete(val, topic)
 			} else {
-				Consumers[engine][topic] = consumer
+				consumers[engine][topic] = consumer
 			}
 		}
 	}

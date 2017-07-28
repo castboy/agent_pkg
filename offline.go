@@ -19,7 +19,7 @@ func StartOffline(msg Start) {
 	startOffset, _, startErr, _ := Offset(topic, Partition)
 	consumer, err := InitConsumer(topic, Partition, startOffset)
 	if nil == startErr && nil == err {
-		Consumers[engine][topic] = consumer
+		consumers[engine][topic] = consumer
 		status[engine][topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
 
 		PrefetchMsgSwitchMap[topic] = true
@@ -27,7 +27,7 @@ func StartOffline(msg Start) {
 		PrefetchChMap[topic] = make(chan PrefetchMsg, 100)
 		go Prefetch(PrefetchChMap[topic])
 
-		CacheInfoMap[engine][topic] = CacheInfo{0, 0}
+		buffersStatus[engine][topic] = BufferStatus{0, 0}
 	}
 }
 
@@ -42,10 +42,10 @@ func StopOffline(msg Base) {
 }
 
 func ShutdownOffline(msg Base) {
-	delete(Consumers[msg.Engine], msg.Topic)
+	delete(consumers[msg.Engine], msg.Topic)
 	delete(status[msg.Engine], msg.Topic)
 	delete(PrefetchMsgSwitchMap, msg.Topic)
-	delete(CacheInfoMap[msg.Engine], msg.Topic)
+	delete(buffersStatus[msg.Engine], msg.Topic)
 
 	_, exist := PrefetchChMap[msg.Topic]
 	if exist {
