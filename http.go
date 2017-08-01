@@ -168,6 +168,8 @@ func Manage() {
 }
 
 func OfflineHandle(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, "received")
+
 	r.ParseForm()
 
 	var weight int
