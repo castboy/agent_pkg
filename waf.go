@@ -69,7 +69,7 @@ func AppendRule(instance, topic string) {
 }
 
 func ReqRule(instance, topic, srvIp string, srvPort int) {
-	url := fmt.Sprintf("http://%s:%d/rule?topic=%s", srvIp, srvPort, topic)
+	url := fmt.Sprintf("http://%s:%d/byzoro.apt.com/off-line-dispatch/rule/request?topic=%s", srvIp, srvPort, topic)
 	fmt.Println(url)
 	res, err := http.Get(url)
 	if nil != err {
@@ -147,7 +147,7 @@ func NewWaf(instance, topic string) {
 func KillWafInstance(instance, topic string) {
 	KillWaf(instance, topic)
 	RmConf(instance, topic)
-    fmt.Println("RmConf:", topic)
+	fmt.Println("RmConf:", topic)
 }
 
 func KillWaf(instance, topic string) {
@@ -164,10 +164,10 @@ func KillWaf(instance, topic string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-    fmt.Println(out)
+	fmt.Println(out)
 }
 
 func RmConf(instance, topic string) {
-    path := fmt.Sprintf("%s/%s", instance, topic)
+	path := fmt.Sprintf("%s/%s", instance, topic)
 	os.RemoveAll(path)
 }

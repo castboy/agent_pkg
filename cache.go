@@ -4,28 +4,30 @@ package agent_pkg
 
 import "fmt"
 
-type BufferStatus struct {
+type BufStatus struct {
 	Current int
 	End     int
 }
 
 type BufferAnalyse struct {
-	ShouldRead      int
+	EngineRead      int
 	SendPrefetchMsg bool
 }
 
-var buffersStatus = make(map[string]map[string]BufferStatus)
+var bufStatus = make(map[string]map[string]BufStatus)
 
 var buffers = make(map[string][][]byte)
 
+var reqTypes = []string{"waf", "vds", "rule"}
+
 func InitBuffersStatus() {
-	buffersStatus["waf"] = make(map[string]BufferStatus)
-	buffersStatus["vds"] = make(map[string]BufferStatus)
-	buffersStatus["rule"] = make(map[string]BufferStatus)
+	for _, v := range reqTypes {
+		bufStatus[v] = make(map[string]BufStatus)
+	}
 
 	for engine, val := range status {
 		for topic, _ := range val {
-			buffersStatus[engine][topic] = BufferStatus{}
+			bufStatus[engine][topic] = BufStatus{}
 		}
 	}
 }
@@ -48,7 +50,7 @@ func AnalyseBuffer(req NormalReq) map[string]BufferAnalyse {
 
 	Deserve := 0
 	if 0 != weightSum {
-		for topic, cacheInfo := range buffersStatus[req.Engine] {
+		for topic, cacheInfo := range bufStatus[req.Engine] {
 			Remainder := cacheInfo.End - cacheInfo.Current
 			Deserve = (req.Count / weightSum) * status[req.Engine][topic].Weight
 
@@ -59,7 +61,7 @@ func AnalyseBuffer(req NormalReq) map[string]BufferAnalyse {
 			}
 		}
 	} else {
-		for topic, _ := range buffersStatus[req.Engine] {
+		for topic, _ := range bufStatus[req.Engine] {
 			Res[topic] = BufferAnalyse{0, false}
 		}
 	}
@@ -71,8 +73,8 @@ func ReadBuffer(res map[string]BufferAnalyse, req NormalReq) {
 	httpRes := make([][]byte, 0, AgentConf.MaxCache)
 
 	for topic, v := range res {
-		current := buffersStatus[req.Engine][topic].Current
-		for i := 0; i < v.ShouldRead; i++ {
+		current := bufStatus[req.Engine][topic].Current
+		for i := 0; i < v.EngineRead; i++ {
 			httpRes = append(httpRes, buffers[topic][current+i])
 		}
 	}
@@ -83,15 +85,15 @@ func ReadBuffer(res map[string]BufferAnalyse, req NormalReq) {
 func UpdateBufferStatus(res map[string]BufferAnalyse, req NormalReq) {
 	fmt.Println("UpdataCacheStatus")
 	for topic, v := range res {
-		s := buffersStatus[req.Engine][topic]
-		buffersStatus[req.Engine][topic] = BufferStatus{s.Current + v.ShouldRead, s.End}
+		s := bufStatus[req.Engine][topic]
+		bufStatus[req.Engine][topic] = BufStatus{s.Current + v.EngineRead, s.End}
 	}
 }
 
 func UpdateEngineOffset(res map[string]BufferAnalyse, req NormalReq) {
 	for topic, v := range res {
 		s := status[req.Engine][topic]
-		readCount := int64(v.ShouldRead)
+		readCount := int64(v.EngineRead)
 		status[req.Engine][topic] = Status{s.First, s.Engine + readCount, s.Err, s.Cache, s.Last, s.Weight}
 	}
 }
@@ -117,7 +119,7 @@ func WriteBuffer(res RdHdfsRes) {
 		count := len(*res.CacheDataPtr)
 		data := *res.CacheDataPtr
 
-		buffersStatus[engine][topic] = BufferStatus{0, count}
+		bufStatus[engine][topic] = BufStatus{0, count}
 		buffers[topic] = data
 	}
 }
@@ -156,7 +158,7 @@ func AnalysisRuleBindingBuffer(req RuleBindingReq) BufferAnalyse {
 
 	var res BufferAnalyse
 
-	remainder := buffersStatus[engine][topic].End - buffersStatus[engine][topic].Current
+	remainder := bufStatus[engine][topic].End - bufStatus[engine][topic].Current
 	if deserve > remainder {
 		res = BufferAnalyse{remainder, true}
 	} else {
@@ -169,10 +171,10 @@ func AnalysisRuleBindingBuffer(req RuleBindingReq) BufferAnalyse {
 func ReadRuleBindingBuffer(res BufferAnalyse, req RuleBindingReq) {
 	engine := req.Base.Engine
 	topic := req.Base.Topic
-	readCount := res.ShouldRead
+	readCount := res.EngineRead
 
 	httpRes := make([][]byte, 0, AgentConf.MaxCache)
-	current := buffersStatus[engine][topic].Current
+	current := bufStatus[engine][topic].Current
 
 	for i := 0; i < readCount; i++ {
 		httpRes = append(httpRes, buffers[topic][current+i])
@@ -184,16 +186,16 @@ func ReadRuleBindingBuffer(res BufferAnalyse, req RuleBindingReq) {
 func UpdateRuleBindingBufferStatus(res BufferAnalyse, req RuleBindingReq) {
 	engine := req.Base.Engine
 	topic := req.Base.Topic
-	readCount := res.ShouldRead
+	readCount := res.EngineRead
 
-	s := buffersStatus[engine][topic]
-	buffersStatus[engine][topic] = BufferStatus{s.Current + readCount, s.End}
+	s := bufStatus[engine][topic]
+	bufStatus[engine][topic] = BufStatus{s.Current + readCount, s.End}
 }
 
 func UpdateRuleBindingEngineOffset(res BufferAnalyse, req RuleBindingReq) {
 	engine := req.Base.Engine
 	topic := req.Base.Topic
-	readCount := int64(res.ShouldRead)
+	readCount := int64(res.EngineRead)
 
 	s := status[engine][topic]
 	status[engine][topic] = Status{s.First, s.Engine + readCount, s.Err, s.Cache, s.Last, s.Weight}

@@ -27,7 +27,7 @@ func StartOffline(msg Start) {
 		PrefetchChMap[topic] = make(chan PrefetchMsg, 100)
 		go Prefetch(PrefetchChMap[topic])
 
-		buffersStatus[engine][topic] = BufferStatus{0, 0}
+		bufStatus[engine][topic] = BufStatus{0, 0}
 	}
 }
 
@@ -44,7 +44,7 @@ func ShutdownOffline(msg Base) {
 	delete(consumers[msg.Engine], msg.Topic)
 	delete(status[msg.Engine], msg.Topic)
 	delete(PrefetchMsgSwitchMap, msg.Topic)
-	delete(buffersStatus[msg.Engine], msg.Topic)
+	delete(bufStatus[msg.Engine], msg.Topic)
 
 	_, exist := PrefetchChMap[msg.Topic]
 	if exist {
