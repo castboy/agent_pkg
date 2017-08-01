@@ -1,6 +1,7 @@
 package agent_pkg
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -88,13 +89,16 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 
 	json.Unmarshal(body, &ruleRes)
 
-	rule := ruleRes.Rule
+	ruleBytes, err := base64.StdEncoding.DecodeString(ruleRes.Rule)
+	if nil != err {
+		//TODO log
+	}
 
 	dir := fmt.Sprintf("%s/%s/conf/rules", instance, topic)
 	fmt.Println(dir)
 	file := fmt.Sprintf("%s.conf", topic)
 	fmt.Println(file)
-	ok := WriteFile(dir, file, []byte(rule))
+	ok := WriteFile(dir, file, []byte(ruleBytes))
 	if !ok {
 		fmt.Println("write .conf err")
 	}
