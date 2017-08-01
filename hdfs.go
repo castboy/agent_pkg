@@ -59,8 +59,7 @@ func InitHdfsCli(namenode string) {
 	}
 }
 
-var ClearFileHdlChs [FILEPRTNNUM]chan int
-var ClearHttpHdlChs [HTTPPRTNNUM]chan int
+var ClearFileHdlChs, ClearHttpHdlChs [FILEPRTNNUM]chan int
 
 func SendClearFileHdlMsg(seconds int) {
 	ticker := time.NewTicker(time.Second * time.Duration(seconds))

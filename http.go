@@ -220,7 +220,8 @@ func OfflineHandle(w http.ResponseWriter, r *http.Request) {
 	case "start":
 		StartOfflineCh <- start
 		if "rule" == engine {
-			NewWafInstance("/home/NewWafInstance/src", "/home/NewWafInstance", start.Base.Topic, "10.88.1.103", 8091)
+			NewWafInstance("/home/NewWafInstance/src", "/home/NewWafInstance",
+				start.Base.Topic, AgentConf.WebServerReqIp, AgentConf.WebServerReqPort)
 		}
 
 	case "stop":

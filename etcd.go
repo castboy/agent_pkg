@@ -14,11 +14,13 @@ import (
 )
 
 type Conf struct {
-	EngineReqPort int
-	MaxCache      int
-	Partition     map[string]int32
-	Topic         []string
-	HdfsNameNode  string
+	EngineReqPort    int
+	MaxCache         int
+	Partition        map[string]int32
+	Topic            []string
+	HdfsNameNode     string
+	WebServerReqIp   string
+	WebServerReqPort int
 }
 
 var EtcdCli *clientv3.Client

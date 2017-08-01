@@ -34,9 +34,8 @@ func StartOffline(msg Start) {
 func StopOffline(msg Base) {
 	startOffset, endOffset, startErr, endErr := Offset(msg.Topic, Partition)
 	if nil == startErr && nil == endErr {
-		status[msg.Engine][msg.Topic] = Status{startOffset, status[msg.Engine][msg.Topic].Engine,
-			status[msg.Engine][msg.Topic].Err, status[msg.Engine][msg.Topic].Cache,
-			endOffset, status[msg.Engine][msg.Topic].Weight}
+		s := status[msg.Engine][msg.Topic]
+		status[msg.Engine][msg.Topic] = Status{startOffset, s.Engine, s.Err, s.Cache, endOffset, s.Weight}
 	}
 
 }

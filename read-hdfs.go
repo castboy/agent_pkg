@@ -152,7 +152,7 @@ func CollectHdfsToLocalRes(ch chan HdfsToLocalRes, tags []HdfsToLocalResTag, rea
 }
 
 func GetCacheAndRightDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, data [][]byte) ([][]byte, int) {
-	var cache [][]byte
+	var cache = make([][]byte, 0, AgentConf.MaxCache)
 	var rightNum int
 
 	for key, val := range tags {
