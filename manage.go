@@ -36,6 +36,9 @@ func Manage() {
 			if "rule" == complete.Engine {
 				KillWafInstance(AgentConf.WafInstanceDst, complete.Topic)
 			}
+
+		default:
+
 		}
 	}
 }

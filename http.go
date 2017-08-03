@@ -9,6 +9,7 @@ import (
 	"net/http"
 	//"regexp"
 	"strconv"
+	"time"
 )
 
 type Base struct {
@@ -126,6 +127,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		data = dataSlice
 	} else {
 		data = nil
+		time.Sleep(time.Duration(10) * time.Millisecond)
 	}
 
 	res := struct {
