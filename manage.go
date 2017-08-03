@@ -24,6 +24,7 @@ func Manage() {
 				NewWafInstance(AgentConf.WafInstanceSrc, AgentConf.WafInstanceDst,
 					start.Base.Topic, AgentConf.WebServerReqIp, AgentConf.WebServerReqPort)
 			}
+			fmt.Println("after start := <-StartOfflineCh:")
 
 		case stop := <-StopOfflineCh:
 			StopOffline(stop)
