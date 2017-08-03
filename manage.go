@@ -7,7 +7,8 @@ func Manage() {
 			DisposeNormalReq(req)
 
 		case req := <-RuleBindingReqCh:
-			DisposeRuleBindingReq(req)
+			fmt.Println("req := <-RuleBindingReqCh:")
+			//			DisposeRuleBindingReq(req)
 
 		case res := <-PrefetchResCh:
 			go RdHdfs(res)
