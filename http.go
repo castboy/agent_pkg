@@ -56,7 +56,12 @@ var StopOfflineCh = make(chan Base)
 var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
 
+var ReqCount int
+
 func Handle(w http.ResponseWriter, r *http.Request) {
+	ReqCount++
+	fmt.Println("ReqCount:", ReqCount)
+
 	HandleCh := make(chan *[][]byte)
 
 	var engine, topic string
