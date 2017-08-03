@@ -64,6 +64,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 
 	for {
 		kafkaMsg, err := consumer.Consume()
+		fmt.Println(string(kafkaMsg.Value))
 		if nil != err {
 			break
 		} else {
