@@ -20,7 +20,6 @@ func Manage() {
 
 		case start := <-StartOfflineCh:
 			StartOffline(start)
-			//			fmt.Println("start:", start)
 			if "rule" == start.Base.Engine {
 				NewWafInstance(AgentConf.WafInstanceSrc, AgentConf.WafInstanceDst,
 					start.Base.Topic, AgentConf.WebServerReqIp, AgentConf.WebServerReqPort)

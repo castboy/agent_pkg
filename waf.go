@@ -40,6 +40,7 @@ func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
 	ReqRule(dst, topic, srvIp, srvPort)
 	JsonFile(dst, topic)
 	NewWaf(dst, topic)
+	fmt.Println("after NewWaf()")
 }
 
 func CopyPkg(src, dst, topic string) {
