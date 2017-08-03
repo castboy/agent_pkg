@@ -22,12 +22,13 @@ type StatusFromEtcd struct {
 }
 
 var statusFromEtcd StatusFromEtcd
-var receivedOfflineMsgOffset int64 = 10
+var receivedOfflineMsgOffset int64
 var status = make(map[string]map[string]Status)
 
 func InitStatus() {
 	wafTopic := AgentConf.Topic[0]
 	vdsTopic := AgentConf.Topic[1]
+	receivedOfflineMsgOffset = int64(AgentConf.OfflineMsgStartOffset)
 
 	InitStatusMap()
 

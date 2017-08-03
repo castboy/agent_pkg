@@ -14,17 +14,18 @@ import (
 )
 
 type Conf struct {
-	EngineReqPort     int
-	MaxCache          int
-	Partition         map[string]int32
-	Topic             []string
-	HdfsNameNode      string
-	WebServerReqIp    string
-	WebServerReqPort  int
-	WafInstanceSrc    string
-	WafInstanceDst    string
-	OfflineMsgTopic   string
-	OfflineMsgPartion int
+	EngineReqPort         int
+	MaxCache              int
+	Partition             map[string]int32
+	Topic                 []string
+	HdfsNameNode          string
+	WebServerReqIp        string
+	WebServerReqPort      int
+	WafInstanceSrc        string
+	WafInstanceDst        string
+	OfflineMsgTopic       string
+	OfflineMsgPartion     int
+	OfflineMsgStartOffset int
 }
 
 var EtcdCli *clientv3.Client
