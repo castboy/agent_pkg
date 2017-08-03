@@ -9,7 +9,7 @@ func Manage() {
 			DisposeNormalReq(req)
 
 		case req := <-RuleBindingReqCh:
-			fmt.Println("req := <-RuleBindingReqCh:")
+			fmt.Println("req := <-RuleBindingReqCh:", req)
 			//			DisposeRuleBindingReq(req)
 
 		case res := <-PrefetchResCh:
