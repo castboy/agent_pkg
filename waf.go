@@ -102,6 +102,8 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 	if !ok {
 		fmt.Println("write .conf err")
 	}
+
+	fmt.Println("ReqRule execed")
 }
 
 func JsonFile(instance, topic string) {
@@ -138,6 +140,7 @@ func JsonFile(instance, topic string) {
 	if !ok {
 
 	}
+	fmt.Println("JsonFile execed")
 }
 
 func NewWaf(instance, topic string) {
