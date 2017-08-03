@@ -2,7 +2,7 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	//	"fmt"
+	"fmt"
 	"log"
 	"time"
 )
@@ -46,7 +46,11 @@ func TimingGetOfflineMsg(second int) {
 
 func SetStatus() {
 	msgs := LoadOfflineMsg()
+	fmt.Println("all msg:", msgs)
+
 	msgs = ExtractValidOfflineMsg(msgs)
+	fmt.Println("valid msg:", msgs)
+
 	SendOfflineMsg(msgs)
 }
 
