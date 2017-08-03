@@ -49,7 +49,7 @@ func Record(seconds int) {
 		s.Status[0] = status["waf"]
 		s.Status[1] = status["vds"]
 		s.Status[2] = status["rule"]
-		fmt.Println("status[waf]", status["waf"])
+		fmt.Println("status[vds]", status["vds"])
 
 		byte, _ := json.Marshal(s)
 		EtcdSet("apt/agent/status/"+Localhost, string(byte))
