@@ -146,6 +146,7 @@ func OfflineHandle(msg OfflineMsg) {
 
 	switch msg.SignalType {
 	case "start":
+		fmt.Println("start:", start)
 		StartOfflineCh <- start
 
 	case "stop":
