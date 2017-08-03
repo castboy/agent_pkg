@@ -46,10 +46,7 @@ func TimingGetOfflineMsg(second int) {
 
 func SetStatus() {
 	msgs := LoadOfflineMsg()
-	fmt.Println("all msg:", msgs)
-
 	msgs = ExtractValidOfflineMsg(msgs)
-	fmt.Println("valid msg:", msgs)
 
 	SendOfflineMsg(msgs)
 }
@@ -80,6 +77,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 		receivedOfflineMsgOffset++
 	}
 
+	fmt.Println("all msg:", offlineMsgs)
 	return offlineMsgs
 }
 
@@ -114,6 +112,7 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 		}
 	}
 
+	fmt.Println("valid msg:", validOfflineMsg)
 	return validOfflineMsg
 
 }
