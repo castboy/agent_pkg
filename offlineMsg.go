@@ -64,10 +64,10 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 
 	for {
 		kafkaMsg, err := consumer.Consume()
-		fmt.Println(string(kafkaMsg.Value))
 		if nil != err {
 			break
 		} else {
+			fmt.Println(string(kafkaMsg.Value))
 			err := json.Unmarshal(kafkaMsg.Value, &msg)
 			if nil != err {
 				Log("Err", "wrong offline msg: "+string(kafkaMsg.Value))
