@@ -1,5 +1,7 @@
 package agent_pkg
 
+import "fmt"
+
 func Manage() {
 	for {
 		select {
