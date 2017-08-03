@@ -147,8 +147,9 @@ func JsonFile(instance, topic string) {
 func NewWaf(instance, topic string) {
 	file := []string{"-c", fmt.Sprintf("%s/%s/conf/bz_waf.json", instance, topic)}
 	ok := execCommand("/opt/bz_beta/bin/bz_waf", file)
+	fmt.Println("NewWaf")
 	if !ok {
-
+		fmt.Println("NewWaf Err")
 	}
 }
 
