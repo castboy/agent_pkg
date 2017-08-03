@@ -22,7 +22,7 @@ type StatusFromEtcd struct {
 }
 
 var statusFromEtcd StatusFromEtcd
-var receivedOfflineMsgOffset int64 = -1
+var receivedOfflineMsgOffset int64 = 4
 var status = make(map[string]map[string]Status)
 
 func InitStatus() {
