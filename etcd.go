@@ -14,13 +14,17 @@ import (
 )
 
 type Conf struct {
-	EngineReqPort    int
-	MaxCache         int
-	Partition        map[string]int32
-	Topic            []string
-	HdfsNameNode     string
-	WebServerReqIp   string
-	WebServerReqPort int
+	EngineReqPort     int
+	MaxCache          int
+	Partition         map[string]int32
+	Topic             []string
+	HdfsNameNode      string
+	WebServerReqIp    string
+	WebServerReqPort  int
+	WafInstanceSrc    string
+	WafInstanceDst    string
+	OfflineMsgTopic   string
+	OfflineMsgPartion int
 }
 
 var EtcdCli *clientv3.Client
@@ -40,11 +44,13 @@ func ParseConf(bytes []byte) {
 
 func Record(seconds int) {
 	for {
-		WafVds[0] = status["waf"]
-		WafVds[1] = status["vds"]
-		WafVds[2] = status["rule"]
+		var s StatusFromEtcd
+		s.ReceivedOfflineMsgOffset = receivedOfflineMsgOffset
+		s.Status[0] = status["waf"]
+		s.Status[1] = status["vds"]
+		s.Status[2] = status["rule"]
 
-		byte, _ := json.Marshal(WafVds)
+		byte, _ := json.Marshal(s)
 		EtcdSet("apt/agent/status/"+Localhost, string(byte))
 
 		time.Sleep(time.Duration(seconds) * time.Second)

@@ -16,11 +16,16 @@ type Status struct {
 	Weight int
 }
 
-var WafVds [3]map[string]Status
+type StatusFromEtcd struct {
+	ReceivedOfflineMsgOffset int64
+	Status                   [3]map[string]Status
+}
 
+var statusFromEtcd StatusFromEtcd
+var receivedOfflineMsgOffset int64 = -1
 var status = make(map[string]map[string]Status)
 
-func InitWafVds() {
+func InitStatus() {
 	wafTopic := AgentConf.Topic[0]
 	vdsTopic := AgentConf.Topic[1]
 
@@ -30,40 +35,30 @@ func InitWafVds() {
 
 	status["vds"][vdsTopic] = Status{0, 0, 0, 0, -1, 1}
 
-	fmt.Println("Init-Status : ", WafVds)
+	fmt.Println("InitStatus : ", status)
+	fmt.Println("ReceivedOfflineMsgOffset : ", receivedOfflineMsgOffset)
 }
 
 func InitStatusMap() {
-	status["waf"] = make(map[string]Status)
-	status["vds"] = make(map[string]Status)
-	status["rule"] = make(map[string]Status)
+	for _, v := range reqTypes {
+		status[v] = make(map[string]Status)
+	}
 }
 
-func UpdateWafVds(bytes []byte) {
-	err := json.Unmarshal(bytes, &WafVds)
+func GetStatusFromEtcd(bytes []byte) {
+	err := json.Unmarshal(bytes, &statusFromEtcd)
 	if err != nil {
-		fmt.Println("UpdateWafVds Err")
+		fmt.Println("GetStatusFromEtcd Err")
 	}
 
 	InitStatusMap()
 
-	status["waf"] = WafVds[0]
-	status["vds"] = WafVds[1]
-	status["rule"] = WafVds[2]
+	status["waf"] = statusFromEtcd.Status[0]
+	status["vds"] = statusFromEtcd.Status[1]
+	status["rule"] = statusFromEtcd.Status[2]
 
-	PrintUpdateStatus()
-}
+	receivedOfflineMsgOffset = statusFromEtcd.ReceivedOfflineMsgOffset
 
-func PrintUpdateStatus() {
-	fmt.Println("\n\nUpdateStatus:")
-
-	fmt.Println("Waf")
-	for key, val := range status["waf"] {
-		fmt.Println(key, "     ", val)
-	}
-
-	fmt.Println("\nVds")
-	for key, val := range status["vds"] {
-		fmt.Println(key, "     ", val)
-	}
+	fmt.Println("GetStatusFromEtcd : ", status)
+	fmt.Println("ReceivedOfflineMsgOffset : ", receivedOfflineMsgOffset)
 }
