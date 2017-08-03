@@ -9,8 +9,7 @@ func Manage() {
 			DisposeNormalReq(req)
 
 		case req := <-RuleBindingReqCh:
-			fmt.Println("req := <-RuleBindingReqCh:", req)
-			//			DisposeRuleBindingReq(req)
+			DisposeRuleBindingReq(req)
 
 		case res := <-PrefetchResCh:
 			go RdHdfs(res)
@@ -24,7 +23,6 @@ func Manage() {
 				go NewWafInstance(AgentConf.WafInstanceSrc, AgentConf.WafInstanceDst,
 					start.Base.Topic, AgentConf.WebServerReqIp, AgentConf.WebServerReqPort)
 			}
-			fmt.Println("after start := <-StartOfflineCh:")
 
 		case stop := <-StopOfflineCh:
 			StopOffline(stop)
