@@ -113,7 +113,7 @@ func JsonFile(instance, topic string) {
 	url := fmt.Sprintf("http://localhost:8090/?type=rule&topic=%s&count=100", topic)
 
 	bzWaf := BzWaf{
-		Daemon:    false,
+		Daemon:    true,
 		Cup:       []string{},
 		Processes: 1,
 		Threads:   1,
