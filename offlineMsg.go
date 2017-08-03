@@ -37,6 +37,7 @@ func TimingGetOfflineMsg(second int) {
 				Log("Err", "wrong offline msg: "+string(kafkaMsg.Value))
 			} else {
 				OfflineHandle(msg)
+				receivedOfflineMsgOffset++
 			}
 		}
 
