@@ -84,6 +84,7 @@ func HttpHdfs(idx int) {
 			HttpHdfsToLocal(fHdl, msg)
 		case msg := <-ClearHttpHdlChs[idx]:
 			ClearHdl(fHdl, msg)
+		default:
 		}
 	}
 }
@@ -98,7 +99,9 @@ func FileHdfs(idx int) {
 			FileHdfsToLocal(fHdl, msg)
 		case msg := <-ClearFileHdlChs[idx]:
 			ClearHdl(fHdl, msg)
+		default:
 		}
+
 	}
 }
 

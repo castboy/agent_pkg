@@ -28,13 +28,13 @@ func Manage() {
 		case shutdown := <-ShutdownOfflineCh:
 			ShutdownOffline(shutdown)
 			if "rule" == shutdown.Engine {
-				KillWafInstance(AgentConf.WafInstanceDst, shutdown.Topic)
+				go KillWafInstance(AgentConf.WafInstanceDst, shutdown.Topic)
 			}
 
 		case complete := <-CompleteOfflineCh:
 			CompleteOffline(complete)
 			if "rule" == complete.Engine {
-				KillWafInstance(AgentConf.WafInstanceDst, complete.Topic)
+				go KillWafInstance(AgentConf.WafInstanceDst, complete.Topic)
 			}
 
 		default:

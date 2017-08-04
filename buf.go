@@ -139,7 +139,7 @@ func UpdateBufferOffset(res RdHdfsRes) {
 
 func DisposeNormalReq(req NormalReq) {
 	res := AnalyseBuffer(req)
-	//fmt.Println("analysisCacheRes", res)
+	fmt.Println("DisposeNormalReq analysisCacheRes", res)
 	ReadBuffer(res, req)
 	UpdateBufferStatus(res, req)
 	UpdateEngineOffset(res, req)
@@ -216,7 +216,7 @@ func SendRuleBindingPrefetchMsg(res BufferAnalyse, req RuleBindingReq) {
 func DisposeRuleBindingReq(req RuleBindingReq) {
 	res := AnalysisRuleBindingBuffer(req)
 
-	fmt.Println("res:", res)
+	fmt.Println("DisposeRuleBindingReq analysisRes:", res)
 
 	ReadRuleBindingBuffer(res, req)
 	UpdateRuleBindingBufferStatus(res, req)
