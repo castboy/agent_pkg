@@ -121,6 +121,8 @@ func WriteBuffer(res RdHdfsRes) {
 
 		bufStatus[engine][topic] = BufStatus{0, count}
 		buffers[topic] = data
+		fmt.Println("WriteBuffer+++++++++++++++++++++++++++++++")
+		fmt.Println(buffers[topic])
 	}
 }
 
