@@ -16,6 +16,10 @@ func StartOffline(msg Start) {
 		topic = msg.Topic
 	}
 
+	if 0 == msg.Weight {
+		msg.Weight = 1
+	}
+
 	startOffset, _, startErr, _ := Offset(topic, Partition)
 	consumer, err := InitConsumer(topic, Partition, startOffset)
 	if nil == startErr && nil == err {
