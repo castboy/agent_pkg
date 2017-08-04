@@ -43,19 +43,15 @@ func ParseConf(bytes []byte) {
 	}
 }
 
-func Record(seconds int) {
-	for {
-		var s StatusFromEtcd
-		s.ReceivedOfflineMsgOffset = receivedOfflineMsgOffset
-		s.Status[0] = status["waf"]
-		s.Status[1] = status["vds"]
-		s.Status[2] = status["rule"]
+func Record() {
+	var s StatusFromEtcd
+	s.ReceivedOfflineMsgOffset = receivedOfflineMsgOffset
+	s.Status[0] = status["waf"]
+	s.Status[1] = status["vds"]
+	s.Status[2] = status["rule"]
 
-		byte, _ := json.Marshal(s)
-		EtcdSet("apt/agent/status/"+Localhost, string(byte))
-
-		time.Sleep(time.Duration(seconds) * time.Second)
-	}
+	byte, _ := json.Marshal(s)
+	EtcdSet("apt/agent/status/"+Localhost, string(byte))
 }
 
 func InitEtcdCli(endpoint string) {

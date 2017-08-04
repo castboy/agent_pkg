@@ -1,6 +1,12 @@
 package agent_pkg
 
+import (
+	"time"
+)
+
 func Manage() {
+	ticker := time.NewTicker(time.Second * time.Duration(3))
+
 	for {
 		select {
 		case req := <-NormalReqCh:
@@ -37,8 +43,8 @@ func Manage() {
 				go KillWafInstance(AgentConf.WafInstanceDst, complete.Topic)
 			}
 
-		default:
-
+		case <-ticker.C:
+			Record()
 		}
 	}
 }
