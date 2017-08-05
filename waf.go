@@ -90,6 +90,8 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 
 	json.Unmarshal(body, &ruleRes)
 
+	fmt.Println(ruleRes.Rule)
+
 	ruleBytes, err := base64.StdEncoding.DecodeString(ruleRes.Rule)
 	if nil != err {
 		//TODO log
