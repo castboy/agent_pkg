@@ -88,7 +88,10 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 		Rule string
 	}
 
-	json.Unmarshal(body, &ruleRes)
+	err := json.Unmarshal(body, &ruleRes)
+	if nil != err {
+		fmt.Println("json.Unmarshal err")
+	}
 
 	fmt.Println("ruleRes.Rule", ruleRes.Rule)
 
