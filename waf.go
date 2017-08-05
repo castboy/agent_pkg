@@ -116,7 +116,7 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 func JsonFile(instance, topic string) {
 	file := fmt.Sprintf("%s/%s/conf/modsecurity.conf", instance, topic)
 	pid := fmt.Sprintf("%s/%s/conf/bz_waf.pid", instance, topic)
-	url := fmt.Sprintf("http://localhost:%s/?type=rule&topic=%s&count=100", topic, AgentConf.EngineReqPort)
+	url := fmt.Sprintf("http://localhost:%s/?type=rule&topic=%s&count=100", AgentConf.EngineReqPort, topic)
 
 	bzWaf := BzWaf{
 		Daemon:    true,
