@@ -84,18 +84,16 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 	body, err := ioutil.ReadAll(res.Body)
 
 	var ruleRes struct {
-		Task string
 		Rule string
+		Cont string
 	}
 
 	err = json.Unmarshal(body, &ruleRes)
 	if nil != err {
-		fmt.Println("json.Unmarshal err")
+		fmt.Println("ruleRes err")
 	}
 
-	fmt.Println("ruleRes.Rule", ruleRes.Rule)
-
-	ruleBytes, err := base64.StdEncoding.DecodeString(ruleRes.Rule)
+	ruleBytes, err := base64.StdEncoding.DecodeString(ruleRes.Cont)
 	if nil != err {
 		//TODO log
 	}
