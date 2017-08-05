@@ -95,10 +95,12 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 		//TODO log
 	}
 
+	fmt.Println(string(ruleBytes))
+
 	dir := fmt.Sprintf("%s/%s/conf/rules", instance, topic)
 	fmt.Println(dir)
 	file := fmt.Sprintf("%s.conf", topic)
-	fmt.Println(file)
+
 	ok := WriteFile(dir, file, []byte(ruleBytes))
 	if !ok {
 		fmt.Println("write .conf err")
@@ -110,7 +112,7 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 func JsonFile(instance, topic string) {
 	file := fmt.Sprintf("%s/%s/conf/modsecurity.conf", instance, topic)
 	pid := fmt.Sprintf("%s/%s/conf/bz_waf.pid", instance, topic)
-	url := fmt.Sprintf("http://localhost:8081/?type=rule&topic=%s&count=100", topic)
+	url := fmt.Sprintf("http://localhost:%s/?type=rule&topic=%s&count=100", topic, AgentConf.EngineReqPort)
 
 	bzWaf := BzWaf{
 		Daemon:    true,
