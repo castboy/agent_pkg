@@ -98,9 +98,6 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 		//TODO log
 	}
 
-	fmt.Println(string(ruleBytes))
-	fmt.Println(ruleBytes)
-
 	dir := fmt.Sprintf("%s/%s/conf/rules", instance, topic)
 	fmt.Println(dir)
 	file := fmt.Sprintf("%s.conf", topic)
