@@ -16,7 +16,7 @@ type BzWaf struct {
 	Cup       []string `json:"cup"`
 	Processes int      `json:"worker_processes"`
 	Threads   int      `json:"worker_threads"`
-	Rule      string   `json:"rule"`
+	Rule      string   `json:"rules"`
 	Pid       string   `json:"pid"`
 	Resource  Resource `json:"resource"`
 	Logs      Logs     `json:"logs"`
