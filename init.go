@@ -36,6 +36,13 @@ func InitStatus() {
 
 	status["vds"][vdsTopic] = Status{0, 0, 0, 0, -1, 1}
 
+	if -1 != AgentConf.Offset[0] {
+		status["waf"][wafTopic] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
+	}
+	if -1 != AgentConf.Offset[1] {
+		status["vds"][wafTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
+	}
+
 	fmt.Println("InitStatus : ", status)
 	fmt.Println("ReceivedOfflineMsgOffset : ", receivedOfflineMsgOffset)
 }
@@ -57,6 +64,13 @@ func GetStatusFromEtcd(bytes []byte) {
 	status["waf"] = statusFromEtcd.Status[0]
 	status["vds"] = statusFromEtcd.Status[1]
 	status["rule"] = statusFromEtcd.Status[2]
+
+	if -1 != AgentConf.Offset[0] {
+		status["waf"][AgentConf.Topic[0]] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
+	}
+	if -1 != AgentConf.Offset[1] {
+		status["vds"][AgentConf.Topic[1]] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
+	}
 
 	receivedOfflineMsgOffset = statusFromEtcd.ReceivedOfflineMsgOffset
 

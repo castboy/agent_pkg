@@ -18,6 +18,7 @@ type Conf struct {
 	MaxCache              int
 	Partition             map[string]int32
 	Topic                 []string
+	Offset                []int64
 	HdfsNameNode          string
 	WebServerReqIp        string
 	WebServerReqPort      int
