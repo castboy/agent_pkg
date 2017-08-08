@@ -40,7 +40,7 @@ func InitStatus() {
 		status["waf"][wafTopic] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
 	}
 	if -1 != AgentConf.Offset[1] {
-		status["vds"][wafTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
+		status["vds"][vdsTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
 	}
 
 	fmt.Println("InitStatus : ", status)
