@@ -55,9 +55,15 @@ func Record() {
 	EtcdSet("apt/agent/status/"+Localhost, string(byte))
 }
 
-func InitEtcdCli(endpoint string) {
+func InitEtcdCli(endpoints map[string]string) {
+	endpoint := make([]string, 0)
+	for _, val := range endpoints {
+		elmt := "http://" + val + ":2379"
+		endpoint = append(endpoint, elmt)
+	}
+
 	cfg := clientv3.Config{
-		Endpoints:   []string{"http://" + endpoint + ":2379"},
+		Endpoints:   endpoint,
 		DialTimeout: 5 * time.Second,
 	}
 	var err error = errors.New("this is a new error")
