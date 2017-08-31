@@ -86,6 +86,9 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			io.WriteString(w, "params `count` err, set `100` default\n")
 		}
 	}
+	if 0 == count {
+		fmt.Println("warning: http req count is zero")
+	}
 
 	if val, ok := r.Form["topic"]; ok {
 		topic = val[0]
