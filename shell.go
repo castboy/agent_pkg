@@ -8,7 +8,7 @@ import (
 func execCommand(commandName string, params []string) bool {
 	cmd := exec.Command(commandName, params...)
 
-	out, err := cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(err)
 

@@ -203,6 +203,11 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 }
 
 func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte) {
+	defer func() {
+		if r := recover(); r != nil {
+		}
+	}()
+
 	bytes = make([]byte, size)
 	_, err := fHdl.ReadAt(bytes, offset)
 

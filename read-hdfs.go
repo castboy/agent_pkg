@@ -2,7 +2,6 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	"fmt"
 	"path"
 	"strconv"
 )
