@@ -16,7 +16,6 @@ import (
 type Conf struct {
 	EngineReqPort         int
 	MaxCache              int
-	Partition             map[string]int32
 	Topic                 []string
 	Offset                []int64
 	HdfsNameNode          string
@@ -27,6 +26,8 @@ type Conf struct {
 	OfflineMsgTopic       string
 	OfflineMsgPartion     int
 	OfflineMsgStartOffset int
+	KafkaHost             string
+	KafkaPartition        int32
 }
 
 var EtcdCli *clientv3.Client
