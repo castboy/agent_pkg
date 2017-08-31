@@ -71,24 +71,24 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 
-	if _, ok := r.Form["type"]; ok {
-		engine = r.Form["type"][0]
+	if val, ok := r.Form["type"]; ok {
+		engine = val[0]
 	}
 	if ok := paramsCheck(engine, types); !ok {
 		io.WriteString(w, "params `type` err\n")
 		return
 	}
 
-	if _, ok := r.Form["count"]; ok {
-		count, err = strconv.Atoi(r.Form["count"][0])
+	if val, ok := r.Form["count"]; ok {
+		count, err = strconv.Atoi(val[0])
 		if nil != err {
 			count = 100
 			io.WriteString(w, "params `count` err, set `100` default\n")
 		}
 	}
 
-	if _, ok := r.Form["topic"]; ok {
-		topic = r.Form["topic"][0]
+	if val, ok := r.Form["topic"]; ok {
+		topic = val[0]
 	}
 
 	var isRuleBindingReq bool
