@@ -42,4 +42,5 @@ func GetLocalhost() {
 
 func GetPartition() {
 	Partition = AgentConf.KafkaPartition
+    fmt.Println("Partition   : ", Partition)
 }
