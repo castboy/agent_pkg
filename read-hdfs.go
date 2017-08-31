@@ -97,8 +97,6 @@ func xdrProperty(engine string, bytes []byte) (XdrProperty, error) {
 
 	json.Unmarshal(bytes, &httpFile)
 
-	fmt.Println(string(bytes))
-
 	if engine == "waf" {
 		property.SrcFile = httpFile.Http.ResponseLocation.File
 		property.DstFile = append(property.DstFile, httpFile.Http.Request)

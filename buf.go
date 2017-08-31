@@ -99,14 +99,11 @@ func UpdateEngineOffset(res map[string]BufferAnalyse, req NormalReq) {
 }
 
 func SendPrefetchMsg(res map[string]BufferAnalyse, req NormalReq) {
-	//fmt.Println("SendPrefetchMsg")
-	//fmt.Println("MaxCache:", AgentConf.MaxCache)
+	fmt.Println("SendPrefetchMsg")
 	for topic, v := range res {
 		if v.SendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
-			//fmt.Println("send prefetchMsg:", topic)
 			PrefetchChMap[topic] <- PrefetchMsg{req.Engine, topic, AgentConf.MaxCache, false}
 
-			//fmt.Println(PrefetchMsg{req.Engine, topic, AgentConf.MaxCache})
 			PrefetchMsgSwitchMap[topic] = false
 		}
 	}
@@ -121,8 +118,7 @@ func WriteBuffer(res RdHdfsRes) {
 
 		bufStatus[engine][topic] = BufStatus{0, count}
 		buffers[topic] = data
-		fmt.Println("WriteBuffer+++++++++++++++++++++++++++++++")
-		fmt.Println(bufStatus[engine])
+		fmt.Println("WriteBuffer bufStatus:", bufStatus[engine])
 	}
 }
 

@@ -14,7 +14,6 @@ func execCommand(commandName string, params []string) bool {
 
 		return false
 	}
-	fmt.Println(string(out))
 
 	return true
 }

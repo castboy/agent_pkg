@@ -88,7 +88,7 @@ func CopyFile(src, dst string) (w int64, err error) {
 }
 
 func WriteFile(dir string, file string, bytes []byte) bool {
-    fmt.Println("WriteFile func")
+	fmt.Println("WriteFile func")
 	isExist, err := pathExists(dir)
 	if !isExist {
 		err := os.MkdirAll(dir, 0777)
@@ -107,7 +107,7 @@ func WriteFile(dir string, file string, bytes []byte) bool {
 	defer f.Close()
 
 	ok := true
-	err = ioutil.WriteFile(dir + "/" + file, bytes, 0644)
+	err = ioutil.WriteFile(dir+"/"+file, bytes, 0644)
 	if nil != err {
 		ok = false
 	}
