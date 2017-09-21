@@ -2,8 +2,10 @@ package agent_pkg
 
 import (
 	"encoding/json"
+	"fmt"
 	"path"
 	"strconv"
+	"time"
 )
 
 type HdfsToLocalResTag struct {
@@ -179,11 +181,16 @@ func RdHdfs(prefetchRes PrefetchRes) {
 
 		hdfsToLocalResCh := make(chan HdfsToLocalRes, len)
 
+		fmt.Println("start DisposeRdHdfs-----------:", time.Now())
 		readHdfsNum := DisposeRdHdfs(hdfsToLocalResCh, prefetchRes)
-
+		fmt.Println("end DisposeRdHdfs-----------:", time.Now())
+		fmt.Println("start CollectHdfsToLocalRes-----------:", time.Now())
 		tags = CollectHdfsToLocalRes(hdfsToLocalResCh, tags, readHdfsNum)
+		fmt.Println("end CollectHdfsToLocalRes-----------:", time.Now())
 
+		fmt.Println("start GetCacheAndRightDataNum-----------:", time.Now())
 		cache, rightNum := GetCacheAndRightDataNum(prefetchRes, tags, data)
+		fmt.Println("end GetCacheAndRightDataNum-----------:", time.Now())
 
 		res = RdHdfsRes{Base{engine, topic}, len, &cache, len - rightNum}
 	} else {

@@ -131,16 +131,20 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 		fileHdl[p.SrcFile] = HdfsFileHdl{fileHdl[p.SrcFile].Hdl, timestamp}
 	}
 
+	fmt.Println("start hdfsRd and check signature:++++++++++++++++++", time.Now())
 	reqBytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
 	reqRight := isRightFile(reqBytes, p.XdrMark[0])
 
 	resBytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1])
 	resRight := isRightFile(resBytes, p.XdrMark[1])
+	fmt.Println("end hdfsRd and check signature:+++++++++++++", time.Now())
 
 	wrOk := false
 	if reqRight && resRight {
+		fmt.Println("start localWrite:+++++++++++++++++", time.Now())
 		wrReqOk := localWrite(p.DstFile[0], reqBytes)
 		wrResOk := localWrite(p.DstFile[1], resBytes)
+		fmt.Println("end localWrite:+++++++++++++++++", time.Now())
 		wrOk = wrReqOk && wrResOk
 		fmt.Println("wrOk:", wrOk)
 	}

@@ -4,6 +4,7 @@ package agent_pkg
 
 import (
 	"fmt"
+	"time"
 )
 
 type PrefetchMsg struct {
@@ -51,7 +52,9 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
 		}
 
 		var Data [][]byte
+		fmt.Println("start read kafka---------------: ", time.Now())
 		ReadKafka(prefetchMsg, &Data)
+		fmt.Println("end read kafka---------------: ", time.Now())
 		dataPtr := &Data
 
 		res := PrefetchRes{Base{prefetchMsg.Engine, prefetchMsg.Topic}, dataPtr}
