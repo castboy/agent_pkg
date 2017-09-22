@@ -133,7 +133,9 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 
 	fmt.Println("start hdfsRd and check signature:++++++++++++++++++", time.Now())
 	reqBytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+	fmt.Println("start check signature:+++++++++++++++++++", time.Now())
 	reqRight := isRightFile(reqBytes, p.XdrMark[0])
+	fmt.Println("end check signature:+++++++++++++++++++", time.Now())
 
 	resBytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1])
 	resRight := isRightFile(resBytes, p.XdrMark[1])
