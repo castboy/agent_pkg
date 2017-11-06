@@ -266,7 +266,10 @@ func localWrite(file string, bytes []byte) bool {
 		fmt.Println(err.Error())
 	}
 
-	defer f.Close()
+	err = f.Close()
+	if nil != err {
+		fmt.Println("could not close file opened")
+	}
 
 	err = ioutil.WriteFile(file, bytes, 0644)
 	if nil != err {
