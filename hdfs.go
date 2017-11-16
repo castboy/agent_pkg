@@ -108,6 +108,7 @@ func ClearHdl(fileHdl map[string]HdfsFileHdl, hours int) {
 
 	for key, val := range fileHdl {
 		if val.ReqTime+int64(hours*60) < timestamp {
+			val.Hdl.Close()
 			delete(fileHdl, key)
 		}
 	}
