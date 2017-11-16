@@ -41,8 +41,18 @@ func Offset(topic string, partition int32) (int64, int64, error, error) {
 	return start, end, startErr, endErr
 }
 
-func InitBroker(localhost string) {
-	var kafkaAddrs []string = []string{localhost + ":9092", localhost + ":9093"}
+func kafkaAddrs() []string {
+	var addrs []string
+	addrs = append(addrs, Localhost+":9092")
+	for k, _ := range AgentConf.Partition {
+		addrs = append(addrs, k+":9092")
+	}
+
+	return addrs
+}
+
+func InitBroker() {
+	var kafkaAddrs []string = kafkaAddrs()
 	conf := kafka.NewBrokerConf("agent")
 	conf.AllowTopicCreation = false
 
@@ -52,8 +62,6 @@ func InitBroker(localhost string) {
 		Log("Err", "cannot connect to kafka cluster")
 		log.Fatalf("cannot connect to kafka cluster: %s", err)
 	}
-
-	defer broker.Close()
 }
 
 func InitConsumers(partition int32) {
