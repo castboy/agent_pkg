@@ -56,12 +56,13 @@ func InitBroker() {
 	conf := kafka.NewBrokerConf("agent")
 	conf.AllowTopicCreation = false
 
-	var err error
 	broker, err = kafka.Dial(kafkaAddrs, conf)
 	if err != nil {
-		Log("Err", "cannot connect to kafka cluster")
-		log.Fatalf("cannot connect to kafka cluster: %s", err)
+		Log("CRT", "%s, broker lists %s", "can not connect to kafka cluster", kafkaAddrs)
+		log.Fatal(exit)
 	}
+
+	Log("INF", "%s", "init kafka broker ok")
 }
 
 func InitConsumers(partition int32) {
@@ -74,6 +75,7 @@ func InitConsumers(partition int32) {
 			consumer, err := InitConsumer(topic, partition, v.Engine)
 			if nil != err {
 				delete(val, topic)
+				Log("ERR", "%s: topic: %s,   partition: %d,  engine: %s", "init consumer err", topic, partition, v.Engine)
 			} else {
 				consumers[engine][topic] = consumer
 			}
@@ -92,28 +94,17 @@ func UpdateOffset() {
 					status[engine][topic] = Status{startOffset, v.Engine, 0, v.Engine, endOffset, v.Weight}
 				}
 				if v.Engine > endOffset {
-					errLog := "conf err: xdrHttp msg-offset requested out of kafka msg-offset"
-					Log("Err", errLog)
-					log.Fatal(errLog)
+					status[engine][topic] = Status{startOffset, endOffset, 0, endOffset, endOffset, v.Weight}
+					wrn := fmt.Sprintf("%s %d partition offset is set to last-offset as what you set is out of kafka current offset", topic, Partition)
+					Log("WRN", "%s", wrn)
+					fmt.Println(wrn)
 				}
+
+				Log("INF", "%s %d partition offset after UpdateOffset", topic, Partition, status[engine][topic])
+			} else {
+				Log("ERR", "can not get start or end offset of %s %d partition", topic, Partition)
 			}
 		}
-	}
-	//fmt.Println("UpdateOffset: ", Waf, Vds)
-	PrintUpdateOffset()
-}
-
-func PrintUpdateOffset() {
-	fmt.Println("\n\nUpdateOffset:")
-
-	fmt.Println("Waf")
-	for key, val := range status["waf"] {
-		fmt.Println(key, "     ", val)
-	}
-
-	fmt.Println("\nVds")
-	for key, val := range status["vds"] {
-		fmt.Println(key, "     ", val)
 	}
 }
 

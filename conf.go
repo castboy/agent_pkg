@@ -9,28 +9,27 @@ import (
 )
 
 func GetConf() {
-	Log("INF", "%s", "GetConf")
-
 	EtcdNodes = goini.SetConfig("conf.ini").ReadList()[1]["etcd"]
 
 	InitEtcdCli()
 
-	getConf, ok := EtcdGet("apt/agent/conf")
+	conf, ok := EtcdGet("apt/agent/conf")
 	if !ok {
-		log.Fatal("configurations does not exist")
+		Log("CRT", "%s", `Get Conf From Etcd Failed`)
 	}
+	Log("INF", "%s", `Get Conf From Etcd Ok`)
 
-	ParseConf(getConf)
+	ParseConf(conf)
 	GetLocalhost()
 	GetPartition()
 }
 func ParseConf(bytes []byte) {
-	err := json.Unmarshal(bytes, &AgentConf)
-	if err != nil {
-		errLog := fmt.Sprintf("ParseConf Error: %s", err.Error())
-		Log("Err", errLog)
-		log.Fatalf(errLog)
-	} else {
-		fmt.Println("Cluster-Conf: ", AgentConf)
+	if nil != json.Unmarshal(bytes, &AgentConf) {
+		Log("CRT", "%s", "ParseConf Failed")
+		log.Fatalf(exit)
 	}
+
+	Log("TRC", "%s: %v", "Agent Conf", AgentConf)
+
+	fmt.Printf("Agent Conf: %v", AgentConf)
 }

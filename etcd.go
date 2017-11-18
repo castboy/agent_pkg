@@ -4,7 +4,6 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -60,14 +59,13 @@ func InitEtcdCli() {
 		DialTimeout: 5 * time.Second,
 	}
 
-	var err error = errors.New("this is a new error")
 	EtcdCli, err = clientv3.New(cfg)
 	if err != nil {
-		errLog := fmt.Sprintf("InitEtcdCli Err: %s", err.Error())
-		Log("Err", errLog)
-		log.Fatalf(errLog)
+		Log("CRT", "InitEtcdCli: %s", err.Error())
+		log.Fatalf(exit)
 	}
-	//defer EtcdCli.Close()
+
+	Log("INF", "%s", "InitEtcdCli Ok")
 }
 
 func EtcdSet(k, v string) {

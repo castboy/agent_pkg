@@ -35,6 +35,8 @@ const (
 	FILEPRTNNUM = 64
 	HTTPPRTNNUM = 64
 	CHECKFILE   = true
+
+//	READTOLERANT = 3
 )
 
 var (
@@ -53,9 +55,8 @@ func InitHdfsCli(namenode string) {
 	var err error
 	client, err = hdfs.New(namenode + ":8020")
 	if nil != err {
-		errLog := fmt.Sprintf("Init Hdfs Client Err: %s", err.Error())
-		Log("Err", errLog)
-		log.Fatalf(errLog)
+		Log("CRT", "%s: %s", "Init Hdfs Client Err", err.Error())
+		log.Fatalf(exit)
 	}
 }
 
@@ -119,8 +120,7 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	if !exist {
 		f, err := client.Open(p.SrcFile)
 		if nil != err {
-			errLog := fmt.Sprintf("Hdfs Open Err: %s", err.Error())
-			Log("Err", errLog)
+			Log("ERR", "Open Hdfs File %s Err, %s", p.SrcFile, err.Error())
 		} else {
 			timestamp := time.Now().Unix()
 			fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
@@ -211,9 +211,7 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 	_, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
-		errLog := fmt.Sprintf("Read Hdfs Err: file %s is %d bytes, but you want %d bytes from offset %d, %s",
-			file, fHdl.Stat().Size(), size, offset, err.Error())
-		Log("Err", errLog)
+		Log("ERR", "Read Hdfs:file %s is %d, but you want %d from offset %d, %s", file, fHdl.Stat().Size(), size, offset, err.Error())
 	}
 
 	return bytes

@@ -4,7 +4,7 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 )
 
 type Status struct {
@@ -24,11 +24,17 @@ type StatusFromEtcd struct {
 var statusFromEtcd StatusFromEtcd
 var receivedOfflineMsgOffset int64
 var status = make(map[string]map[string]Status)
+var err error
+var exit = "Shut down due to critical fault."
 
 func InitStatus() {
+	Log("INF", "%s", "init status")
+
 	wafTopic := AgentConf.Topic[0]
 	vdsTopic := AgentConf.Topic[1]
 	receivedOfflineMsgOffset = int64(AgentConf.OfflineMsgStartOffset)
+
+	Log("INF", "%s is %d", "ReceivedOfflineMsgOffset", receivedOfflineMsgOffset)
 
 	InitStatusMap()
 
@@ -37,14 +43,13 @@ func InitStatus() {
 	status["vds"][vdsTopic] = Status{0, 0, 0, 0, -1, 1}
 
 	if -1 != AgentConf.Offset[0] {
+		Log("TRC", "%s %d", "waf offset is reset to", AgentConf.Offset[0])
 		status["waf"][wafTopic] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
 	}
 	if -1 != AgentConf.Offset[1] {
+		Log("TRC", "%s %d", "vds offset is reset to", AgentConf.Offset[1])
 		status["vds"][vdsTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
 	}
-
-	fmt.Println("InitStatus : ", status)
-	fmt.Println("ReceivedOfflineMsgOffset : ", receivedOfflineMsgOffset)
 }
 
 func InitStatusMap() {
@@ -53,10 +58,19 @@ func InitStatusMap() {
 	}
 }
 
-func GetStatusFromEtcd(bytes []byte) {
+func GetStatusFromEtcd() error {
+	Log("INF", "%s", "get status from etcd")
+
+	bytes, ok := EtcdGet("apt/agent/status/" + Localhost)
+	if !ok {
+		Log("WRN", "%s", "can not get status from etcd")
+		return errors.New("err")
+	}
+
 	err := json.Unmarshal(bytes, &statusFromEtcd)
 	if err != nil {
-		fmt.Println("GetStatusFromEtcd Err")
+		Log("WRN", "%s", "parse status from etcd err")
+		return errors.New("err")
 	}
 
 	InitStatusMap()
@@ -66,24 +80,23 @@ func GetStatusFromEtcd(bytes []byte) {
 	status["rule"] = statusFromEtcd.Status[2]
 
 	if -1 != AgentConf.Offset[0] {
+		Log("TRC", "%s %d", "waf offset is reset to", AgentConf.Offset[0])
 		status["waf"][AgentConf.Topic[0]] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
 	}
 	if -1 != AgentConf.Offset[1] {
+		Log("TRC", "%s %d", "vds offset is reset to", AgentConf.Offset[1])
 		status["vds"][AgentConf.Topic[1]] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
 	}
 
 	receivedOfflineMsgOffset = statusFromEtcd.ReceivedOfflineMsgOffset
+	Log("INF", "%s is %d", "ReceivedOfflineMsgOffset", receivedOfflineMsgOffset)
 
-	fmt.Println("GetStatusFromEtcd : ", status)
-	fmt.Println("ReceivedOfflineMsgOffset : ", receivedOfflineMsgOffset)
+	return nil
 }
 
 func RightStatus() {
-	status, ok := EtcdGet("apt/agent/status/" + Localhost)
-
-	if !ok {
+	err = GetStatusFromEtcd()
+	if nil != err {
 		InitStatus()
-	} else {
-		GetStatusFromEtcd(status)
 	}
 }
