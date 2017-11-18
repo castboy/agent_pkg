@@ -32,11 +32,10 @@ type HdfsToLocalRes struct {
 }
 
 const (
-	FILEPRTNNUM = 64
-	HTTPPRTNNUM = 64
-	CHECKFILE   = true
-
-//	READTOLERANT = 3
+	FILEPRTNNUM  = 64
+	HTTPPRTNNUM  = 64
+	CHECKFILE    = true
+	READTOLERANT = 3
 )
 
 var (
@@ -168,29 +167,25 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 		fileHdl[p.SrcFile] = HdfsFileHdl{fileHdl[p.SrcFile].Hdl, timestamp}
 	}
 
+	var b []byte
+	rdOk := false
 	wrOk := false
+	errNum := 0
 
-	bytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
-	ok := isRightFile(bytes, p.XdrMark[0])
+	for errNum < READTOLERANT {
+		bytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
+		ok := isRightFile(bytes, p.XdrMark[0])
+		if ok {
+			b = bytes
+			rdOk = true
+			break
+		} else {
+			errNum++
+		}
+	}
 
-	//	if !ok {
-	//		errNum := 1
-	//		for {
-	//			bytes = hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
-	//			ok := isRightFile(bytes, p.XdrMark[0])
-	//			if ok {
-	//				break
-	//			} else {
-	//				errNum++
-	//			}
-	//		}
-	//		errInfo := "file: " + p.SrcFile + " offset: " + strconv.FormatInt(p.Offset[0], 10) +
-	//			" size: " + strconv.Itoa(p.Size[0]) + " errNum: " + strconv.Itoa(errNum)
-	//		Log("Err", errInfo)
-	//	}
-
-	if ok {
-		wrOk = localWrite(p.DstFile[0], bytes)
+	if rdOk {
+		wrOk = localWrite(p.DstFile[0], b)
 	}
 
 	res := HdfsToLocalRes{
