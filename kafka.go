@@ -116,3 +116,9 @@ func PrintUpdateOffset() {
 		fmt.Println(key, "     ", val)
 	}
 }
+
+func Kafka() {
+	InitBroker()
+	InitConsumers(Partition)
+	UpdateOffset()
+}

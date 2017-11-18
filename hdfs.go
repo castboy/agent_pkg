@@ -280,3 +280,8 @@ func HdfsToLocals() {
 		go FileHdfs(i)
 	}
 }
+
+func Hdfs() {
+	InitHdfsCli(AgentConf.HdfsNameNode)
+	HdfsToLocals()
+}

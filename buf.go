@@ -221,3 +221,9 @@ func DisposeRuleBindingReq(req RuleBindingReq) {
 	UpdateRuleBindingEngineOffset(res, req)
 	SendRuleBindingPrefetchMsg(res, req)
 }
+
+func Buffer() {
+	InitBuffersStatus()
+	InitBuffer()
+	InitPrefetchMsgSwitchMap()
+}

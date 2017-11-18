@@ -15,21 +15,21 @@ func InitLog() {
 	seelog.ReplaceLogger(logger)
 }
 
-func Log(level string, log ...interface{}) {
+func Log(level string, format string, s ...interface{}) {
 	defer seelog.Flush()
 
 	switch level {
 	case "TRC":
-		seelog.Tracef(s)
+		seelog.Tracef(format, s)
 	case "DBG":
-		seelog.Debugf(s)
+		seelog.Debugf(format, s)
 	case "INF":
-		seelog.Infof(s)
+		seelog.Infof(format, s)
 	case "WRN":
-		seelog.Warnf(s)
+		seelog.Warnf(format, s)
 	case "ERR":
-		seelog.Errorf(s)
+		seelog.Errorf(format, s)
 	case "CRT":
-		seelog.Criticalf(s)
+		seelog.Criticalf(format, s)
 	}
 }

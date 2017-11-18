@@ -33,16 +33,7 @@ var EtcdCli *clientv3.Client
 
 var AgentConf Conf
 
-func ParseConf(bytes []byte) {
-	err := json.Unmarshal(bytes, &AgentConf)
-	if err != nil {
-		errLog := fmt.Sprintf("ParseConf Error: %s", err.Error())
-		Log("Err", errLog)
-		log.Fatalf(errLog)
-	} else {
-		fmt.Println("Cluster-Conf: ", AgentConf)
-	}
-}
+var EtcdNodes = make(map[string]string)
 
 func Record() {
 	var s StatusFromEtcd
@@ -55,17 +46,20 @@ func Record() {
 	EtcdSet("apt/agent/status/"+Localhost, string(byte))
 }
 
-func InitEtcdCli(endpoints map[string]string) {
-	endpoint := make([]string, 0)
-	for _, val := range endpoints {
-		elmt := "http://" + val + ":2379"
-		endpoint = append(endpoint, elmt)
+func InitEtcdCli() {
+	Log("INF", "%s", "InitEtcdCli")
+
+	nodes := make([]string, 0)
+	for _, val := range EtcdNodes {
+		elmt := val + ":2379"
+		nodes = append(nodes, elmt)
 	}
 
 	cfg := clientv3.Config{
-		Endpoints:   endpoint,
+		Endpoints:   nodes,
 		DialTimeout: 5 * time.Second,
 	}
+
 	var err error = errors.New("this is a new error")
 	EtcdCli, err = clientv3.New(cfg)
 	if err != nil {

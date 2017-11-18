@@ -77,3 +77,13 @@ func GetStatusFromEtcd(bytes []byte) {
 	fmt.Println("GetStatusFromEtcd : ", status)
 	fmt.Println("ReceivedOfflineMsgOffset : ", receivedOfflineMsgOffset)
 }
+
+func RightStatus() {
+	status, ok := EtcdGet("apt/agent/status/" + Localhost)
+
+	if !ok {
+		InitStatus()
+	} else {
+		GetStatusFromEtcd(status)
+	}
+}

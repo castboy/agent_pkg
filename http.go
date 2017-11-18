@@ -156,7 +156,7 @@ func topicIsExist(topic string) bool {
 	return ok
 }
 
-func ListenReq(url string) {
+func Listen() {
 	http.HandleFunc("/", Handle)
-	http.ListenAndServe(url, nil)
+	http.ListenAndServe(":"+strconv.Itoa(AgentConf.EngineReqPort), nil)
 }
