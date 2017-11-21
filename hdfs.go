@@ -81,7 +81,7 @@ func HttpHdfs(idx int) {
 	for {
 		select {
 		case msg := <-HttpHdfsToLocalReqChs[idx]:
-			HttpHdfsToLocal(fHdl, msg)
+			HttpHdfsToLocal(&fHdl, msg)
 		case msg := <-ClearHttpHdlChs[idx]:
 			ClearHdl(fHdl, msg)
 		}
@@ -95,11 +95,10 @@ func FileHdfs(idx int) {
 	for {
 		select {
 		case msg := <-FileHdfsToLocalReqChs[idx]:
-			FileHdfsToLocal(fHdl, msg)
+			FileHdfsToLocal(&fHdl, msg)
 		case msg := <-ClearFileHdlChs[idx]:
 			ClearHdl(fHdl, msg)
 		}
-
 	}
 }
 
@@ -114,33 +113,35 @@ func ClearHdl(fileHdl map[string]HdfsFileHdl, hours int) {
 	}
 }
 
-func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
-	_, exist := fileHdl[p.SrcFile]
+func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) map[string]HdfsFileHdl {
+	_, exist := (*fileHdl)[p.SrcFile]
 	if !exist {
 		f, err := client.Open(p.SrcFile)
 		if nil != err {
 			Log("ERR", "Open Hdfs File %s Err, %s", p.SrcFile, err.Error())
 		} else {
 			timestamp := time.Now().Unix()
-			fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
+			(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
 		}
 	} else {
 		timestamp := time.Now().Unix()
-		fileHdl[p.SrcFile] = HdfsFileHdl{fileHdl[p.SrcFile].Hdl, timestamp}
+		(*fileHdl)[p.SrcFile] = HdfsFileHdl{(*fileHdl)[p.SrcFile].Hdl, timestamp}
 	}
 
-	reqBytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
-	reqRight := isRightFile(reqBytes, p.XdrMark[0])
+	return *fileHdl
+}
 
-	resBytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1])
-	resRight := isRightFile(resBytes, p.XdrMark[1])
+func HttpHdfsToLocal(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
+	fHdl := FileHdl(fileHdl, p)
+
+	reqBytes, reqRight := hdfsRdCheck(fHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0], p.XdrMark[0])
+	resBytes, resRight := hdfsRdCheck(fHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1], p.XdrMark[1])
 
 	wrOk := false
 	if reqRight && resRight {
 		wrReqOk := localWrite(p.DstFile[0], reqBytes)
 		wrResOk := localWrite(p.DstFile[1], resBytes)
 		wrOk = wrReqOk && wrResOk
-		fmt.Println("wrOk:", wrOk)
 	}
 	res := HdfsToLocalRes{
 		Index:   p.Index,
@@ -151,38 +152,12 @@ func HttpHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 
 }
 
-func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
-	_, exist := fileHdl[p.SrcFile]
-	if !exist {
-		f, err := client.Open(p.SrcFile)
-		if nil != err {
-			errLog := fmt.Sprintf("Hdfs Open Err: %s", err.Error())
-			Log("Err", errLog)
-		} else {
-			timestamp := time.Now().Unix()
-			fileHdl[p.SrcFile] = HdfsFileHdl{f, timestamp}
-		}
-	} else {
-		timestamp := time.Now().Unix()
-		fileHdl[p.SrcFile] = HdfsFileHdl{fileHdl[p.SrcFile].Hdl, timestamp}
-	}
+func FileHdfsToLocal(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
+	fHdl := FileHdl(fileHdl, p)
 
-	var b []byte
-	rdOk := false
 	wrOk := false
-	errNum := 0
 
-	for errNum < READTOLERANT {
-		bytes := hdfsRd(fileHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0])
-		ok := isRightFile(bytes, p.XdrMark[0])
-		if ok {
-			b = bytes
-			rdOk = true
-			break
-		} else {
-			errNum++
-		}
-	}
+	b, rdOk := hdfsRdCheck(fHdl[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0], p.XdrMark[0])
 
 	if rdOk {
 		wrOk = localWrite(p.DstFile[0], b)
@@ -194,6 +169,23 @@ func FileHdfsToLocal(fileHdl map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	}
 
 	p.HdfsToLocalResCh <- res
+}
+
+func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mark string) ([]byte, bool) {
+	errNum := 0
+	var b []byte
+
+	for errNum < READTOLERANT {
+		bytes := hdfsRd(fHdl, file, offset, size)
+		ok := isRightFile(bytes, mark)
+		if ok {
+			return bytes, true
+		} else {
+			errNum++
+		}
+	}
+
+	return b, false
 }
 
 func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte) {
@@ -247,17 +239,17 @@ func localWrite(file string, bytes []byte) bool {
 
 	isExist, err := pathExists(dir)
 	if !isExist {
-		err := os.MkdirAll(dir, 0777)
+		err = os.MkdirAll(dir, 0777)
 		if err != nil {
-			fmt.Printf("%s", err.Error())
-		} else {
-			fmt.Print("Create Directory OK!")
+			Log("CRT", "Create local dir %s failed", dir)
+			log.Fatal(exit)
 		}
 	}
 
 	err = ioutil.WriteFile(file, bytes, 0644)
 	if nil != err {
 		success = false
+		Log("ERR", "Write local file %s failed", file)
 	}
 
 	return success

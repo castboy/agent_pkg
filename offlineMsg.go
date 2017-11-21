@@ -20,9 +20,8 @@ var types = []string{"waf", "vds", "rule"}
 func TimingGetOfflineMsg(second int) {
 	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
 	if nil != err {
-		info := "init TimingGetOfflineMsg consumer err"
-		Log("Err", info)
-		log.Fatalln(info)
+		Log("ERR", "init consumer of %s failed", AgentConf.OfflineMsgTopic)
+		log.Fatalln(exit)
 	}
 
 	var msg OfflineMsg
@@ -34,7 +33,7 @@ func TimingGetOfflineMsg(second int) {
 		} else {
 			err := json.Unmarshal(kafkaMsg.Value, &msg)
 			if nil != err {
-				Log("Err", "wrong offline msg: "+string(kafkaMsg.Value))
+				Log("ERR", "wrong offline msg: %s", string(kafkaMsg.Value))
 			} else {
 				OfflineHandle(msg)
 				receivedOfflineMsgOffset++
@@ -57,9 +56,8 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 
 	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
 	if nil != err {
-		info := "init TimingGetOfflineMsg consumer err"
-		Log("Err", info)
-		log.Fatalln(info)
+		Log("ERR", "init consumer of %s failed", AgentConf.OfflineMsgTopic)
+		log.Fatalln(exit)
 	}
 
 	for {
@@ -70,7 +68,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 			fmt.Println(string(kafkaMsg.Value))
 			err := json.Unmarshal(kafkaMsg.Value, &msg)
 			if nil != err {
-				Log("Err", "wrong offline msg: "+string(kafkaMsg.Value))
+				Log("ERR", "wrong offline msg: %s", string(kafkaMsg.Value))
 			} else {
 				offlineMsgs = append(offlineMsgs, msg)
 			}
@@ -79,7 +77,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 		receivedOfflineMsgOffset++
 	}
 
-	fmt.Println("all msg:", offlineMsgs)
+	Log("INF", "all offline msg %v", offlineMsgs)
 	return offlineMsgs
 }
 
@@ -114,7 +112,7 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 		}
 	}
 
-	fmt.Println("valid msg:", validOfflineMsg)
+	Log("INF", "valid offline msg: %v", validOfflineMsg)
 	return validOfflineMsg
 
 }
@@ -127,12 +125,12 @@ func SendOfflineMsg(validOfflineMsg []OfflineMsg) {
 
 func OfflineHandle(msg OfflineMsg) {
 	if ok := paramsCheck(msg.SignalType, signals); !ok {
-		Log("Err", "offline msg signalType err: "+msg.SignalType)
+		Log("ERR", "offline msg signalType err: %s", msg.SignalType)
 		return
 	}
 
 	if ok := paramsCheck(msg.Engine, types); !ok {
-		Log("Err", "offline msg engine err: "+msg.Engine)
+		Log("ERR", "offline msg engine err: %s", msg.Engine)
 		return
 	}
 

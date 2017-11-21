@@ -2,10 +2,6 @@
 
 package agent_pkg
 
-import (
-	"fmt"
-)
-
 type PrefetchMsg struct {
 	Engine string
 	Topic  string
@@ -28,14 +24,13 @@ func InitPrefetchMsgSwitchMap() {
 func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("consume err: %v", r)
 		}
 	}()
 
 	for i := 0; i < prefetchMsg.Count; i++ {
 		msg, err := consumers[prefetchMsg.Engine][prefetchMsg.Topic].Consume()
 		if err != nil {
-			fmt.Println("no data in: " + prefetchMsg.Topic)
+			Log("WRN", "no data in: %s", prefetchMsg.Topic)
 		}
 		*data = append(*data, msg.Value)
 	}
@@ -44,7 +39,6 @@ func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 func Prefetch(prefetchCh chan PrefetchMsg) {
 	for {
 		prefetchMsg := <-prefetchCh
-		fmt.Println("received PrefetchMsg:", prefetchMsg)
 
 		if prefetchMsg.Shutdown {
 			break
@@ -56,13 +50,9 @@ func Prefetch(prefetchCh chan PrefetchMsg) {
 
 		res := PrefetchRes{Base{prefetchMsg.Engine, prefetchMsg.Topic}, dataPtr}
 
-		fmt.Println("Prefetch res:", res)
-
 		PrefetchResCh <- res
 
 	}
-
-	fmt.Println("break out prefetch routine")
 }
 
 func InitPrefetch() {

@@ -2,8 +2,6 @@
 
 package agent_pkg
 
-import "fmt"
-
 type BufStatus struct {
 	Current int
 	End     int
@@ -83,7 +81,6 @@ func ReadBuffer(res map[string]BufferAnalyse, req NormalReq) {
 }
 
 func UpdateBufferStatus(res map[string]BufferAnalyse, req NormalReq) {
-	fmt.Println("UpdataCacheStatus")
 	for topic, v := range res {
 		s := bufStatus[req.Engine][topic]
 		bufStatus[req.Engine][topic] = BufStatus{s.Current + v.EngineRead, s.End}
@@ -99,7 +96,6 @@ func UpdateEngineOffset(res map[string]BufferAnalyse, req NormalReq) {
 }
 
 func SendPrefetchMsg(res map[string]BufferAnalyse, req NormalReq) {
-	fmt.Println("SendPrefetchMsg")
 	for topic, v := range res {
 		if v.SendPrefetchMsg && PrefetchMsgSwitchMap[topic] {
 			PrefetchChMap[topic] <- PrefetchMsg{req.Engine, topic, AgentConf.MaxCache, false}
@@ -118,7 +114,6 @@ func WriteBuffer(res RdHdfsRes) {
 
 		bufStatus[engine][topic] = BufStatus{0, count}
 		buffers[topic] = data
-		fmt.Println("WriteBuffer bufStatus:", bufStatus[engine])
 	}
 }
 
@@ -137,7 +132,6 @@ func UpdateBufferOffset(res RdHdfsRes) {
 
 func DisposeNormalReq(req NormalReq) {
 	res := AnalyseBuffer(req)
-	fmt.Println("DisposeNormalReq analysisCacheRes", res)
 	ReadBuffer(res, req)
 	UpdateBufferStatus(res, req)
 	UpdateEngineOffset(res, req)
@@ -212,10 +206,8 @@ func SendRuleBindingPrefetchMsg(res BufferAnalyse, req RuleBindingReq) {
 }
 
 func DisposeRuleBindingReq(req RuleBindingReq) {
+	Log("INF", "dispose ruleBinding buffer: %v", req)
 	res := AnalysisRuleBindingBuffer(req)
-
-	fmt.Println("DisposeRuleBindingReq analysisRes:", res)
-
 	ReadRuleBindingBuffer(res, req)
 	UpdateRuleBindingBufferStatus(res, req)
 	UpdateRuleBindingEngineOffset(res, req)

@@ -87,7 +87,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if 0 == count {
-		fmt.Println("warning: http req count is zero")
+		Log("WRN", "%s", "http req count is zero")
 	}
 
 	if val, ok := r.Form["topic"]; ok {
@@ -105,14 +105,13 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	if isRuleBindingReq {
 		RuleBindingReqCh <- RuleBindingReq{Base{engine, topic}, count, HandleCh}
-		fmt.Println("Length of RuleBindingReqCh:", len(RuleBindingReqCh))
+		Log("INF", "Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
 	} else {
 		NormalReqCh <- NormalReq{engine, count, HandleCh}
-		fmt.Println("Length of NormalReqCh:", len(NormalReqCh))
+		Log("INF", "Length of NormalReqCh: %d", len(NormalReqCh))
 	}
 
 	Data := <-HandleCh
-	fmt.Println("Data := <-HandleCh")
 
 	var data interface{}
 	var dataSlice = make([]interface{}, 0)
@@ -121,7 +120,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < dataLen; i++ {
 		err := json.Unmarshal((*Data)[i], &data)
 		if err != nil {
-			fmt.Println("Unmarshal Error")
+			Log("ERR", "json.Unmarshal %v err", data)
 		}
 		dataSlice = append(dataSlice, data)
 	}

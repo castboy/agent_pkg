@@ -31,5 +31,7 @@ func Log(level string, format string, s ...interface{}) {
 		seelog.Errorf(format, s)
 	case "CRT":
 		seelog.Criticalf(format, s)
+	default:
+		panic("wrong log type")
 	}
 }

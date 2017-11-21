@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -35,34 +36,34 @@ type Logs struct {
 }
 
 func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
+	Log("INF", "%s", "new waf instance begin")
 	CopyPkg(src, dst, topic)
 	AppendRule(dst, topic)
-	fmt.Println("after AppendRule")
 	ReqRule(dst, topic, srvIp, srvPort)
 	JsonFile(dst, topic)
 	NewWaf(dst, topic)
 	fmt.Println("after NewWaf()")
+	Log("INF", "%s", "new waf instance ok")
 }
 
 func CopyPkg(src, dst, topic string) {
 	dst = dst + "/" + topic
 	err := os.MkdirAll(dst, 0777)
 	if err != nil {
-		fmt.Printf("%s", err.Error())
-	} else {
-		fmt.Print("Create Directory OK!")
+		Log("CRT", "create dir %s failed when copypkg in newWafInstance", dst)
+		log.Fatal(exit)
 	}
+
+	Log("INF", "create dir %s ok when newWafInstance", dst)
 
 	copyDir(src, dst)
 
 	dst = dst + "/conf/rules"
 	err = os.MkdirAll(dst, 0777)
 	if err != nil {
-		fmt.Printf("%s", err.Error())
-	} else {
-		fmt.Print("Create Directory OK!")
+		Log("CRT", "create dir %s failed when copypkg in newWafInstance", dst)
+		log.Fatal(exit)
 	}
-
 }
 
 func AppendRule(instance, topic string) {
@@ -73,11 +74,11 @@ func AppendRule(instance, topic string) {
 
 func ReqRule(instance, topic, srvIp string, srvPort int) {
 	url := fmt.Sprintf("http://%s:%d/byzoro.apt.com/off-line-dispatch/rule/request?topic=%s", srvIp, srvPort, topic)
-	fmt.Println(url)
+
 	res, err := http.Get(url)
 	if nil != err {
-		errLog := fmt.Sprintf("RuleReq Err: %s", err.Error())
-		Log("Err", errLog)
+		Log("CRT", "req rule url failed, %s", url)
+		log.Fatal(exit)
 	}
 
 	defer res.Body.Close()
@@ -91,24 +92,24 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 
 	err = json.Unmarshal(body, &ruleRes)
 	if nil != err {
-		fmt.Println("ruleRes err")
+		Log("CRT", "req rule res err, %s", string(body))
+		log.Fatal(exit)
 	}
 
 	ruleBytes, err := base64.StdEncoding.DecodeString(ruleRes.Cont)
 	if nil != err {
-		//TODO log
+		Log("CRT", "req rule res base64Decode err, %s", ruleRes.Cont)
+		log.Fatal(exit)
 	}
 
 	dir := fmt.Sprintf("%s/%s/conf/rules", instance, topic)
-	fmt.Println(dir)
 	file := fmt.Sprintf("%s.conf", topic)
 
 	ok := WriteFile(dir, file, []byte(ruleBytes))
 	if !ok {
-		fmt.Println("write .conf err")
+		Log("CRT", "write rule file to %s/%s failed", dir, file)
+		log.Fatal(exit)
 	}
-
-	fmt.Println("ReqRule execed")
 }
 
 func JsonFile(instance, topic string) {
@@ -138,30 +139,31 @@ func JsonFile(instance, topic string) {
 
 	bytes, err := json.Marshal(bzWaf)
 	if nil != err {
-		fmt.Printf("json.Marshal Err: %s", err.Error())
+		Log("CRT", "bz_waf.json, json.Marshal err %v", bzWaf)
+		log.Fatal(exit)
 	}
 
 	dir := fmt.Sprintf("%s/%s/conf", instance, topic)
 	ok := WriteFile(dir, "bz_waf.json", bytes)
 	if !ok {
-
+		Log("CRT", "%s", "write file bz_waf.json failed")
+		log.Fatal(exit)
 	}
-	fmt.Println("JsonFile execed")
 }
 
 func NewWaf(instance, topic string) {
 	file := []string{"-c", fmt.Sprintf("%s/%s/conf/bz_waf.json", instance, topic)}
 	ok := execCommand("/opt/bz_beta/bin/bz_waf", file)
-	fmt.Println("NewWaf")
 	if !ok {
-		fmt.Println("NewWaf Err")
+		Log("CRT", "%s, %s", "exe newWafInstance failed", topic)
 	}
 }
 
 func KillWafInstance(instance, topic string) {
+	Log("INF", "Kill wafInstance, %s", topic)
 	KillWaf(instance, topic)
 	RmConf(instance, topic)
-	fmt.Println("RmConf:", topic)
+	Log("INF", "Kill wafInstance ok, %s", topic)
 }
 
 func KillWaf(instance, topic string) {
@@ -169,16 +171,17 @@ func KillWaf(instance, topic string) {
 	cmd := exec.Command("cat", pidFile)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(err)
+		Log("CRT", "pidFile %s not found", pidFile)
+		log.Fatal(exit)
 	}
 	pid := string(out)
 
 	cmd = exec.Command("kill", "-9", pid)
 	out, err = cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(err)
+		Log("CRT", "can not kill newWafInstance, pid %s", pid)
+		log.Fatal(exit)
 	}
-	fmt.Println(out)
 }
 
 func RmConf(instance, topic string) {

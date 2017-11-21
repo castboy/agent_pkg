@@ -4,7 +4,6 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -73,9 +72,7 @@ func EtcdSet(k, v string) {
 	_, err := EtcdCli.Put(ctx, k, v)
 	cancel()
 	if err != nil {
-		errLog := fmt.Sprintf("EtcdSet Err: %s", err.Error())
-		Log("Err", errLog)
-	} else {
+		Log("ERR", "set etcd key %s %s err", k, v)
 	}
 }
 

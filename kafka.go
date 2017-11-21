@@ -18,25 +18,12 @@ func InitConsumer(topic string, partition int32, start int64) (kafka.Consumer, e
 	conf.RetryLimit = 1
 	consumer, err := broker.Consumer(conf)
 
-	if err != nil {
-		errLog := fmt.Sprintf("cannot initConsumer of %s %d partition", topic, partition)
-		Log("Err", errLog)
-	}
-
 	return consumer, err
 }
 
 func Offset(topic string, partition int32) (int64, int64, error, error) {
 	start, startErr := broker.OffsetEarliest(topic, partition)
-	if startErr != nil {
-		errLog := fmt.Sprintf("cannot get start of %s %d partition", topic, partition)
-		Log("Err", errLog)
-	}
 	end, endErr := broker.OffsetLatest(topic, partition)
-	if endErr != nil {
-		errLog := fmt.Sprintf("cannot get end of %s %d partition", topic, partition)
-		Log("Err", errLog)
-	}
 
 	return start, end, startErr, endErr
 }

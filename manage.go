@@ -10,9 +10,11 @@ func Manage() {
 	for {
 		select {
 		case req := <-NormalReqCh:
+			Log("TRC", "NormalReq: %v", req)
 			DisposeNormalReq(req)
 
 		case req := <-RuleBindingReqCh:
+			Log("TRC", "RuleBindingReq: %v", req)
 			DisposeRuleBindingReq(req)
 
 		case res := <-PrefetchResCh:

@@ -5,6 +5,7 @@ package agent_pkg
 //	"fmt"
 
 func StartOffline(msg Start) {
+	Log("INF", "%s: %v", "start offline", msg)
 	var start interface{} = msg
 	var engine, topic string
 
@@ -36,6 +37,7 @@ func StartOffline(msg Start) {
 }
 
 func StopOffline(msg Base) {
+	Log("INF", "Stop Offline %v", msg)
 	startOffset, endOffset, startErr, endErr := Offset(msg.Topic, Partition)
 	if nil == startErr && nil == endErr {
 		s := status[msg.Engine][msg.Topic]
@@ -45,6 +47,7 @@ func StopOffline(msg Base) {
 }
 
 func ShutdownOffline(msg Base) {
+	Log("INF", "Shutdown Offline %v", msg)
 	delete(consumers[msg.Engine], msg.Topic)
 	delete(status[msg.Engine], msg.Topic)
 	delete(PrefetchMsgSwitchMap, msg.Topic)
