@@ -79,6 +79,7 @@ func EtcdSet(k, v string) {
 func EtcdGet(key string) (bytes []byte, ok bool) {
 	defer func() {
 		if r := recover(); r != nil {
+			Log("ERR", "%s PANIC", "EtcdGet")
 			bytes = []byte{}
 			ok = false
 		}

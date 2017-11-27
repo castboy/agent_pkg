@@ -24,6 +24,7 @@ func InitPrefetchMsgSwitchMap() {
 func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 	defer func() {
 		if r := recover(); r != nil {
+			Log("ERR", "%s PANIC", "ReadKafka")
 		}
 	}()
 

@@ -191,6 +191,7 @@ func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mar
 func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte) {
 	defer func() {
 		if r := recover(); r != nil {
+			Log("ERR", "%s PANIC", "hdfsRd")
 		}
 	}()
 
