@@ -155,7 +155,7 @@ func GetCacheAndRightDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, 
 			cache = append(cache, data[key])
 			rightNum++
 		} else {
-			Log("ERR", "Err xdr: %v", string(data[key]))
+			Log("ERR", "Err xdr: %s", string(data[key]))
 		}
 	}
 

@@ -4,7 +4,6 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
@@ -60,11 +59,10 @@ func InitEtcdCli() {
 
 	EtcdCli, err = clientv3.New(cfg)
 	if err != nil {
-		Log("CRT", "InitEtcdCli: %s", err.Error())
-		log.Fatalf(exit)
+		Log("CRT", "Init Etcd Client failed: %s", err.Error())
 	}
 
-	Log("INF", "%s", "InitEtcdCli Ok")
+	Log("INF", "%s", "Init Etcd Client Ok")
 }
 
 func EtcdSet(k, v string) {
@@ -72,7 +70,7 @@ func EtcdSet(k, v string) {
 	_, err := EtcdCli.Put(ctx, k, v)
 	cancel()
 	if err != nil {
-		Log("ERR", "set etcd key %s %s err", k, v)
+		Log("ERR", "set etcd key err: %s", k, v)
 	}
 }
 

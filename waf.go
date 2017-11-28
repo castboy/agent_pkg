@@ -51,7 +51,6 @@ func CopyPkg(src, dst, topic string) {
 	err := os.MkdirAll(dst, 0777)
 	if err != nil {
 		Log("CRT", "create dir %s failed when copypkg in newWafInstance", dst)
-		log.Fatal(exit)
 	}
 
 	Log("INF", "create dir %s ok when newWafInstance", dst)
@@ -62,7 +61,6 @@ func CopyPkg(src, dst, topic string) {
 	err = os.MkdirAll(dst, 0777)
 	if err != nil {
 		Log("CRT", "create dir %s failed when copypkg in newWafInstance", dst)
-		log.Fatal(exit)
 	}
 }
 
@@ -78,7 +76,6 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 	res, err := http.Get(url)
 	if nil != err {
 		Log("CRT", "req rule url failed, %s", url)
-		log.Fatal(exit)
 	}
 
 	defer res.Body.Close()
@@ -99,7 +96,6 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 	ruleBytes, err := base64.StdEncoding.DecodeString(ruleRes.Cont)
 	if nil != err {
 		Log("CRT", "req rule res base64Decode err, %s", ruleRes.Cont)
-		log.Fatal(exit)
 	}
 
 	dir := fmt.Sprintf("%s/%s/conf/rules", instance, topic)
@@ -107,8 +103,7 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 
 	ok := WriteFile(dir, file, []byte(ruleBytes))
 	if !ok {
-		Log("CRT", "write rule file to %s/%s failed", dir, file)
-		log.Fatal(exit)
+		Log("CRT", "write rule file to %s failed", dir, file)
 	}
 }
 
@@ -140,14 +135,12 @@ func JsonFile(instance, topic string) {
 	bytes, err := json.Marshal(bzWaf)
 	if nil != err {
 		Log("CRT", "bz_waf.json, json.Marshal err %v", bzWaf)
-		log.Fatal(exit)
 	}
 
 	dir := fmt.Sprintf("%s/%s/conf", instance, topic)
 	ok := WriteFile(dir, "bz_waf.json", bytes)
 	if !ok {
 		Log("CRT", "%s", "write file bz_waf.json failed")
-		log.Fatal(exit)
 	}
 }
 
@@ -155,7 +148,7 @@ func NewWaf(instance, topic string) {
 	file := []string{"-c", fmt.Sprintf("%s/%s/conf/bz_waf.json", instance, topic)}
 	ok := execCommand("/opt/bz_beta/bin/bz_waf", file)
 	if !ok {
-		Log("CRT", "%s, %s", "exe newWafInstance failed", topic)
+		Log("CRT", "exe newWafInstance failed%s", topic)
 	}
 }
 
@@ -172,7 +165,6 @@ func KillWaf(instance, topic string) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		Log("CRT", "pidFile %s not found", pidFile)
-		log.Fatal(exit)
 	}
 	pid := string(out)
 
@@ -180,7 +172,6 @@ func KillWaf(instance, topic string) {
 	out, err = cmd.CombinedOutput()
 	if err != nil {
 		Log("CRT", "can not kill newWafInstance, pid %s", pid)
-		log.Fatal(exit)
 	}
 }
 

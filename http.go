@@ -120,7 +120,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < dataLen; i++ {
 		err := json.Unmarshal((*Data)[i], &data)
 		if err != nil {
-			Log("ERR", "json.Unmarshal %v err", data)
+			Log("ERR", "%s", "json.Unmarshal err on data to response http req")
 		}
 		dataSlice = append(dataSlice, data)
 	}

@@ -25,7 +25,6 @@ var statusFromEtcd StatusFromEtcd
 var receivedOfflineMsgOffset int64
 var status = make(map[string]map[string]Status)
 var err error
-var exit = "Shut down due to critical fault."
 
 func InitStatus() {
 	Log("INF", "%s", "init status")
@@ -34,7 +33,7 @@ func InitStatus() {
 	vdsTopic := AgentConf.Topic[1]
 	receivedOfflineMsgOffset = int64(AgentConf.OfflineMsgStartOffset)
 
-	Log("INF", "%s is %d", "ReceivedOfflineMsgOffset", receivedOfflineMsgOffset)
+	Log("INF", "Received Offline Task Msg Offset: %d", receivedOfflineMsgOffset)
 
 	InitStatusMap()
 
@@ -43,11 +42,11 @@ func InitStatus() {
 	status["vds"][vdsTopic] = Status{0, 0, 0, 0, -1, 1}
 
 	if -1 != AgentConf.Offset[0] {
-		Log("TRC", "%s %d", "waf offset is reset to", AgentConf.Offset[0])
+		Log("TRC", "waf offset is reset to: %d", AgentConf.Offset[0])
 		status["waf"][wafTopic] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
 	}
 	if -1 != AgentConf.Offset[1] {
-		Log("TRC", "%s %d", "vds offset is reset to", AgentConf.Offset[1])
+		Log("TRC", "vds offset is reset to: %d", AgentConf.Offset[1])
 		status["vds"][vdsTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
 	}
 }
@@ -89,7 +88,7 @@ func GetStatusFromEtcd() error {
 	}
 
 	receivedOfflineMsgOffset = statusFromEtcd.ReceivedOfflineMsgOffset
-	Log("INF", "%s is %d", "ReceivedOfflineMsgOffset", receivedOfflineMsgOffset)
+	Log("INF", "Received Offline Task Msg Offset is %d", receivedOfflineMsgOffset)
 
 	return nil
 }

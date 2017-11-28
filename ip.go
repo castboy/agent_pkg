@@ -3,8 +3,6 @@
 package agent_pkg
 
 import (
-	"fmt"
-	"log"
 	"net"
 	"os"
 	"regexp"
@@ -38,20 +36,17 @@ func GetLocalhost() {
 	if "" != env {
 		Localhost = env
 		Log("TRC", "%s", `Localhost set by os-Env "THIS_HOST"`)
+	} else {
+		Log("TRC", "%s", `Localhost set by intranet`)
 	}
-
-	Log("TRC", "%s", `Localhost set by intranet`)
-	fmt.Println("Localhost   : ", Localhost)
 }
 
 func GetPartition() {
 	value, ok := AgentConf.Partition[Localhost]
 	if ok {
 		Partition = value
-		Log("TRC", "%s: %s", `Partition`, Partition)
-		fmt.Println("Partition   : ", Partition)
+		Log("TRC", "Consume Partition: %d", Partition)
 	} else {
-		Log("CRT", "%s", "Can not get partiton")
-		log.Fatal(exit)
+		Log("CRT", "%s", "Consume Partition Unknow")
 	}
 }

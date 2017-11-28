@@ -3,7 +3,6 @@ package agent_pkg
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/widuu/goini"
 )
@@ -26,10 +25,9 @@ func GetConf() {
 func ParseConf(bytes []byte) {
 	if nil != json.Unmarshal(bytes, &AgentConf) {
 		Log("CRT", "%s", "ParseConf Failed")
-		log.Fatalf(exit)
 	}
 
-	Log("TRC", "%s: %v", "Agent Conf", AgentConf)
+	Log("TRC", "Agent Conf: %v", AgentConf)
 
 	fmt.Printf("Agent Conf: %v", AgentConf)
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,8 +23,7 @@ func copyDir(src string, dest string) {
 		return nil
 	})
 	if err != nil {
-		Log("CRT", "copy %s to %s failed when newWafInstance", src, dest)
-		log.Fatal(exit)
+		Log("CRT", "copy dir failed when newWafInstance: %s", src, dest)
 	}
 }
 
@@ -117,12 +115,10 @@ func AppendWr(file string, content string) {
 	f, err := os.OpenFile(file, os.O_WRONLY|os.O_APPEND, 0666)
 	if nil != err {
 		Log("CRT", "open file %s failed", file)
-		log.Fatal(exit)
 	}
 	_, err = io.WriteString(f, content)
 	if nil != err {
 		Log("CRT", "write file %s failed", file)
-		log.Fatal(exit)
 	}
 }
 

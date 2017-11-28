@@ -5,7 +5,7 @@ package agent_pkg
 //	"fmt"
 
 func StartOffline(msg Start) {
-	Log("INF", "%s: %v", "start offline", msg)
+	Log("INF", "start offline: %v", msg)
 	var start interface{} = msg
 	var engine, topic string
 

@@ -21,7 +21,6 @@ func TimingGetOfflineMsg(second int) {
 	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
 	if nil != err {
 		Log("ERR", "init consumer of %s failed", AgentConf.OfflineMsgTopic)
-		log.Fatalln(exit)
 	}
 
 	var msg OfflineMsg

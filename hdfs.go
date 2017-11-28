@@ -4,8 +4,8 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -55,7 +55,6 @@ func InitHdfsCli(namenode string) {
 	client, err = hdfs.New(namenode + ":8020")
 	if nil != err {
 		Log("CRT", "%s: %s", "Init Hdfs Client Err", err.Error())
-		log.Fatalf(exit)
 	}
 }
 
@@ -118,7 +117,7 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) map[string
 	if !exist {
 		f, err := client.Open(p.SrcFile)
 		if nil != err {
-			Log("ERR", "Open Hdfs File %s Err, %s", p.SrcFile, err.Error())
+			Log("ERR", "Open Hdfs File Err: %s", p.SrcFile, err.Error())
 		} else {
 			timestamp := time.Now().Unix()
 			(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
@@ -199,7 +198,10 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 	_, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
-		Log("ERR", "Read Hdfs:file %s is %d, but you want %d from offset %d, %s", file, fHdl.Stat().Size(), size, offset, err.Error())
+		needSize := strconv.Itoa(size)
+		getSize := strconv.Itoa(int(fHdl.Stat().Size()))
+		oft := strconv.Itoa(int(offset))
+		Log("ERR", "Read Hdfs:file offset needSize getSize %s", file, oft, needSize, getSize)
 	}
 
 	return bytes
@@ -243,7 +245,6 @@ func localWrite(file string, bytes []byte) bool {
 		err = os.MkdirAll(dir, 0777)
 		if err != nil {
 			Log("CRT", "Create local dir %s failed", dir)
-			log.Fatal(exit)
 		}
 	}
 

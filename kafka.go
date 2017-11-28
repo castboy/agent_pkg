@@ -4,7 +4,7 @@ package agent_pkg
 
 import (
 	"fmt"
-	"log"
+	"strconv"
 
 	"github.com/optiopay/kafka"
 )
@@ -45,8 +45,7 @@ func InitBroker() {
 
 	broker, err = kafka.Dial(kafkaAddrs, conf)
 	if err != nil {
-		Log("CRT", "%s, broker lists %s", "can not connect to kafka cluster", kafkaAddrs)
-		log.Fatal(exit)
+		Log("CRT", "can not connect to kafka cluster, broker lists %s", kafkaAddrs)
 	}
 
 	Log("INF", "%s", "init kafka broker ok")
@@ -62,7 +61,7 @@ func InitConsumers(partition int32) {
 			consumer, err := InitConsumer(topic, partition, v.Engine)
 			if nil != err {
 				delete(val, topic)
-				Log("ERR", "%s: topic: %s,   partition: %d,  engine: %s", "init consumer err", topic, partition, v.Engine)
+				Log("ERR", "init consumer, topic, partition, engine: %s", topic, strconv.Itoa(int(partition)), v.Engine)
 			} else {
 				consumers[engine][topic] = consumer
 			}
@@ -84,12 +83,9 @@ func UpdateOffset() {
 					status[engine][topic] = Status{startOffset, endOffset, 0, endOffset, endOffset, v.Weight}
 					wrn := fmt.Sprintf("%s %d partition offset is set to last-offset as what you set is out of kafka current offset", topic, Partition)
 					Log("WRN", "%s", wrn)
-					fmt.Println(wrn)
 				}
-
-				Log("INF", "%s %d partition offset after UpdateOffset", topic, Partition, status[engine][topic])
 			} else {
-				Log("ERR", "can not get start or end offset of %s %d partition", topic, Partition)
+				Log("ERR", "Unknow firstOffset or lastOffset of topic, partition: %s", topic, strconv.Itoa(int(Partition)))
 			}
 		}
 	}
