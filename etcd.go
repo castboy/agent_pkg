@@ -67,7 +67,7 @@ func InitEtcdCli() {
 
 	nodes := make([]string, 0)
 	for _, val := range EtcdNodes {
-		elmt := val + ":2379"
+		elmt := "http://" + val + ":2379"
 		nodes = append(nodes, elmt)
 	}
 
