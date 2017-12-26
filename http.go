@@ -57,6 +57,8 @@ var ErrorOfflineCh = make(chan Base)
 var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
 
+var ReqOverstock = len(NormalReqCh) / 2
+
 func Handle(w http.ResponseWriter, r *http.Request) {
 	HandleCh := make(chan *[][]byte)
 
@@ -102,11 +104,14 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	if isRuleBindingReq {
 		RuleBindingReqCh <- RuleBindingReq{Base{engine, topic}, count, HandleCh}
-		Log("INF", "Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
+		if len(RuleBindingReqCh) > ReqOverstock {
+			Log("INF", "Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
+		}
 	} else {
 		NormalReqCh <- NormalReq{engine, count, HandleCh}
-		if len(NormalReqCh) > 
-		Log("INF", "Length of NormalReqCh: %d", )
+		if len(NormalReqCh) > ReqOverstock {
+			Log("INF", "Length of NormalReqCh: %d", len(NormalReqCh))
+		}
 	}
 
 	Data := <-HandleCh
