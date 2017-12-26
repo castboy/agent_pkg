@@ -92,7 +92,6 @@ func UpdateOffset() {
 }
 
 func Kafka() {
-	InitBroker()
 	InitConsumers(Partition)
 	UpdateOffset()
 }

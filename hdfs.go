@@ -191,6 +191,14 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 	defer func() {
 		if r := recover(); r != nil {
 			Log("ERR", "%s PANIC", "hdfsRd")
+			switch err := r.(type) {
+			case string:
+				Log("CRT", "HDFS-PANIC: %s", err)
+			case error:
+				Log("CRT", "HDFS-PANIC: %s", err.Error())
+			default:
+				Log("CRT", "HDFS-PANIC: %v", err)
+			}
 		}
 	}()
 

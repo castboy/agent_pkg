@@ -33,6 +33,9 @@ func Manage() {
 		case stop := <-StopOfflineCh:
 			StopOffline(stop)
 
+		case err := <-ErrorOfflineCh:
+			ShutdownOffline(err)
+
 		case shutdown := <-ShutdownOfflineCh:
 			ShutdownOffline(shutdown)
 			if "rule" == shutdown.Engine {

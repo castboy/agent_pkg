@@ -54,20 +54,21 @@ var RdHdfsResCh = make(chan RdHdfsRes)
 
 var StartOfflineCh = make(chan Start)
 var StopOfflineCh = make(chan Base)
+var ErrorOfflineCh = make(chan Base)
 var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
+var ReqCountCh = make(chan Base, 10000)
 
-var ReqCount int
+var ReqOverstock = len(NormalReqCh) / 2
 
 func Handle(w http.ResponseWriter, r *http.Request) {
-	ReqCount++
-	fmt.Println("ReqCount:", ReqCount)
-
 	HandleCh := make(chan *[][]byte)
 
-	var engine, topic string
-	var count int
-	var err error
+	var (
+		engine, topic string
+		count         int
+		err           error
+	)
 
 	r.ParseForm()
 
@@ -104,11 +105,17 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isRuleBindingReq {
+		ReqCountCh <- Base{engine, topic}
 		RuleBindingReqCh <- RuleBindingReq{Base{engine, topic}, count, HandleCh}
-		Log("INF", "Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
+		if len(RuleBindingReqCh) > ReqOverstock {
+			Log("INF", "Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
+		}
 	} else {
+		ReqCountCh <- Base{Engine: engine}
 		NormalReqCh <- NormalReq{engine, count, HandleCh}
-		Log("INF", "Length of NormalReqCh: %d", len(NormalReqCh))
+		if len(NormalReqCh) > ReqOverstock {
+			Log("INF", "Length of NormalReqCh: %d", len(NormalReqCh))
+		}
 	}
 
 	Data := <-HandleCh
@@ -158,4 +165,32 @@ func topicIsExist(topic string) bool {
 func Listen() {
 	http.HandleFunc("/", Handle)
 	http.ListenAndServe(":"+strconv.Itoa(AgentConf.EngineReqPort), nil)
+}
+
+func ReqCount() {
+	count := make(map[string]int)
+	ticker := time.NewTicker(time.Minute * time.Duration(5))
+	for {
+		select {
+		case req := <-ReqCountCh:
+			switch req.Engine {
+			case "waf":
+				count["waf"]++
+			case "vds":
+				count["vds"]++
+			case "rule":
+				count[req.Topic]++
+			}
+		case <-ticker.C:
+			ReqCountIntoFile(count)
+			for k := range count {
+				delete(count, k)
+			}
+		}
+	}
+}
+
+func ReqCountIntoFile(count map[string]int) {
+	cont := fmt.Sprintf("%s:   engine req count per 5 mins:     %v", time.Now().Format("2006-01-02 15:04:05"), count)
+	AppendWr("log/count", cont)
 }

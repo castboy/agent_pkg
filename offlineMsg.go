@@ -149,6 +149,8 @@ func OfflineHandle(msg OfflineMsg) {
 
 	case "stop":
 		StopOfflineCh <- other
+	case "error":
+		ErrorOfflineCh <- other
 
 	case "shutdown":
 		ShutdownOfflineCh <- other
