@@ -4,7 +4,6 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	//"regexp"
@@ -58,17 +57,14 @@ var ErrorOfflineCh = make(chan Base)
 var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
 
-var ReqCount int
-
 func Handle(w http.ResponseWriter, r *http.Request) {
-	ReqCount++
-	fmt.Println("ReqCount:", ReqCount)
-
 	HandleCh := make(chan *[][]byte)
 
-	var engine, topic string
-	var count int
-	var err error
+	var (
+		engine, topic string
+		count         int
+		err           error
+	)
 
 	r.ParseForm()
 
@@ -109,7 +105,8 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		Log("INF", "Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
 	} else {
 		NormalReqCh <- NormalReq{engine, count, HandleCh}
-		Log("INF", "Length of NormalReqCh: %d", len(NormalReqCh))
+		if len(NormalReqCh) > 
+		Log("INF", "Length of NormalReqCh: %d", )
 	}
 
 	Data := <-HandleCh
