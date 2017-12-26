@@ -117,7 +117,7 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) map[string
 	if !exist {
 		f, err := client.Open(p.SrcFile)
 		if nil != err {
-			Log("ERR", "Open Hdfs File Err: %s", p.SrcFile, err.Error())
+			Log("ERR", "Open Hdfs File Err: %s", err.Error())
 		} else {
 			timestamp := time.Now().Unix()
 			(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
