@@ -49,11 +49,11 @@ func InitStatus() {
 	status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
 
 	if (-1 != AgentConf.Offset[0]) && (wafStartOffset < AgentConf.Offset[0]) && (AgentConf.Offset[0] < wafEndOffset) {
-		Log("TRC", "waf offset is reset to: %d", strconv.Itoa(int(AgentConf.Offset[0])))
+		Log("TRC", "waf offset is reset to: %s", strconv.Itoa(int(AgentConf.Offset[0])))
 		status["waf"][wafTopic] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
 	}
 	if (-1 != AgentConf.Offset[1]) && (vdsStartOffset < AgentConf.Offset[1]) && (AgentConf.Offset[1] < vdsEndOffset) {
-		Log("TRC", "vds offset is reset to: %d", strconv.Itoa(int(AgentConf.Offset[1])))
+		Log("TRC", "vds offset is reset to: %s", strconv.Itoa(int(AgentConf.Offset[1])))
 		status["vds"][vdsTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
 	}
 }
@@ -84,11 +84,11 @@ func GetStatusFromEtcd() error {
 	status["rule"] = statusFromEtcd.Status[2]
 
 	if (wafStartOffset > status["waf"][wafTopic].Engine) || (wafEndOffset < status["waf"][wafTopic].Engine) {
-		Log("TRC", "%s %d", "waf offset is reset to", strconv.Itoa(int(wafStartOffset)))
+		Log("TRC", "%s %d", "waf offset is reset to %s", strconv.Itoa(int(wafStartOffset)))
 		status["waf"][wafTopic] = Status{0, wafStartOffset, 0, 0, -1, 1}
 	}
 	if (vdsStartOffset > status["vds"][vdsTopic].Engine) || (vdsEndOffset < status["vds"][vdsTopic].Engine) {
-		Log("TRC", "%s %d", "vds offset is reset to", strconv.Itoa(int(vdsStartOffset)))
+		Log("TRC", "%s %d", "vds offset is reset to %s", strconv.Itoa(int(vdsStartOffset)))
 		status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
 	}
 
