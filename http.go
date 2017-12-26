@@ -54,6 +54,7 @@ var RdHdfsResCh = make(chan RdHdfsRes)
 
 var StartOfflineCh = make(chan Start)
 var StopOfflineCh = make(chan Base)
+var ErrorOfflineCh = make(chan Base)
 var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
 
