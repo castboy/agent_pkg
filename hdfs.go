@@ -190,14 +190,13 @@ func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mar
 func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte) {
 	defer func() {
 		if r := recover(); r != nil {
-			Log("ERR", "%s PANIC", "hdfsRd")
 			switch err := r.(type) {
 			case string:
-				Log("CRT", "HDFS-PANIC: %s", err)
+				Log("ERR", "HDFS-PANIC: %s", err)
 			case error:
-				Log("CRT", "HDFS-PANIC: %s", err.Error())
+				Log("ERR", "HDFS-PANIC: %s", err.Error())
 			default:
-				Log("CRT", "HDFS-PANIC: %v", err)
+				Log("ERR", "HDFS-PANIC: %v", err)
 			}
 		}
 	}()
@@ -207,9 +206,9 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 
 	if nil != err {
 		needSize := strconv.Itoa(size)
-		getSize := strconv.Itoa(int(fHdl.Stat().Size()))
+		actualSize := strconv.Itoa(int(fHdl.Stat().Size()))
 		oft := strconv.Itoa(int(offset))
-		Log("ERR", "Read Hdfs:file offset needSize getSize %s", file, oft, needSize, getSize)
+		Log("ERR", "Read Hdfs, [file offset needSize actualSize] %s", file, oft, needSize, actualSize)
 	}
 
 	return bytes

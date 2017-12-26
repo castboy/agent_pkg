@@ -182,6 +182,7 @@ func ReqCount() {
 				count[req.Topic]++
 			}
 		case <-ticker.C:
+			Log("INF", "%s", "engine req count per 5 mins")
 			ReqCountIntoFile(count)
 			for k := range count {
 				delete(count, k)
@@ -191,6 +192,6 @@ func ReqCount() {
 }
 
 func ReqCountIntoFile(count map[string]int) {
-	cont := fmt.Sprintf("%s:   engine req count per 5 mins:     %v", time.Now().Format("2006-01-02 15:04:05"), count)
-	AppendWr("log/count", cont)
+	cont := fmt.Sprintf("%s:   engine req count per 5 mins:     %v\n", time.Now().Format("2006-01-02 15:04:05"), count)
+	AppendWr("count", cont)
 }
