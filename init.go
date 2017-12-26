@@ -31,21 +31,29 @@ func InitStatus() {
 
 	wafTopic := AgentConf.Topic[0]
 	vdsTopic := AgentConf.Topic[1]
-	receivedOfflineMsgOffset = int64(AgentConf.OfflineMsgStartOffset)
+
+        start, _ := broker.OffsetEarliest(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion))
+
+	receivedOfflineMsgOffset = int64(start-1)
 
 	Log("INF", "Received Offline Task Msg Offset: %d", receivedOfflineMsgOffset)
 
 	InitStatusMap()
 
-	status["waf"][wafTopic] = Status{0, 0, 0, 0, -1, 1}
+        wafStartOffset, _ := broker.OffsetEarliest(wafTopic, int32(Partition))
+        wafEndOffset, _ := broker.OffsetLatest(wafTopic, int32(Partition))
+        vdsStartOffset, _ := broker.OffsetEarliest(vdsTopic, int32(Partition))
+        vdsEndOffset, _ := broker.OffsetLatest(vdsTopic, int32(Partition))
 
-	status["vds"][vdsTopic] = Status{0, 0, 0, 0, -1, 1}
+	status["waf"][wafTopic] = Status{0, wafStartOffset, 0, 0, -1, 1}
 
-	if -1 != AgentConf.Offset[0] {
+	status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
+
+	if (-1 != AgentConf.Offset[0]) && (wafStartOffset < AgentConf.Offset[0]) && (AgentConf.Offset[0] < wafEndOffset) {
 		Log("TRC", "waf offset is reset to: %d", AgentConf.Offset[0])
 		status["waf"][wafTopic] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
 	}
-	if -1 != AgentConf.Offset[1] {
+	if (-1 != AgentConf.Offset[1]) && (vdsStartOffset < AgentConf.Offset[1]) && (AgentConf.Offset[1] < vdsEndOffset){
 		Log("TRC", "vds offset is reset to: %d", AgentConf.Offset[1])
 		status["vds"][vdsTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
 	}
