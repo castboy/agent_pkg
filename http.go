@@ -10,6 +10,8 @@ import (
 	//"regexp"
 	"strconv"
 	"time"
+
+	"github.com/astaxie/beego/logs"
 )
 
 type Base struct {
@@ -60,6 +62,8 @@ var CompleteOfflineCh = make(chan Base)
 var ReqCountCh = make(chan Base, 10000)
 
 var ReqOverstock = len(NormalReqCh) / 2
+
+var beeLogs *logs.BeeLogger
 
 func Handle(w http.ResponseWriter, r *http.Request) {
 	HandleCh := make(chan *[][]byte)
@@ -168,6 +172,8 @@ func Listen() {
 }
 
 func ReqCount() {
+	initReqCountLog()
+
 	count := make(map[string]int)
 	ticker := time.NewTicker(time.Minute * time.Duration(5))
 	for {
@@ -191,7 +197,12 @@ func ReqCount() {
 	}
 }
 
+func initReqCountLog() {
+	beeLogs = logs.NewLogger(10000)
+	beeLogs.SetLogger(logs.AdapterFile, `{"filename":"req_count/count.log","level":7}`)
+}
+
 func ReqCountIntoFile(count map[string]int) {
 	cont := fmt.Sprintf("%s:   engine req count per 5 mins:     %v\n", time.Now().Format("2006-01-02 15:04:05"), count)
-	AppendWr("count", cont)
+	beeLogs.Trace(cont)
 }
