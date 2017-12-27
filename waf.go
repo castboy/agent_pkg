@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
+	//	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -90,7 +90,6 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 	err = json.Unmarshal(body, &ruleRes)
 	if nil != err {
 		Log("CRT", "req rule res err, %s", string(body))
-		log.Fatal(exit)
 	}
 
 	ruleBytes, err := base64.StdEncoding.DecodeString(ruleRes.Cont)

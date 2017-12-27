@@ -2,8 +2,8 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+	//	"fmt"
+	//	"log"
 	"time"
 )
 
@@ -43,7 +43,7 @@ func TimingGetOfflineMsg(second int) {
 	}
 }
 
-func SetStatus() {
+func CompensationOfflineMsg() {
 	msgs := LoadOfflineMsg()
 	msgs = ExtractValidOfflineMsg(msgs)
 
@@ -56,7 +56,6 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
 	if nil != err {
 		Log("ERR", "init consumer of %s failed", AgentConf.OfflineMsgTopic)
-		log.Fatalln(exit)
 	}
 
 	for {
@@ -64,7 +63,6 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 		if nil != err {
 			break
 		} else {
-			fmt.Println(string(kafkaMsg.Value))
 			err := json.Unmarshal(kafkaMsg.Value, &msg)
 			if nil != err {
 				Log("ERR", "wrong offline msg: %s", string(kafkaMsg.Value))
