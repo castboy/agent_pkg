@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	EtcdClient "github.com/coreos/etcd/client"
+	"github.com/coreos/etcd/clientv3"
 	"golang.org/x/net/context"
 )
 
@@ -26,8 +26,7 @@ type Conf struct {
 	OfflineMsgStartOffset int
 }
 
-//var EtcdCli *clientv3.Client
-var EtcdApi EtcdClient.KeysAPI
+var EtcdCli *clientv3.Client
 
 var AgentConf Conf
 
@@ -45,46 +44,31 @@ func Record() {
 }
 
 func InitEtcdCli() {
-	//	Log("INF", "%s", "InitEtcdCli")
-
-	//	nodes := make([]string, 0)
-	//	for _, val := range EtcdNodes {
-	//		elmt := val + ":2379"
-	//		nodes = append(nodes, elmt)
-	//	}
-
-	//	cfg := clientv3.Config{
-	//		Endpoints:   nodes,
-	//		DialTimeout: 5 * time.Second,
-	//	}
-
-	//	EtcdCli, err = clientv3.New(cfg)
-	//	if err != nil {
-	//		Log("CRT", "Init Etcd Client failed: %s", err.Error())
-	//	}
-
-	//	Log("INF", "%s", "Init Etcd Client Ok")
+	Log("INF", "%s", "InitEtcdCli")
 
 	nodes := make([]string, 0)
 	for _, val := range EtcdNodes {
-		elmt := "http://" + val + ":2379"
+		elmt := val + ":2379"
 		nodes = append(nodes, elmt)
 	}
 
-	cfg := EtcdClient.Config{
-		Endpoints:               nodes,
-		Transport:               EtcdClient.DefaultTransport,
-		HeaderTimeoutPerRequest: time.Second,
+	cfg := clientv3.Config{
+		Endpoints:   nodes,
+		DialTimeout: 5 * time.Second,
 	}
-	c, err := EtcdClient.New(cfg)
+
+	EtcdCli, err = clientv3.New(cfg)
 	if err != nil {
 		Log("CRT", "Init Etcd Client failed: %s", err.Error())
 	}
-	EtcdApi = EtcdClient.NewKeysAPI(c)
+
+	Log("INF", "%s", "Init Etcd Client Ok")
 }
 
 func EtcdSet(k, v string) {
-	_, err := EtcdApi.Set(context.Background(), k, v, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	_, err := EtcdCli.Put(ctx, k, v)
+	cancel()
 	if err != nil {
 		Log("ERR", "set etcd key err: %s", k, v)
 	}
@@ -99,7 +83,9 @@ func EtcdGet(key string) (bytes []byte, ok bool) {
 		}
 	}()
 
-	resp, _ := EtcdApi.Get(context.Background(), key, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	resp, _ := EtcdCli.Get(ctx, key)
+	cancel()
 
-	return []byte(resp.Node.Value), true
+	return resp.Kvs[0].Value, true
 }
