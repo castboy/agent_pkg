@@ -127,7 +127,7 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) map[string
 		(*fileHdl)[p.SrcFile] = HdfsFileHdl{(*fileHdl)[p.SrcFile].Hdl, timestamp}
 	}
 
-	Log("INF", "current hdfs-file-handle-num: %s, detail %v", strconv.Itoa(len(*fileHdl)), *fileHdl)
+	Log("INF", "current hdfs-file-handle-num: %s", strconv.Itoa(len(*fileHdl)), fmt.Sprintf("%v", *fileHdl))
 
 	return *fileHdl
 }
