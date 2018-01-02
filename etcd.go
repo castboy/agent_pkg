@@ -24,6 +24,8 @@ type Conf struct {
 	OfflineMsgTopic       string
 	OfflineMsgPartion     int
 	OfflineMsgStartOffset int
+	ClearHdfsHdl          int
+	GetOfflineMsg         int
 }
 
 var EtcdCli *clientv3.Client
