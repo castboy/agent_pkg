@@ -126,7 +126,9 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) map[string
 		(*fileHdl)[p.SrcFile] = HdfsFileHdl{(*fileHdl)[p.SrcFile].Hdl, timestamp}
 	}
 
-	Log.Info("current hdfs-file-handle-num: %d, fileHdls: %v", len(*fileHdl), *fileHdl)
+	if fl := len(*fileHdl); fl > 5 {
+		Log.Info("current hdfs-file-handle-num: %d, fileHdls: %v", fl, *fileHdl)
+	}
 
 	return *fileHdl
 }
