@@ -198,8 +198,8 @@ func ReqCount() {
 }
 
 func initReqCountLog() {
-	beeLogs = logs.NewLogger(10000)
-	beeLogs.SetLogger(logs.AdapterFile, `{"filename":"req_count/count.log","level":7}`)
+	beeLogs = logs.NewLogger(1000)
+	beeLogs.SetLogger(logs.AdapterFile, `{"filename":"log/count/log","level":7}`)
 }
 
 func ReqCountIntoFile(count map[string]int) {
