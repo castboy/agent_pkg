@@ -5,7 +5,6 @@ package agent_pkg
 import (
 	"encoding/json"
 	"errors"
-	"strconv"
 )
 
 type Status struct {
@@ -39,21 +38,21 @@ func InitVars() {
 }
 
 func InitStatus() {
-	Log("INF", "%s", "init status")
+	Log.Info("%s", "init status")
 
 	start, _ := broker.OffsetEarliest(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion))
 	receivedOfflineMsgOffset = int64(start - 1)
-	Log("INF", "Received Offline Task Msg Offset: %d", receivedOfflineMsgOffset)
+	Log.Info("Received Offline Task Msg Offset: %d", receivedOfflineMsgOffset)
 
 	status["waf"][wafTopic] = Status{0, wafStartOffset, 0, 0, -1, 1}
 	status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
 
 	if (-1 != AgentConf.Offset[0]) && (wafStartOffset < AgentConf.Offset[0]) && (AgentConf.Offset[0] < wafEndOffset) {
-		Log("TRC", "waf offset is reset to: %s", strconv.Itoa(int(AgentConf.Offset[0])))
+		Log.Trace("waf offset is reset to: %d", AgentConf.Offset[0])
 		status["waf"][wafTopic] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
 	}
 	if (-1 != AgentConf.Offset[1]) && (vdsStartOffset < AgentConf.Offset[1]) && (AgentConf.Offset[1] < vdsEndOffset) {
-		Log("TRC", "vds offset is reset to: %s", strconv.Itoa(int(AgentConf.Offset[1])))
+		Log.Trace("vds offset is reset to: %s", AgentConf.Offset[1])
 		status["vds"][vdsTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
 	}
 }
@@ -65,17 +64,17 @@ func InitStatusMap() {
 }
 
 func GetStatusFromEtcd() error {
-	Log("INF", "%s", "get status from etcd")
+	Log.Info("%s", "get status from etcd")
 
 	bytes, ok := EtcdGet("apt/agent/status/" + Localhost)
 	if !ok {
-		Log("WRN", "%s", "can not get status from etcd")
+		Log.Warn("%s", "can not get status from etcd")
 		return errors.New("err")
 	}
 
 	err := json.Unmarshal(bytes, &statusFromEtcd)
 	if err != nil {
-		Log("WRN", "%s", "parse status from etcd err")
+		Log.Warn("%s", "parse status from etcd err")
 		return errors.New("err")
 	}
 
@@ -84,16 +83,16 @@ func GetStatusFromEtcd() error {
 	status["rule"] = statusFromEtcd.Status[2]
 
 	if (wafStartOffset > status["waf"][wafTopic].Engine) || (wafEndOffset < status["waf"][wafTopic].Engine) {
-		Log("TRC", "%s %d", "waf offset is reset to %s", strconv.Itoa(int(wafStartOffset)))
+		Log.Trace("waf offset is reset to %d", wafStartOffset)
 		status["waf"][wafTopic] = Status{0, wafStartOffset, 0, 0, -1, 1}
 	}
 	if (vdsStartOffset > status["vds"][vdsTopic].Engine) || (vdsEndOffset < status["vds"][vdsTopic].Engine) {
-		Log("TRC", "%s %d", "vds offset is reset to %s", strconv.Itoa(int(vdsStartOffset)))
+		Log.Trace("vds offset is reset to %d", vdsStartOffset)
 		status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
 	}
 
 	receivedOfflineMsgOffset = statusFromEtcd.ReceivedOfflineMsgOffset
-	Log("INF", "Received Offline Task Msg Offset is %d", receivedOfflineMsgOffset)
+	Log.Info("Received Offline Task Msg Offset is %d", receivedOfflineMsgOffset)
 
 	return nil
 }

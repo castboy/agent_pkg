@@ -23,7 +23,7 @@ func copyDir(src string, dest string) {
 		return nil
 	})
 	if err != nil {
-		Log("CRT", "copy dir failed when newWafInstance: %s", src, dest)
+		LogCrt("copy dir failed when newWafInstance, src = %s, dest = %s", src, dest)
 	}
 }
 
@@ -114,11 +114,11 @@ func WriteFile(dir string, file string, bytes []byte) bool {
 func AppendWr(file string, content string) {
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if nil != err {
-		Log("CRT", "open file %s failed", file)
+		LogCrt("open file %s failed", file)
 	}
 	_, err = io.WriteString(f, content)
 	if nil != err {
-		Log("CRT", "write file %s failed", file)
+		LogCrt("write file %s failed", file)
 	}
 }
 

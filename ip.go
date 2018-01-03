@@ -14,7 +14,7 @@ var Partition int32
 func GetLocalhost() {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		Log("WRN", "%s", "The address list of the system's network interface failed")
+		Log.Warn("%s", "The address list of the system's network interface failed")
 	} else {
 		ips := []string{}
 		for _, a := range addrs {
@@ -35,9 +35,9 @@ func GetLocalhost() {
 	env := os.Getenv("THIS_HOST")
 	if "" != env {
 		Localhost = env
-		Log("TRC", "%s", `Localhost set by os-Env "THIS_HOST"`)
+		Log.Trace("%s", `Localhost set by os-Env "THIS_HOST"`)
 	} else {
-		Log("TRC", "%s", `Localhost set by intranet`)
+		Log.Trace("%s", `Localhost set by intranet`)
 	}
 }
 
@@ -45,8 +45,8 @@ func GetPartition() {
 	value, ok := AgentConf.Partition[Localhost]
 	if ok {
 		Partition = value
-		Log("TRC", "Consume Partition: %d", Partition)
+		Log.Trace("Consume Partition: %d", Partition)
 	} else {
-		Log("CRT", "%s", "Consume Partition Unknow")
+		LogCrt("%s", "Consume Partition Unknow")
 	}
 }

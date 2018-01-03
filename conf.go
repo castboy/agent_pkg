@@ -14,9 +14,9 @@ func GetConf() {
 
 	conf, ok := EtcdGet("apt/agent/conf")
 	if !ok {
-		Log("CRT", "%s", `Get Conf From Etcd Failed`)
+		LogCrt("%s", `Get Conf From Etcd Failed`)
 	}
-	Log("INF", "%s", `Get Conf From Etcd Ok`)
+	Log.Info("%s", `Get Conf From Etcd Ok`)
 
 	ParseConf(conf)
 	GetLocalhost()
@@ -24,10 +24,9 @@ func GetConf() {
 }
 func ParseConf(bytes []byte) {
 	if nil != json.Unmarshal(bytes, &AgentConf) {
-		Log("CRT", "%s", "ParseConf Failed")
+		LogCrt("%s", "ParseConf Failed")
 	}
-
-	Log("TRC", "Agent Conf: %v", AgentConf)
+	LogCrt("Agent Conf: %v", AgentConf)
 
 	fmt.Printf("Agent Conf: %v", AgentConf)
 }

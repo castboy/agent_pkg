@@ -20,7 +20,7 @@ var types = []string{"waf", "vds", "rule"}
 func TimingGetOfflineMsg(second int) {
 	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
 	if nil != err {
-		Log("ERR", "init consumer of %s failed", AgentConf.OfflineMsgTopic)
+		Log.Error("init consumer of %s failed", AgentConf.OfflineMsgTopic)
 	}
 
 	var msg OfflineMsg
@@ -32,7 +32,7 @@ func TimingGetOfflineMsg(second int) {
 		} else {
 			err := json.Unmarshal(kafkaMsg.Value, &msg)
 			if nil != err {
-				Log("ERR", "wrong offline msg: %s", string(kafkaMsg.Value))
+				Log.Error("wrong offline msg: %s", string(kafkaMsg.Value))
 			} else {
 				OfflineHandle(msg)
 				receivedOfflineMsgOffset++
@@ -55,7 +55,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 
 	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
 	if nil != err {
-		Log("ERR", "init consumer of %s failed", AgentConf.OfflineMsgTopic)
+		Log.Error("init consumer of %s failed", AgentConf.OfflineMsgTopic)
 	}
 
 	for {
@@ -65,7 +65,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 		} else {
 			err := json.Unmarshal(kafkaMsg.Value, &msg)
 			if nil != err {
-				Log("ERR", "wrong offline msg: %s", string(kafkaMsg.Value))
+				Log.Error("wrong offline msg: %s", string(kafkaMsg.Value))
 			} else {
 				offlineMsgs = append(offlineMsgs, msg)
 			}
@@ -74,7 +74,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 		receivedOfflineMsgOffset++
 	}
 
-	Log("INF", "all offline msg %v", offlineMsgs)
+	Log.Info("all offline msg %v", offlineMsgs)
 	return offlineMsgs
 }
 
@@ -109,7 +109,7 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 		}
 	}
 
-	Log("INF", "valid offline msg: %v", validOfflineMsg)
+	Log.Info("valid offline msg: %v", validOfflineMsg)
 	return validOfflineMsg
 
 }
@@ -122,12 +122,12 @@ func SendOfflineMsg(validOfflineMsg []OfflineMsg) {
 
 func OfflineHandle(msg OfflineMsg) {
 	if ok := paramsCheck(msg.SignalType, signals); !ok {
-		Log("ERR", "offline msg signalType err: %s", msg.SignalType)
+		Log.Error("offline msg signalType err: %s", msg.SignalType)
 		return
 	}
 
 	if ok := paramsCheck(msg.Engine, types); !ok {
-		Log("ERR", "offline msg engine err: %s", msg.Engine)
+		Log.Error("offline msg engine err: %s", msg.Engine)
 		return
 	}
 

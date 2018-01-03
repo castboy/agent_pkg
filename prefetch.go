@@ -29,7 +29,7 @@ func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 	for i := 0; i < prefetchMsg.Count; i++ {
 		msg, err := consumers[prefetchMsg.Engine][prefetchMsg.Topic].Consume()
 		if err != nil {
-			Log("WRN", "no data in: %s", prefetchMsg.Topic)
+			Log.Warn("no data in: %s", prefetchMsg.Topic)
 		}
 		*data = append(*data, msg.Value)
 	}

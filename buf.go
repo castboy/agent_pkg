@@ -206,7 +206,7 @@ func SendRuleBindingPrefetchMsg(res BufferAnalyse, req RuleBindingReq) {
 }
 
 func DisposeRuleBindingReq(req RuleBindingReq) {
-	Log("INF", "dispose ruleBinding buffer: %v", req)
+	Log.Info("dispose ruleBinding buffer: %v", req)
 	res := AnalysisRuleBindingBuffer(req)
 	ReadRuleBindingBuffer(res, req)
 	UpdateRuleBindingBufferStatus(res, req)

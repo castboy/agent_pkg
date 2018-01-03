@@ -52,13 +52,13 @@ func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) int {
 		if engine == "vds" {
 			property, err = xdrProperty("vds", val)
 			if nil != err || property.Prtn < 0 || property.Prtn >= FILEPRTNNUM {
-				Log("ERR", "prtn-id err, origin-xdr below: %s", string(val))
+				Log.Error("partition-id err, origin-xdr below: %s", string(val))
 				break
 			}
 		} else {
 			property, err = xdrProperty("waf", val)
 			if nil != err || property.Prtn < 0 || property.Prtn >= HTTPPRTNNUM {
-				Log("ERR", "prtn-id err, origin-xdr below: %s", string(val))
+				Log.Error("partition-id err, origin-xdr below: %s", string(val))
 				break
 			}
 		}
@@ -155,7 +155,7 @@ func GetCacheAndRightDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, 
 			cache = append(cache, data[key])
 			rightNum++
 		} else {
-			Log("ERR", "Err xdr: %s", string(data[key]))
+			Log.Error("Err xdr: %s", string(data[key]))
 		}
 	}
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -54,7 +53,7 @@ func InitHdfsCli(namenode string) {
 	var err error
 	client, err = hdfs.New(namenode + ":8020")
 	if nil != err {
-		Log("CRT", "%s: %s", "Init Hdfs Client Err", err.Error())
+		LogCrt("Init Hdfs Client Err, %s", err.Error())
 	}
 }
 
@@ -117,7 +116,7 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) map[string
 	if !exist {
 		f, err := client.Open(p.SrcFile)
 		if nil != err {
-			Log("ERR", "Open Hdfs File Err: %s", err.Error())
+			Log.Error("Open Hdfs File %s Err: %s", p.SrcFile, err.Error())
 		} else {
 			timestamp := time.Now().Unix()
 			(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
@@ -127,7 +126,7 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) map[string
 		(*fileHdl)[p.SrcFile] = HdfsFileHdl{(*fileHdl)[p.SrcFile].Hdl, timestamp}
 	}
 
-	Log("INF", "current hdfs-file-handle-num: %s", strconv.Itoa(len(*fileHdl)), fmt.Sprintf("%v", *fileHdl))
+	Log.Info("current hdfs-file-handle-num: %d, fileHdls: %v", len(*fileHdl), *fileHdl)
 
 	return *fileHdl
 }
@@ -194,11 +193,11 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 		if r := recover(); r != nil {
 			switch err := r.(type) {
 			case string:
-				Log("ERR", "HDFS-PANIC: %s", err)
+				Log.Error("HDFS-PANIC: %s", err)
 			case error:
-				Log("ERR", "HDFS-PANIC: %s", err.Error())
+				Log.Error("HDFS-PANIC: %s", err.Error())
 			default:
-				Log("ERR", "HDFS-PANIC: %v", err)
+				Log.Error("HDFS-PANIC: %v", err)
 			}
 		}
 	}()
@@ -207,10 +206,7 @@ func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes [
 	_, err := fHdl.ReadAt(bytes, offset)
 
 	if nil != err {
-		needSize := strconv.Itoa(size)
-		actualSize := strconv.Itoa(int(fHdl.Stat().Size()))
-		oft := strconv.Itoa(int(offset))
-		Log("ERR", "Read Hdfs, [file offset needSize actualSize] %s", file, oft, needSize, actualSize)
+		Log.Error("Read Hdfs, file = %s, offset = %d, size = %d fileSize = %d", file, offset, size, fHdl.Stat().Size())
 	}
 
 	return bytes
@@ -253,14 +249,14 @@ func localWrite(file string, bytes []byte) bool {
 	if !isExist {
 		err = os.MkdirAll(dir, 0777)
 		if err != nil {
-			Log("CRT", "Create local dir %s failed", dir)
+			LogCrt("Create local dir %s failed", dir)
 		}
 	}
 
 	err = ioutil.WriteFile(file, bytes, 0644)
 	if nil != err {
 		success = false
-		Log("ERR", "Write local file %s failed", file)
+		Log.Error("Write local file %s failed", file)
 	}
 
 	return success

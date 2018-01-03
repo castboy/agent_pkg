@@ -46,7 +46,7 @@ func Record() {
 }
 
 func InitEtcdCli() {
-	Log("INF", "%s", "InitEtcdCli")
+	Log.Info("%s", "InitEtcdCli")
 
 	nodes := make([]string, 0)
 	for _, val := range EtcdNodes {
@@ -61,10 +61,10 @@ func InitEtcdCli() {
 
 	EtcdCli, err = clientv3.New(cfg)
 	if err != nil {
-		Log("CRT", "Init Etcd Client failed: %s", err.Error())
+		LogCrt("Init Etcd Client failed: %s", err.Error())
 	}
 
-	Log("INF", "%s", "Init Etcd Client Ok")
+	Log.Info("%s", "Init Etcd Client Ok")
 }
 
 func EtcdSet(k, v string) {
@@ -72,14 +72,14 @@ func EtcdSet(k, v string) {
 	_, err := EtcdCli.Put(ctx, k, v)
 	cancel()
 	if err != nil {
-		Log("ERR", "set etcd key err: %s", k, v)
+		Log.Error("set etcd key err, k = %s, v = %s", k, v)
 	}
 }
 
 func EtcdGet(key string) (bytes []byte, ok bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			Log("ERR", "%s PANIC", "EtcdGet")
+			Log.Error("%s PANIC", "EtcdGet")
 			bytes = []byte{}
 			ok = false
 		}

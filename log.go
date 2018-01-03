@@ -3,38 +3,18 @@ package agent_pkg
 import (
 	"log"
 
-	seelog "github.com/cihub/seelog"
+	"github.com/astaxie/beego/logs"
 )
 
-var exit = "Shut down due to critical fault."
+var exitInfo = "Shut down due to critical fault."
+var Log *logs.BeeLogger
 
 func InitLog() {
-	logger, err := seelog.LoggerFromConfigAsFile("seelog.xml")
-
-	if err != nil {
-		log.Fatal("Log Configuration File Does Not Exist")
-	}
-	seelog.ReplaceLogger(logger)
+	Log = logs.NewLogger(1000)
+	Log.SetLogger(logs.AdapterFile, `{"filename":"log/log","level":7}`)
 }
 
-func Log(level string, format string, s ...interface{}) {
-	defer seelog.Flush()
-
-	switch level {
-	case "TRC":
-		seelog.Tracef(format, s)
-	case "DBG":
-		seelog.Debugf(format, s)
-	case "INF":
-		seelog.Infof(format, s)
-	case "WRN":
-		seelog.Warnf(format, s)
-	case "ERR":
-		seelog.Errorf(format, s)
-	case "CRT":
-		seelog.Criticalf(format, s)
-		log.Fatalf(exit)
-	default:
-		panic("wrong log type")
-	}
+func LogCrt(format string, v ...interface{}) {
+	Log.Critical(format, v)
+	log.Fatal(exitInfo)
 }

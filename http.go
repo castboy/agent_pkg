@@ -92,7 +92,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if 0 == count {
-		Log("WRN", "%s", "http req count is zero")
+		Log.Warn("%s", "http req count is zero")
 	}
 
 	if val, ok := r.Form["topic"]; ok {
@@ -112,13 +112,13 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		ReqCountCh <- Base{engine, topic}
 		RuleBindingReqCh <- RuleBindingReq{Base{engine, topic}, count, HandleCh}
 		if len(RuleBindingReqCh) > ReqOverstock {
-			Log("INF", "Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
+			Log.Info("Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
 		}
 	} else {
 		ReqCountCh <- Base{Engine: engine}
 		NormalReqCh <- NormalReq{engine, count, HandleCh}
 		if len(NormalReqCh) > ReqOverstock {
-			Log("INF", "Length of NormalReqCh: %d", len(NormalReqCh))
+			Log.Info("Length of NormalReqCh: %d", len(NormalReqCh))
 		}
 	}
 
@@ -131,7 +131,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	for i := 0; i < dataLen; i++ {
 		err := json.Unmarshal((*Data)[i], &data)
 		if err != nil {
-			Log("ERR", "%s", "json.Unmarshal err on data to response http req")
+			Log.Error("%s", "json.Unmarshal err on data to response http req")
 		}
 		dataSlice = append(dataSlice, data)
 	}
@@ -188,7 +188,7 @@ func ReqCount() {
 				count[req.Topic]++
 			}
 		case <-ticker.C:
-			Log("INF", "%s", "engine req count per 5 mins")
+			Log.Info("%s", "engine req count per 5 mins")
 			ReqCountIntoFile(count)
 			for k := range count {
 				delete(count, k)
