@@ -26,7 +26,7 @@ func ParseConf(bytes []byte) {
 	if nil != json.Unmarshal(bytes, &AgentConf) {
 		LogCrt("%s", "ParseConf Failed")
 	}
-	LogCrt("Agent Conf: %v", AgentConf)
+	Log.Info("Agent Conf: %v", AgentConf)
 
 	fmt.Printf("Agent Conf: %v", AgentConf)
 }
