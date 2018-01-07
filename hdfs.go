@@ -128,10 +128,6 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (error, *m
 		(*fileHdl)[p.SrcFile] = HdfsFileHdl{(*fileHdl)[p.SrcFile].Hdl, timestamp}
 	}
 
-	if fl := len(*fileHdl); fl > 5 {
-		Log.Info("current hdfs-file-handle-num: %d, fileHdls: %v", fl, *fileHdl)
-	}
-
 	return nil, fileHdl
 }
 
@@ -140,6 +136,11 @@ func HttpHdfsToLocal(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	var res HdfsToLocalRes
 
 	if nil != err {
+		res = HdfsToLocalRes{
+			Index:   p.Index,
+			Success: false,
+		}
+	} else {
 		reqBytes, reqRight := hdfsRdCheck((*fHdl)[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0], p.XdrMark[0])
 		resBytes, resRight := hdfsRdCheck((*fHdl)[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1], p.XdrMark[1])
 
@@ -153,11 +154,6 @@ func HttpHdfsToLocal(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 			Index:   p.Index,
 			Success: wrOk,
 		}
-	} else {
-		res = HdfsToLocalRes{
-			Index:   p.Index,
-			Success: false,
-		}
 	}
 
 	p.HdfsToLocalResCh <- res
@@ -169,6 +165,11 @@ func FileHdfsToLocal(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 	var res HdfsToLocalRes
 
 	if nil != err {
+		res = HdfsToLocalRes{
+			Index:   p.Index,
+			Success: false,
+		}
+	} else {
 		wrOk := false
 
 		b, rdOk := hdfsRdCheck((*fHdl)[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0], p.XdrMark[0])
@@ -180,11 +181,6 @@ func FileHdfsToLocal(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
 		res = HdfsToLocalRes{
 			Index:   p.Index,
 			Success: wrOk,
-		}
-	} else {
-		res = HdfsToLocalRes{
-			Index:   p.Index,
-			Success: false,
 		}
 	}
 
