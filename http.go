@@ -61,8 +61,6 @@ var ShutdownOfflineCh = make(chan Base)
 var CompleteOfflineCh = make(chan Base)
 var ReqCountCh = make(chan Base, 10000)
 
-var ReqOverstock = len(NormalReqCh) / 2
-
 var beeLogs *logs.BeeLogger
 
 func Handle(w http.ResponseWriter, r *http.Request) {
@@ -111,13 +109,13 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	if isRuleBindingReq {
 		ReqCountCh <- Base{engine, topic}
 		RuleBindingReqCh <- RuleBindingReq{Base{engine, topic}, count, HandleCh}
-		if len(RuleBindingReqCh) > ReqOverstock {
+		if len(RuleBindingReqCh) > 100 {
 			Log.Info("Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
 		}
 	} else {
 		ReqCountCh <- Base{Engine: engine}
 		NormalReqCh <- NormalReq{engine, count, HandleCh}
-		if len(NormalReqCh) > ReqOverstock {
+		if len(NormalReqCh) > 100 {
 			Log.Info("Length of NormalReqCh: %d", len(NormalReqCh))
 		}
 	}
