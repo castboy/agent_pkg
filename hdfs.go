@@ -69,10 +69,11 @@ func SendClearFileHdlMsg(seconds int) {
 	for {
 		select {
 		case <-ticker.C:
-			Log.Info("clear httpHdfsFileHdl per %d s, current hdfs file handle num: %d", seconds, CurrentHdfsFHdl())
+			Log.Info("clear HdfsFileHdl per %d s, current hdfs file handle num: %d", seconds, CurrentHdfsFHdl())
 			BulkSendClearFileHdlMsg(seconds)
 		case <-BulkClearHdfsFHdl:
-			Log.Error("BulkSendClearFileHdlMsg, current hdfs file handle num: %d", CurrentHdfsFHdl())
+			fmt.Println("<-BulkClearHdfsFHdl")
+			Log.Info("BulkSendClearFileHdlMsg, current hdfs file handle num: %d", CurrentHdfsFHdl())
 			BulkSendClearFileHdlMsg(seconds)
 		}
 	}
@@ -147,6 +148,7 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (error, *m
 		f, err = client.Open(p.SrcFile)
 		if nil != err {
 			BulkClearHdfsFHdl <- 1
+			fmt.Println("BulkClearHdfsFHdl <- 1")
 			num := 0
 			for {
 				num++
