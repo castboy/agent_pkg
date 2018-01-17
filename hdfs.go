@@ -35,7 +35,11 @@ const (
 	HTTPPRTNNUM  = 64
 	CHECKFILE    = true
 	READTOLERANT = 3
+	MAXOPENNUM   = 4
 )
+
+var FileHdfsFHdls [FILEPRTNNUM]map[string]HdfsFileHdl
+var HttpHdfsFHdls [HTTPPRTNNUM]map[string]HdfsFileHdl
 
 var (
 	HttpHdfsToLocalReqChs [HTTPPRTNNUM]chan HdfsToLocalReqParams
@@ -58,44 +62,67 @@ func InitHdfsCli(namenode string) {
 }
 
 var ClearFileHdlChs, ClearHttpHdlChs [FILEPRTNNUM]chan int
+var BulkClearHdfsFHdl = make(chan int)
 
 func SendClearFileHdlMsg(seconds int) {
 	ticker := time.NewTicker(time.Second * time.Duration(seconds))
-	for _ = range ticker.C {
-		for _, ch := range ClearFileHdlChs {
-			ch <- seconds
-		}
-		for _, ch := range ClearHttpHdlChs {
-			ch <- seconds
+	for {
+		select {
+		case <-ticker.C:
+			Log.Info("clear httpHdfsFileHdl per %d s, current hdfs file handle num: %d", seconds, CurrentHdfsFHdl())
+			BulkSendClearFileHdlMsg(seconds)
+		case <-BulkClearHdfsFHdl:
+			Log.Error("BulkSendClearFileHdlMsg, current hdfs file handle num: %d", CurrentHdfsFHdl())
+			BulkSendClearFileHdlMsg(seconds)
 		}
 	}
+}
 
+func BulkSendClearFileHdlMsg(seconds int) {
+	for _, ch := range ClearFileHdlChs {
+		ch <- seconds
+	}
+	for _, ch := range ClearHttpHdlChs {
+		ch <- seconds
+	}
+}
+
+func CurrentHdfsFHdl() int {
+	var num int
+	for _, v := range FileHdfsFHdls {
+		num += len(v)
+	}
+	for _, v := range HttpHdfsFHdls {
+		num += len(v)
+	}
+
+	return num
 }
 
 func HttpHdfs(idx int) {
-	fHdl := make(map[string]HdfsFileHdl)
+	HttpHdfsFHdls[idx] = make(map[string]HdfsFileHdl)
 	ClearHttpHdlChs[idx] = make(chan int)
 
 	for {
 		select {
 		case msg := <-HttpHdfsToLocalReqChs[idx]:
-			HttpHdfsToLocal(&fHdl, msg)
+			HttpHdfsToLocal(&HttpHdfsFHdls[idx], msg)
 		case msg := <-ClearHttpHdlChs[idx]:
-			ClearHdl(fHdl, msg)
+			ClearHdl(HttpHdfsFHdls[idx], msg)
 		}
 	}
 }
 
 func FileHdfs(idx int) {
-	fHdl := make(map[string]HdfsFileHdl)
+	FileHdfsFHdls[idx] = make(map[string]HdfsFileHdl)
 	ClearFileHdlChs[idx] = make(chan int)
 
 	for {
 		select {
 		case msg := <-FileHdfsToLocalReqChs[idx]:
-			FileHdfsToLocal(&fHdl, msg)
+			FileHdfsToLocal(&FileHdfsFHdls[idx], msg)
 		case msg := <-ClearFileHdlChs[idx]:
-			ClearHdl(fHdl, msg)
+			ClearHdl(FileHdfsFHdls[idx], msg)
 		}
 	}
 }
@@ -112,17 +139,29 @@ func ClearHdl(fileHdl map[string]HdfsFileHdl, seconds int) {
 }
 
 func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (error, *map[string]HdfsFileHdl) {
+	var f *hdfs.FileReader
+	var err error
+
 	_, exist := (*fileHdl)[p.SrcFile]
 	if !exist {
-		f, err := client.Open(p.SrcFile)
+		f, err = client.Open(p.SrcFile)
 		if nil != err {
-			Log.Error("Open Hdfs File %s Err: %s", p.SrcFile, err.Error())
-
-			return err, nil
-		} else {
-			timestamp := time.Now().Unix()
-			(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
+			BulkClearHdfsFHdl <- 1
+			num := 0
+			for {
+				num++
+				time.Sleep(time.Duration(10) * time.Millisecond)
+				f, err = client.Open(p.SrcFile)
+				if nil == err {
+					break
+				}
+				if num > MAXOPENNUM {
+					return err, nil
+				}
+			}
 		}
+		timestamp := time.Now().Unix()
+		(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
 	} else {
 		timestamp := time.Now().Unix()
 		(*fileHdl)[p.SrcFile] = HdfsFileHdl{(*fileHdl)[p.SrcFile].Hdl, timestamp}
