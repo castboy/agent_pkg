@@ -42,7 +42,11 @@ var (
 	FileHdfsToLocalReqChs [FILEPRTNNUM]chan HdfsToLocalReqParams
 
 	client *hdfs.Client
+
+	clientBuildTime int64
 )
+
+var ReHdfsCliChs = make(chan int, 300)
 
 type HdfsFileHdl struct {
 	Hdl     *hdfs.FileReader
@@ -54,6 +58,18 @@ func InitHdfsCli(namenode string) {
 	client, err = hdfs.New(namenode + ":8020")
 	if nil != err {
 		LogCrt("Init Hdfs Client Err, %s", err.Error())
+	}
+
+	clientBuildTime = time.Now().Unix()
+}
+
+func ReHdfsCli() {
+	for _ = range ReHdfsCliChs {
+		if (time.Now().Unix() - clientBuildTime) > 3600 {
+			client.Close()
+			InitHdfsCli(AgentConf.HdfsNameNode)
+			Log.Info("ReHdfsCli, %s", time.Now())
+		}
 	}
 }
 
@@ -112,13 +128,26 @@ func ClearHdl(fileHdl map[string]HdfsFileHdl, seconds int) {
 }
 
 func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (error, *map[string]HdfsFileHdl) {
+	var f *hdfs.FileReader
+	var err error
+
 	_, exist := (*fileHdl)[p.SrcFile]
 	if !exist {
-		f, err := client.Open(p.SrcFile)
+		f, err = client.Open(p.SrcFile)
 		if nil != err {
-			Log.Error("Open Hdfs File %s Err: %s", p.SrcFile, err.Error())
-
-			return err, nil
+			if _, ok := err.(*os.PathError); ok {
+				Log.Error("Open Hdfs File %s Path Err", p.SrcFile)
+				return err, nil
+			} else {
+				ReHdfsCliChs <- 1
+				for {
+					time.Sleep(time.Duration(100) * time.Microsecond)
+					f, err = client.Open(p.SrcFile)
+					if err == nil {
+						break
+					}
+				}
+			}
 		} else {
 			timestamp := time.Now().Unix()
 			(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
