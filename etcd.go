@@ -13,6 +13,7 @@ import (
 type Conf struct {
 	EngineReqPort     int
 	MaxCache          int
+	DelayListen       int
 	Partition         map[string]int32
 	Topic             []string
 	Offset            []int64
