@@ -130,9 +130,10 @@ func ClearHdl(fileHdl map[string]HdfsFileHdl, seconds int) {
 
 func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (err error, fH *map[string]HdfsFileHdl) {
 	defer func() {
-		recover()
-		Log.Error("FileHdl recover %s", err.Error())
-		err = errors.New("error example")
+		if e := recover(); nil != e {
+			Log.Error("FileHdl() recover %s", err.Error())
+			err = errors.New("error example")
+		}
 	}()
 
 	var f *hdfs.FileReader
