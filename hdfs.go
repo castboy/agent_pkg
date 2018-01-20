@@ -2,6 +2,7 @@ package agent_pkg
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -127,9 +128,14 @@ func ClearHdl(fileHdl map[string]HdfsFileHdl, seconds int) {
 	}
 }
 
-func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (error, *map[string]HdfsFileHdl) {
+func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (err error, fH *map[string]HdfsFileHdl) {
+	defer func() {
+		recover()
+		Log.Error("FileHdl recover %s", err.Error())
+		err = errors.New("error example")
+	}()
+
 	var f *hdfs.FileReader
-	var err error
 
 	_, exist := (*fileHdl)[p.SrcFile]
 	if !exist {
@@ -157,7 +163,9 @@ func FileHdl(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (error, *m
 		(*fileHdl)[p.SrcFile] = HdfsFileHdl{(*fileHdl)[p.SrcFile].Hdl, timestamp}
 	}
 
-	return nil, fileHdl
+	fH = fileHdl
+
+	return nil, fH
 }
 
 func HttpHdfsToLocal(fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
