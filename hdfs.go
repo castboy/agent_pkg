@@ -51,6 +51,18 @@ type HdfsFileHdl struct {
 var FileHdfsClients = make([]*hdfs.Client, 0)
 var HttpHdfsClients = make([]*hdfs.Client, 0)
 
+func HdfsClisOffline() {
+	ticker := time.NewTicker(time.Second * time.Duration(300))
+	for range ticker.C {
+		for i := 0; i < HTTPPRTNNUM; i++ {
+			HttpHdfsClients[i].Close()
+		}
+		for i := 0; i < FILEPRTNNUM; i++ {
+			FileHdfsClients[i].Close()
+		}
+	}
+}
+
 func InitHdfsClis(namenode string) {
 	for i := 0; i < HTTPPRTNNUM; i++ {
 		HttpHdfsClients = append(HttpHdfsClients, InitHdfsCli(namenode))
