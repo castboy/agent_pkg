@@ -164,6 +164,8 @@ func FileHdl(t string, idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalRe
 					Log.Error("Open Hdfs File %s Path Err", p.SrcFile)
 					return errors.New("path err"), nil
 				}
+				timestamp := time.Now().Unix()
+				(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
 			}
 		} else {
 			timestamp := time.Now().Unix()
