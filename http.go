@@ -138,7 +138,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		data = dataSlice
 	} else {
 		data = nil
-		time.Sleep(time.Duration(10) * time.Millisecond)
+		time.Sleep(time.Duration(500) * time.Millisecond)
 	}
 
 	res := struct {
