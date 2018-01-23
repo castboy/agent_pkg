@@ -53,6 +53,18 @@ var HttpHdfsClients = make([]*hdfs.Client, 0)
 var FileHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
 var HttpHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
 
+func HdfsClisOffline() {
+	ticker := time.NewTicker(time.Second * time.Duration(300))
+	for range ticker.C {
+		for i := 0; i < HTTPPRTNNUM; i++ {
+			HttpHdfsClients[i].Close()
+		}
+		for i := 0; i < FILEPRTNNUM; i++ {
+			FileHdfsClients[i].Close()
+		}
+	}
+}
+
 func InitHdfsClis(namenode string) {
 	for i := 0; i < HTTPPRTNNUM; i++ {
 		HttpHdfsClients = append(HttpHdfsClients, InitHdfsCli(namenode))
