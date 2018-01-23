@@ -147,11 +147,13 @@ func hdfsRd(file string, offset int64, size int) ([]byte, error) {
 
 	fHdl, err := client.Open(file)
 
-	if _, ok := err.(*os.PathError); ok {
-		Log.Error("First Open Hdfs File %s Path Err", file)
-		return bytes, errors.New("PathError")
-	} else {
-		os.Exit(1)
+	if err != nil {
+		if _, ok := err.(*os.PathError); ok {
+			Log.Error("First Open Hdfs File %s Path Err", file)
+			return bytes, errors.New("PathError")
+		} else {
+			os.Exit(1)
+		}
 	}
 
 	defer fHdl.Close()
