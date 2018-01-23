@@ -176,7 +176,7 @@ func FileHdl(t string, idx int, p HdfsToLocalReqParams) error {
 		}
 		if nil != err {
 			if _, ok := err.(*os.PathError); ok {
-				Log.Error("Open Hdfs File %s Path Err", p.SrcFile)
+				Log.Error("First Open Hdfs File %s Path Err", p.SrcFile)
 				return errors.New("path err")
 			} else {
 				ReHdfsCli(t, idx)
@@ -187,7 +187,7 @@ func FileHdl(t string, idx int, p HdfsToLocalReqParams) error {
 					f, err = HttpHdfsClients[idx].Open(p.SrcFile)
 				}
 				if nil != err {
-					Log.Error("Open Hdfs File %s Path Err", p.SrcFile)
+					Log.Error("Second Open Hdfs File %s Path Err", p.SrcFile)
 					return errors.New("path err")
 				}
 
