@@ -50,6 +50,8 @@ type HdfsFileHdl struct {
 
 var FileHdfsClients = make([]*hdfs.Client, 0)
 var HttpHdfsClients = make([]*hdfs.Client, 0)
+var FileHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
+var HttpHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
 
 func InitHdfsClis(namenode string) {
 	for i := 0; i < HTTPPRTNNUM; i++ {
@@ -96,12 +98,13 @@ func SendClearFileHdlMsg(seconds int) {
 
 func HttpHdfs(idx int) {
 	fHdl := make(map[string]HdfsFileHdl)
+	HttpHdfsFileHdl = append(HttpHdfsFileHdl, fHdl)
 	ClearHttpHdlChs[idx] = make(chan int)
 
 	for {
 		select {
 		case msg := <-HttpHdfsToLocalReqChs[idx]:
-			HttpHdfsToLocal(idx, &fHdl, msg)
+			HttpHdfsToLocal(idx, msg)
 		case msg := <-ClearHttpHdlChs[idx]:
 			ClearHdlTiming(fHdl, msg)
 		}
@@ -110,12 +113,13 @@ func HttpHdfs(idx int) {
 
 func FileHdfs(idx int) {
 	fHdl := make(map[string]HdfsFileHdl)
+	FileHdfsFileHdl = append(FileHdfsFileHdl, fHdl)
 	ClearFileHdlChs[idx] = make(chan int)
 
 	for {
 		select {
 		case msg := <-FileHdfsToLocalReqChs[idx]:
-			FileHdfsToLocal(idx, &fHdl, msg)
+			FileHdfsToLocal(idx, msg)
 		case msg := <-ClearFileHdlChs[idx]:
 			ClearHdlTiming(fHdl, msg)
 		}
@@ -133,15 +137,25 @@ func ClearHdlTiming(fileHdl map[string]HdfsFileHdl, seconds int) {
 	}
 }
 
-func ClearHdlCertain(fileHdl *map[string]HdfsFileHdl) {
-	*fileHdl = make(map[string]HdfsFileHdl)
+func ClearHdlCertain(t string, idx int) {
+	if "FILE" == t {
+		FileHdfsFileHdl[idx] = make(map[string]HdfsFileHdl)
+	} else {
+		HttpHdfsFileHdl[idx] = make(map[string]HdfsFileHdl)
+	}
 }
 
-func FileHdl(t string, idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) (error, *map[string]HdfsFileHdl) {
+func FileHdl(t string, idx int, p HdfsToLocalReqParams) error {
 	var f *hdfs.FileReader
 	var err error
+	var exist bool
 
-	_, exist := (*fileHdl)[p.SrcFile]
+	if "FILE" == t {
+		_, exist = FileHdfsFileHdl[idx][p.SrcFile]
+	} else {
+		_, exist = HttpHdfsFileHdl[idx][p.SrcFile]
+	}
+
 	if !exist {
 		if "FILE" == t {
 			f, err = FileHdfsClients[idx].Open(p.SrcFile)
@@ -151,10 +165,10 @@ func FileHdl(t string, idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalRe
 		if nil != err {
 			if _, ok := err.(*os.PathError); ok {
 				Log.Error("Open Hdfs File %s Path Err", p.SrcFile)
-				return errors.New("path err"), nil
+				return errors.New("path err")
 			} else {
 				ReHdfsCli(t, idx)
-				ClearHdlCertain(fileHdl)
+				ClearHdlCertain(t, idx)
 				if "FILE" == t {
 					f, err = FileHdfsClients[idx].Open(p.SrcFile)
 				} else {
@@ -162,25 +176,42 @@ func FileHdl(t string, idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalRe
 				}
 				if nil != err {
 					Log.Error("Open Hdfs File %s Path Err", p.SrcFile)
-					return errors.New("path err"), nil
+					return errors.New("path err")
 				}
-				timestamp := time.Now().Unix()
-				(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
+
+				if "FILE" == t {
+					timestamp := time.Now().Unix()
+					FileHdfsFileHdl[idx][p.SrcFile] = HdfsFileHdl{f, timestamp}
+				} else {
+					timestamp := time.Now().Unix()
+					HttpHdfsFileHdl[idx][p.SrcFile] = HdfsFileHdl{f, timestamp}
+				}
+
 			}
 		} else {
-			timestamp := time.Now().Unix()
-			(*fileHdl)[p.SrcFile] = HdfsFileHdl{f, timestamp}
+			if "FILE" == t {
+				timestamp := time.Now().Unix()
+				FileHdfsFileHdl[idx][p.SrcFile] = HdfsFileHdl{f, timestamp}
+			} else {
+				timestamp := time.Now().Unix()
+				HttpHdfsFileHdl[idx][p.SrcFile] = HdfsFileHdl{f, timestamp}
+			}
 		}
 	} else {
-		timestamp := time.Now().Unix()
-		(*fileHdl)[p.SrcFile] = HdfsFileHdl{(*fileHdl)[p.SrcFile].Hdl, timestamp}
+		if "FILE" == t {
+			timestamp := time.Now().Unix()
+			FileHdfsFileHdl[idx][p.SrcFile] = HdfsFileHdl{FileHdfsFileHdl[idx][p.SrcFile].Hdl, timestamp}
+		} else {
+			timestamp := time.Now().Unix()
+			HttpHdfsFileHdl[idx][p.SrcFile] = HdfsFileHdl{HttpHdfsFileHdl[idx][p.SrcFile].Hdl, timestamp}
+		}
 	}
 
-	return nil, fileHdl
+	return nil
 }
 
-func HttpHdfsToLocal(idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
-	err, fHdl := FileHdl("HTTP", idx, fileHdl, p)
+func HttpHdfsToLocal(idx int, p HdfsToLocalReqParams) {
+	err := FileHdl("HTTP", idx, p)
 	var res HdfsToLocalRes
 
 	if nil != err {
@@ -189,8 +220,8 @@ func HttpHdfsToLocal(idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqP
 			Success: false,
 		}
 	} else {
-		reqBytes, reqRight := hdfsRdCheck((*fHdl)[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0], p.XdrMark[0])
-		resBytes, resRight := hdfsRdCheck((*fHdl)[p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1], p.XdrMark[1])
+		reqBytes, reqRight := hdfsRdCheck(HttpHdfsFileHdl[idx][p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0], p.XdrMark[0])
+		resBytes, resRight := hdfsRdCheck(HttpHdfsFileHdl[idx][p.SrcFile].Hdl, p.SrcFile, p.Offset[1], p.Size[1], p.XdrMark[1])
 
 		wrOk := false
 		if reqRight && resRight {
@@ -208,8 +239,8 @@ func HttpHdfsToLocal(idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqP
 
 }
 
-func FileHdfsToLocal(idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqParams) {
-	err, fHdl := FileHdl("FILE", idx, fileHdl, p)
+func FileHdfsToLocal(idx int, p HdfsToLocalReqParams) {
+	err := FileHdl("FILE", idx, p)
 	var res HdfsToLocalRes
 
 	if nil != err {
@@ -220,7 +251,7 @@ func FileHdfsToLocal(idx int, fileHdl *map[string]HdfsFileHdl, p HdfsToLocalReqP
 	} else {
 		wrOk := false
 
-		b, rdOk := hdfsRdCheck((*fHdl)[p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0], p.XdrMark[0])
+		b, rdOk := hdfsRdCheck(FileHdfsFileHdl[idx][p.SrcFile].Hdl, p.SrcFile, p.Offset[0], p.Size[0], p.XdrMark[0])
 
 		if rdOk {
 			wrOk = localWrite(p.DstFile[0], b)
