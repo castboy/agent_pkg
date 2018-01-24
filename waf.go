@@ -20,7 +20,8 @@ type BzWaf struct {
 	Rule      string   `json:"rules"`
 	Pid       string   `json:"pid"`
 	Resource  Resource `json:"resource"`
-	Logs      Logs     `json:"logs"`
+	Alert     Alert    `json:"alert"`
+        Logs      []Lg       `json:"logs"`
 }
 
 type Resource struct {
@@ -28,11 +29,16 @@ type Resource struct {
 	Url    string `json:"url"`
 }
 
-type Logs struct {
+type Alert struct {
 	Debug  bool   `json:"debug"`
 	Method string `json:"method"`
 	Url    string `json:"url"`
 	Name   string `json:"data_field_name"`
+}
+
+type Lg struct {
+        Level  string `level`
+        LgFile string `log_file`         
 }
 
 func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
@@ -123,12 +129,13 @@ func JsonFile(instance, topic string) {
 			Method: "GET",
 			Url:    url,
 		},
-		Logs: Logs{
+		Alert: Alert{
 			Debug:  false,
 			Method: "POST",
 			Url:    "http://192.168.146.128/test.php",
 			Name:   "",
 		},
+                Logs: []Lg{{Level: "debug", LgFile: "logs/debug.log"}, {Level: "error", LgFile: "logs/error.log"}},
 	}
 
 	bytes, err := json.Marshal(bzWaf)
