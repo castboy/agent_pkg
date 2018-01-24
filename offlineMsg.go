@@ -14,7 +14,7 @@ type OfflineMsg struct {
 	SignalType string `json: "SignalType"`
 }
 
-var signals = []string{"start", "stop", "complete", "shutdown"}
+var signals = []string{"start", "stop", "complete", "shutdown", "error"}
 var types = []string{"waf", "vds", "rule"}
 
 func TimingGetOfflineMsg(second int) {
