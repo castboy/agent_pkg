@@ -2,7 +2,6 @@ package agent_pkg
 
 import (
 	"encoding/json"
-	//	"fmt"
 	//	"log"
 	"time"
 )
@@ -84,7 +83,7 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 	var validOfflineMsg []OfflineMsg
 
 	for _, v := range offlineMsgs {
-		if "shutdown" == v.SignalType {
+		if "shutdown" == v.SignalType || "error" == v.SignalType {
 			invalidOfflineTask = append(invalidOfflineTask, v.Topic)
 		}
 	}
@@ -110,6 +109,7 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 	}
 
 	Log.Info("valid offline msg: %v", validOfflineMsg)
+        fmt.Println("valid offline msg: %v", validOfflineMsg)
 	return validOfflineMsg
 
 }
@@ -123,6 +123,7 @@ func SendOfflineMsg(validOfflineMsg []OfflineMsg) {
 func OfflineHandle(msg OfflineMsg) {
 	if ok := paramsCheck(msg.SignalType, signals); !ok {
 		Log.Error("offline msg signalType err: %s", msg.SignalType)
+		fmt.Println("offline msg signalType err: %s", msg.SignalType)
 		return
 	}
 
@@ -147,6 +148,7 @@ func OfflineHandle(msg OfflineMsg) {
 
 	case "stop":
 		StopOfflineCh <- other
+
 	case "error":
 		ErrorOfflineCh <- other
 

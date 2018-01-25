@@ -1,8 +1,10 @@
 //offline.go
 
 package agent_pkg
-
-//	"fmt"
+import (
+	"fmt"
+        "time"
+)
 
 func StartOffline(msg Start) {
 	Log.Info("start offline: %v", msg)
@@ -21,11 +23,20 @@ func StartOffline(msg Start) {
 		msg.Weight = 1
 	}
 
+        time.Sleep(time.Duration(5) * time.Second) //can delete this
+
 	startOffset, _, startErr, _ := Offset(topic, Partition)
+
 	consumer, err := InitConsumer(topic, Partition, startOffset)
+
+        if nil != err {
+            Log.Error("create offline-task topic consumer err, topic: %s", topic)
+        }
+
 	if nil == startErr && nil == err {
 		consumers[engine][topic] = consumer
 		status[engine][topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
+                fmt.Println("status", status)
 
 		PrefetchMsgSwitchMap[topic] = true
 

@@ -135,7 +135,7 @@ func JsonFile(instance, topic string) {
 			Url:    "http://192.168.146.128/test.php",
 			Name:   "",
 		},
-                Logs: []Lg{{Level: "debug", LgFile: "logs/debug.log"}, {Level: "error", LgFile: "logs/error.log"}},
+                Logs: []Lg{{Level: "error", LgFile: "logs/error.log"}},
 	}
 
 	bytes, err := json.Marshal(bzWaf)
