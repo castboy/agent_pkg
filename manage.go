@@ -37,6 +37,9 @@ func Manage() {
 
 		case err := <-ErrorOfflineCh:
 			ShutdownOffline(err)
+			if "rule" == err.Engine {
+				go KillWafInstance(AgentConf.WafInstanceDst, err.Topic)
+			}
 
 		case shutdown := <-ShutdownOfflineCh:
 			ShutdownOffline(shutdown)

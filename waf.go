@@ -37,8 +37,8 @@ type Alert struct {
 }
 
 type Lg struct {
-        Level  string `level`
-        LgFile string `log_file`         
+        Level  string `json:"level"`
+        LgFile string `json:"log_file"`         
 }
 
 func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
@@ -117,6 +117,7 @@ func JsonFile(instance, topic string) {
 	pid := fmt.Sprintf("%s/%s/conf/bz_waf.pid", instance, topic)
 	url := fmt.Sprintf("http://localhost:%s/?type=rule&topic=%s&count=100",
 		strconv.Itoa(AgentConf.EngineReqPort), topic)
+        log := fmt.Sprintf("/var/log/waf_instance/%s", topic)
 
 	bzWaf := BzWaf{
 		Daemon:    true,
@@ -135,7 +136,7 @@ func JsonFile(instance, topic string) {
 			Url:    "http://192.168.146.128/test.php",
 			Name:   "",
 		},
-                Logs: []Lg{{Level: "error", LgFile: "logs/error.log"}},
+                Logs: []Lg{{Level: "error", LgFile: log}},
 	}
 
 	bytes, err := json.Marshal(bzWaf)
@@ -152,7 +153,9 @@ func JsonFile(instance, topic string) {
 
 func NewWaf(instance, topic string) {
 	file := []string{"-c", fmt.Sprintf("%s/%s/conf/bz_waf.json", instance, topic)}
-	ok := execCommand("/opt/bz_waf/bin/bz_waf", file)
+        bzWaf := fmt.Sprintf("%s/bz_waf/bin/bz_waf", os.Getenv("APT_HOME"))
+
+	ok := execCommand(bzWaf, file)
 	if !ok {
 		LogCrt("exe newWafInstance failed, %s", topic)
 	}
@@ -174,10 +177,10 @@ func KillWaf(instance, topic string) {
 	}
 	pid := string(out)
 
-	cmd = exec.Command("kill", "-9", pid)
+	cmd = exec.Command("kill", "-TERM", pid)
 	out, err = cmd.CombinedOutput()
 	if err != nil {
-		LogCrt("can not kill newWafInstance, pid %s", pid)
+		Log.Error("can not kill newWafInstance, pid %s, err %s", pid, err.Error())
 	}
 }
 

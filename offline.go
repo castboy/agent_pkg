@@ -52,6 +52,9 @@ func StopOffline(msg Base) {
 	startOffset, endOffset, startErr, endErr := Offset(msg.Topic, Partition)
 	if nil == startErr && nil == endErr {
 		s := status[msg.Engine][msg.Topic]
+                if s.Weight == 0 {
+                    s.Weight = 5
+                }
 		status[msg.Engine][msg.Topic] = Status{startOffset, s.Engine, s.Err, s.Cache, endOffset, s.Weight}
 	}
 

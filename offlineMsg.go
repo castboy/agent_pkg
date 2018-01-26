@@ -3,6 +3,7 @@ package agent_pkg
 import (
 	"encoding/json"
 	//	"log"
+        "fmt"
 	"time"
 )
 
@@ -123,7 +124,6 @@ func SendOfflineMsg(validOfflineMsg []OfflineMsg) {
 func OfflineHandle(msg OfflineMsg) {
 	if ok := paramsCheck(msg.SignalType, signals); !ok {
 		Log.Error("offline msg signalType err: %s", msg.SignalType)
-		fmt.Println("offline msg signalType err: %s", msg.SignalType)
 		return
 	}
 
