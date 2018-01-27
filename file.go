@@ -1,7 +1,6 @@
 package agent_pkg
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -9,7 +8,7 @@ import (
 	"strings"
 )
 
-func copyDir(src string, dest string) {
+func copyDir(src string, dest string) error {
 	src_original := src
 	err := filepath.Walk(src, func(src string, f os.FileInfo, err error) error {
 		if f == nil {
@@ -23,8 +22,11 @@ func copyDir(src string, dest string) {
 		return nil
 	})
 	if err != nil {
-		LogCrt("copy dir failed when newWafInstance, src = %s, dest = %s", src, dest)
+		Log.Error("copy dir failed when newWafInstance, src = %s, dest = %s", src, dest)
+		return err
 	}
+
+	return nil
 }
 
 func getFilelist(path string) {
@@ -86,40 +88,47 @@ func CopyFile(src, dst string) (w int64, err error) {
 	return io.Copy(dstFile, srcFile)
 }
 
-func WriteFile(dir string, file string, bytes []byte) bool {
+func WriteFile(dir string, file string, bytes []byte) error {
 	isExist, err := pathExists(dir)
 	if !isExist {
 		err := os.MkdirAll(dir, 0777)
 		if err != nil {
+			Log.Error("mkdir err %s", dir)
+			return err
 		} else {
 		}
 	}
 
 	f, err := os.Create(dir + "/" + file)
 	if nil != err {
-		fmt.Println(err.Error())
+		Log.Error("create file %s failed", dir+"/"+file)
+		return err
 	}
 
 	defer f.Close()
 
-	ok := true
 	err = ioutil.WriteFile(dir+"/"+file, bytes, 0644)
 	if nil != err {
-		ok = false
+		Log.Error("write file %s failed", dir+"/"+file)
+		return err
 	}
 
-	return ok
+	return nil
 }
 
-func AppendWr(file string, content string) {
+func AppendWr(file string, content string) error {
 	f, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if nil != err {
-		LogCrt("open file %s failed", file)
+		Log.Error("open file %s failed", file)
+		return err
 	}
 	_, err = io.WriteString(f, content)
 	if nil != err {
-		LogCrt("write file %s failed", file)
+		Log.Error("write file %s failed", file)
+		return err
 	}
+
+	return nil
 }
 
 func pathExists(path string) (bool, error) {

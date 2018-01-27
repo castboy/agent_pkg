@@ -1,19 +1,16 @@
 package agent_pkg
 
 import (
-	"fmt"
 	"os/exec"
 )
 
-func execCommand(commandName string, params []string) bool {
+func execCommand(commandName string, params []string) error {
 	cmd := exec.Command(commandName, params...)
 
 	_, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(err)
-
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }

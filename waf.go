@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"time"
 )
 
 type BzWaf struct {
@@ -21,7 +22,7 @@ type BzWaf struct {
 	Pid       string   `json:"pid"`
 	Resource  Resource `json:"resource"`
 	Alert     Alert    `json:"alert"`
-        Logs      []Lg       `json:"logs"`
+	Logs      []Lg     `json:"logs"`
 }
 
 type Resource struct {
@@ -37,56 +38,94 @@ type Alert struct {
 }
 
 type Lg struct {
-        Level  string `json:"level"`
-        LgFile string `json:"log_file"`         
+	Level  string `json:"level"`
+	LgFile string `json:"log_file"`
 }
 
 func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
 	Log.Info("%s", "new waf instance begin")
-	CopyPkg(src, dst, topic)
-	AppendRule(dst, topic)
-	ReqRule(dst, topic, srvIp, srvPort)
-	JsonFile(dst, topic)
-	NewWaf(dst, topic)
-	fmt.Println("after NewWaf()")
+
+	if nil != CopyPkg(src, dst, topic) {
+		return
+	}
+
+	if nil != AppendRule(dst, topic) {
+		return
+	}
+
+	if nil != ReqRule(dst, topic, srvIp, srvPort) {
+		return
+	}
+
+	if nil != JsonFile(dst, topic) {
+		return
+	}
+
+	if nil != NewWaf(dst, topic) {
+		return
+	}
+
 	Log.Info("%s", "new waf instance ok")
 }
 
-func CopyPkg(src, dst, topic string) {
+func CopyPkg(src, dst, topic string) error {
 	dst = dst + "/" + topic
 	err := os.MkdirAll(dst, 0777)
 	if err != nil {
-		LogCrt("create dir %s failed when copypkg in newWafInstance", dst)
+		Log.Error("create dir %s failed when copypkg in newWafInstance", dst)
+		return err
 	}
 
 	Log.Info("create dir %s ok when newWafInstance", dst)
 
-	copyDir(src, dst)
+	err = copyDir(src, dst)
+	if err != nil {
+		return err
+	}
 
 	dst = dst + "/conf/rules"
 	err = os.MkdirAll(dst, 0777)
 	if err != nil {
-		LogCrt("create dir %s failed when copypkg in newWafInstance", dst)
+		Log.Error("create dir %s failed when copypkg in newWafInstance", dst)
+		return err
 	}
+
+	return nil
 }
 
-func AppendRule(instance, topic string) {
+func AppendRule(instance, topic string) error {
 	file := fmt.Sprintf("%s/%s/conf/modsecurity.conf", instance, topic)
 	cont := fmt.Sprintf("Include rules/%s.conf", topic)
-	AppendWr(file, cont)
+
+	return AppendWr(file, cont)
 }
 
-func ReqRule(instance, topic, srvIp string, srvPort int) {
+func ReqRule(instance, topic, srvIp string, srvPort int) error {
 	url := fmt.Sprintf("http://%s:%d/byzoro.apt.com/off-line-dispatch/rule/request?topic=%s", srvIp, srvPort, topic)
 
-	res, err := http.Get(url)
+	var res *http.Response
+	var err error
+
+	for i := 0; i < 40; i++ {
+		res, err = http.Get(url)
+		if nil != err {
+			time.Sleep(time.Duration(5) * time.Second)
+		} else {
+			break
+		}
+	}
+
 	if nil != err {
-		LogCrt("req rule url failed, %s", url)
+		Log.Error("req rule url failed, %s", url, err.Error())
+		return err
 	}
 
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
+	if nil != err {
+		return err
+	}
 
 	var ruleRes struct {
 		Rule string
@@ -95,29 +134,32 @@ func ReqRule(instance, topic, srvIp string, srvPort int) {
 
 	err = json.Unmarshal(body, &ruleRes)
 	if nil != err {
-		LogCrt("req rule res err, %s", string(body))
+		return err
 	}
 
 	ruleBytes, err := base64.StdEncoding.DecodeString(ruleRes.Cont)
 	if nil != err {
-		LogCrt("req rule res base64Decode err, %s", ruleRes.Cont)
+		Log.Error("req rule res base64Decode err, %s", ruleRes.Cont)
+		return err
 	}
 
 	dir := fmt.Sprintf("%s/%s/conf/rules", instance, topic)
 	file := fmt.Sprintf("%s.conf", topic)
 
-	ok := WriteFile(dir, file, []byte(ruleBytes))
-	if !ok {
-		LogCrt("write rule file to %s/%s failed", dir, file)
+	err = WriteFile(dir, file, []byte(ruleBytes))
+	if nil != err {
+		return err
 	}
+
+	return nil
 }
 
-func JsonFile(instance, topic string) {
+func JsonFile(instance, topic string) error {
 	file := fmt.Sprintf("%s/%s/conf/modsecurity.conf", instance, topic)
 	pid := fmt.Sprintf("%s/%s/conf/bz_waf.pid", instance, topic)
 	url := fmt.Sprintf("http://localhost:%s/?type=rule&topic=%s&count=100",
 		strconv.Itoa(AgentConf.EngineReqPort), topic)
-        log := fmt.Sprintf("/var/log/waf_instance/%s", topic)
+	log := fmt.Sprintf("/var/log/waf_instance/%s", topic)
 
 	bzWaf := BzWaf{
 		Daemon:    true,
@@ -136,29 +178,36 @@ func JsonFile(instance, topic string) {
 			Url:    "http://192.168.146.128/test.php",
 			Name:   "",
 		},
-                Logs: []Lg{{Level: "error", LgFile: log}},
+		Logs: []Lg{{Level: "error", LgFile: log}},
 	}
 
 	bytes, err := json.Marshal(bzWaf)
 	if nil != err {
-		LogCrt("bz_waf.json, json.Marshal err %v", bzWaf)
+		Log.Error("bz_waf.json, json.Marshal err %v", bzWaf)
+		return err
 	}
 
 	dir := fmt.Sprintf("%s/%s/conf", instance, topic)
-	ok := WriteFile(dir, "bz_waf.json", bytes)
-	if !ok {
-		LogCrt("%s", "write file bz_waf.json failed")
+	err = WriteFile(dir, "bz_waf.json", bytes)
+	if nil != err {
+		Log.Error("%s", "write file bz_waf.json failed")
+		return err
 	}
+
+	return nil
 }
 
-func NewWaf(instance, topic string) {
+func NewWaf(instance, topic string) error {
 	file := []string{"-c", fmt.Sprintf("%s/%s/conf/bz_waf.json", instance, topic)}
-        bzWaf := fmt.Sprintf("%s/bz_waf/bin/bz_waf", os.Getenv("APT_HOME"))
+	bzWaf := fmt.Sprintf("%s/bz_waf/bin/bz_waf", os.Getenv("APT_HOME"))
 
-	ok := execCommand(bzWaf, file)
-	if !ok {
-		LogCrt("exe newWafInstance failed, %s", topic)
+	err := execCommand(bzWaf, file)
+	if nil != err {
+		Log.Error("exe newWafInstance failed, %s", topic)
+		return err
 	}
+
+	return nil
 }
 
 func KillWafInstance(instance, topic string) {
