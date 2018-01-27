@@ -173,7 +173,7 @@ func KillWaf(instance, topic string) {
 	cmd := exec.Command("cat", pidFile)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		LogCrt("pidFile %s not found", pidFile)
+		Log.Error("pidFile %s not found", pidFile)
 	}
 	pid := string(out)
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"path"
 	"strconv"
+        "time"
 )
 
 type HdfsToLocalResTag struct {
@@ -163,6 +164,8 @@ func GetCacheAndRightDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, 
 }
 
 func RdHdfs(prefetchRes PrefetchRes) {
+        time.Sleep(time.Duration(500) * time.Millisecond) //TODO
+
 	engine := prefetchRes.Base.Engine
 	data := *prefetchRes.DataPtr
 	topic := prefetchRes.Base.Topic
