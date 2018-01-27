@@ -90,6 +90,7 @@ func ReHdfsCli(cli HdfsClients, idx int) {
 	client := InitHdfsCli(AgentConf.HdfsNameNode)
 	cli[idx].Close()
 	cli[idx] = client
+	Log.Error("ReHdfsCli")
 }
 
 var ClearFileHdlChs, ClearHttpHdlChs [FILEPRTNNUM]chan int
