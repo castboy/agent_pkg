@@ -98,6 +98,12 @@ func GetStatusFromEtcd() error {
 }
 
 func RightStatus() {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in RightStatus(), %v", err)
+		}
+	}()
+
 	InitVars()
 	InitStatusMap()
 	err = GetStatusFromEtcd()

@@ -36,6 +36,12 @@ func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 }
 
 func Prefetch(prefetchCh chan PrefetchMsg) {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in Prefetch(), %v", err)
+		}
+	}()
+
 	for {
 		prefetchMsg := <-prefetchCh
 

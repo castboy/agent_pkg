@@ -170,6 +170,12 @@ func Listen() {
 }
 
 func ReqCount() {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in ReqCount(), %v", err)
+		}
+	}()
+
 	initReqCountLog()
 
 	count := make(map[string]int)

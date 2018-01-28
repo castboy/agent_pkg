@@ -96,6 +96,12 @@ func ReHdfsCli(cli HdfsClients, idx int) {
 var ClearFileHdlChs, ClearHttpHdlChs [FILEPRTNNUM]chan int
 
 func SendClearFileHdlMsg(seconds int) {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in SendClearFileHdlMsg(), %v", err)
+		}
+	}()
+
 	ticker := time.NewTicker(time.Second * time.Duration(seconds))
 	for _ = range ticker.C {
 		for _, ch := range ClearFileHdlChs {
@@ -108,6 +114,12 @@ func SendClearFileHdlMsg(seconds int) {
 }
 
 func HttpHdfs(idx int) {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in HttpHdfs(), %v", err)
+		}
+	}()
+
 	fHdl := make(map[string]HdfsFileHdl)
 	HttpHdfsFileHdl = append(HttpHdfsFileHdl, fHdl)
 	ClearHttpHdlChs[idx] = make(chan int)
@@ -123,6 +135,12 @@ func HttpHdfs(idx int) {
 }
 
 func FileHdfs(idx int) {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in FileHdfs(), %v", err)
+		}
+	}()
+
 	fHdl := make(map[string]HdfsFileHdl)
 	FileHdfsFileHdl = append(FileHdfsFileHdl, fHdl)
 	ClearFileHdlChs[idx] = make(chan int)

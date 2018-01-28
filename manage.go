@@ -1,11 +1,17 @@
 package agent_pkg
 
 import (
+	"fmt"
 	"time"
-        "fmt"
 )
 
 func Manage() {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in Manage(), %v", err)
+		}
+	}()
+
 	ticker := time.NewTicker(time.Second * time.Duration(3))
 
 	for {
@@ -25,7 +31,7 @@ func Manage() {
 			WriteBufferAndUpdateBufferOffset(res)
 
 		case start := <-StartOfflineCh:
-                        fmt.Println("recv StartOfflineCh")
+			fmt.Println("recv StartOfflineCh")
 			StartOffline(start)
 			if "rule" == start.Base.Engine {
 				go NewWafInstance(AgentConf.WafInstanceSrc, AgentConf.WafInstanceDst,

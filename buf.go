@@ -90,9 +90,9 @@ func UpdateBufferStatus(res map[string]BufferAnalyse, req NormalReq) {
 func UpdateEngineOffset(res map[string]BufferAnalyse, req NormalReq) {
 	for topic, v := range res {
 		s := status[req.Engine][topic]
-                if s.Weight == 0 {
-                    s.Weight = 5
-                }
+		if s.Weight == 0 {
+			s.Weight = 5
+		}
 		readCount := int64(v.EngineRead)
 		status[req.Engine][topic] = Status{s.First, s.Engine + readCount, s.Err, s.Cache, s.Last, s.Weight}
 	}
@@ -126,9 +126,9 @@ func UpdateBufferOffset(res RdHdfsRes) {
 		count := int64(res.PrefetchNum)
 		errNum := res.ErrNum
 		s := status[res.Engine][topic]
-                if s.Weight == 0 {
-                    s.Weight = 5
-                }
+		if s.Weight == 0 {
+			s.Weight = 5
+		}
 
 		status[res.Engine][topic] = Status{s.First, s.Engine, s.Err + errNum, s.Cache + count, s.Last, s.Weight}
 	}
@@ -196,9 +196,9 @@ func UpdateRuleBindingEngineOffset(res BufferAnalyse, req RuleBindingReq) {
 	readCount := int64(res.EngineRead)
 
 	s := status[engine][topic]
-        if s.Weight == 0 {
-            s.Weight = 5
-        }
+	if s.Weight == 0 {
+		s.Weight = 5
+	}
 	status[engine][topic] = Status{s.First, s.Engine + readCount, s.Err, s.Cache, s.Last, s.Weight}
 }
 
@@ -224,6 +224,12 @@ func DisposeRuleBindingReq(req RuleBindingReq) {
 }
 
 func Buffer() {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in Buffer(), %v", err)
+		}
+	}()
+
 	InitBuffersStatus()
 	InitBuffer()
 	InitPrefetchMsgSwitchMap()

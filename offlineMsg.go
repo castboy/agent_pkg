@@ -3,7 +3,7 @@ package agent_pkg
 import (
 	"encoding/json"
 	//	"log"
-        "fmt"
+	"fmt"
 	"time"
 )
 
@@ -18,6 +18,12 @@ var signals = []string{"start", "stop", "complete", "shutdown", "error"}
 var types = []string{"waf", "vds", "rule"}
 
 func TimingGetOfflineMsg(second int) {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in TimingGetOfflineMsg(), %v", err)
+		}
+	}()
+
 	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
 	if nil != err {
 		Log.Error("init consumer of %s failed", AgentConf.OfflineMsgTopic)
@@ -44,6 +50,12 @@ func TimingGetOfflineMsg(second int) {
 }
 
 func CompensationOfflineMsg() {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in CompensationOfflineMsg(), %v", err)
+		}
+	}()
+
 	msgs := LoadOfflineMsg()
 	msgs = ExtractValidOfflineMsg(msgs)
 
@@ -110,7 +122,7 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 	}
 
 	Log.Info("valid offline msg: %v", validOfflineMsg)
-        fmt.Println("valid offline msg: %v", validOfflineMsg)
+	fmt.Println("valid offline msg: %v", validOfflineMsg)
 	return validOfflineMsg
 
 }

@@ -8,6 +8,12 @@ import (
 )
 
 func GetConf() {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in GetConf(), %v", err)
+		}
+	}()
+
 	EtcdNodes = goini.SetConfig("conf.ini").ReadList()[1]["etcd"]
 
 	InitEtcdCli()
