@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"strconv"
 	"time"
+
+	"github.com/widuu/goini"
 )
 
 type BzWaf struct {
@@ -154,6 +156,16 @@ func ReqRule(instance, topic, srvIp string, srvPort int) error {
 	return nil
 }
 
+func AlertUploadUrl() string {
+	conf := goini.SetConfig("conf.ini")
+	host, err := strconv.Atoi(conf.GetValue("preproccess", "url"))
+	if nil != err {
+		Log.Error("UNKNOW PREPROCESS HOST, %s", err.Error())
+	}
+
+	return fmt.Sprintf("http://%s:8092/alert/waf", host)
+}
+
 func JsonFile(instance, topic string) error {
 	file := fmt.Sprintf("%s/%s/conf/modsecurity.conf", instance, topic)
 	pid := fmt.Sprintf("%s/%s/conf/bz_waf.pid", instance, topic)
@@ -175,7 +187,7 @@ func JsonFile(instance, topic string) error {
 		Alert: Alert{
 			Debug:  false,
 			Method: "POST",
-			Url:    "http://192.168.146.128/test.php",
+			Url:    AlertUploadUrl(),
 			Name:   "",
 		},
 		Logs: []Lg{{Level: "error", LgFile: log}},
