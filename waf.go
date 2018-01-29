@@ -158,7 +158,7 @@ func ReqRule(instance, topic, srvIp string, srvPort int) error {
 
 func AlertUploadUrl() string {
 	conf := goini.SetConfig("conf.ini")
-	host, err := conf.GetValue("preproccess", "url")
+	host := conf.GetValue("preproccess", "url")
 	if nil != err {
 		Log.Error("UNKNOW PREPROCESS HOST, %s", err.Error())
 	}
