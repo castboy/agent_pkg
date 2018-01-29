@@ -32,8 +32,8 @@ type HdfsToLocalRes struct {
 }
 
 const (
-	FILEPRTNNUM  = 64
-	HTTPPRTNNUM  = 64
+	FILEPRTNNUM  = 65
+	HTTPPRTNNUM  = 65
 	CHECKFILE    = true
 	READTOLERANT = 3
 )
