@@ -120,8 +120,6 @@ func HttpHdfs(idx int) {
 		}
 	}()
 
-	fHdl := make(map[string]HdfsFileHdl)
-	HttpHdfsFileHdl = append(HttpHdfsFileHdl, fHdl)
 	ClearHttpHdlChs[idx] = make(chan int)
 
 	for {
@@ -129,7 +127,7 @@ func HttpHdfs(idx int) {
 		case msg := <-HttpHdfsToLocalReqChs[idx]:
 			HttpHdfsToLocal(idx, msg)
 		case msg := <-ClearHttpHdlChs[idx]:
-			ClearHdlTiming(fHdl, msg)
+			ClearHdlTiming(HttpHdfsFileHdl, idx, msg)
 		}
 	}
 }
@@ -141,8 +139,6 @@ func FileHdfs(idx int) {
 		}
 	}()
 
-	fHdl := make(map[string]HdfsFileHdl)
-	FileHdfsFileHdl = append(FileHdfsFileHdl, fHdl)
 	ClearFileHdlChs[idx] = make(chan int)
 
 	for {
@@ -150,18 +146,18 @@ func FileHdfs(idx int) {
 		case msg := <-FileHdfsToLocalReqChs[idx]:
 			FileHdfsToLocal(idx, msg)
 		case msg := <-ClearFileHdlChs[idx]:
-			ClearHdlTiming(fHdl, msg)
+			ClearHdlTiming(FileHdfsFileHdl, idx, msg)
 		}
 	}
 }
 
-func ClearHdlTiming(fileHdl map[string]HdfsFileHdl, seconds int) {
+func ClearHdlTiming(fileHdl []map[string]HdfsFileHdl, idx int, seconds int) {
 	timestamp := time.Now().Unix()
 
-	for key, val := range fileHdl {
+	for key, val := range fileHdl[idx] {
 		if val.ReqTime+int64(seconds) < timestamp {
-			val.Hdl.Close()
-			delete(fileHdl, key)
+			fileHdl[idx][key].Hdl.Close()
+			delete(fileHdl[idx], key)
 		}
 	}
 }
@@ -349,6 +345,13 @@ func localWrite(file string, bytes []byte) bool {
 }
 
 func HdfsToLocals() {
+	for i := 0; i < HTTPPRTNNUM; i++ {
+		HttpHdfsFileHdl = append(HttpHdfsFileHdl, make(map[string]HdfsFileHdl))
+	}
+	for i := 0; i < FILEPRTNNUM; i++ {
+		FileHdfsFileHdl = append(FileHdfsFileHdl, make(map[string]HdfsFileHdl))
+	}
+
 	for i := 0; i < HTTPPRTNNUM; i++ {
 		HttpHdfsToLocalReqChs[i] = make(chan HdfsToLocalReqParams, 100)
 		go HttpHdfs(i)
