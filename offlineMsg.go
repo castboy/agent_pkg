@@ -19,6 +19,7 @@ var signals = []string{"start", "stop", "complete", "shutdown", "error"}
 var types = []string{"waf", "vds", "rule"}
 
 var OfflineMsgExedCh = make(chan int, 100)
+var ZeroOfflineMsgCh = make(chan int)
 
 var (
 	IsBoot      bool = true
@@ -29,16 +30,22 @@ var (
 
 func OfflineMsgOffsetRecord() {
 	for {
-		<-OfflineMsgExedCh
-		if IsBoot {
-			msgExedNum++
-			if msgValidNum == msgExedNum {
-				receivedOfflineMsgOffset += msgTotalNum
+		select {
+		case <-OfflineMsgExedCh:
+			if IsBoot {
+				msgExedNum++
+				if msgValidNum == msgExedNum {
+					receivedOfflineMsgOffset += msgTotalNum
+					EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
+					IsBoot = false
+				}
+			} else {
+				receivedOfflineMsgOffset++
 				EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
-				IsBoot = false
 			}
-		} else {
-			receivedOfflineMsgOffset++
+
+		case <-ZeroOfflineMsgCh:
+			receivedOfflineMsgOffset += msgTotalNum
 			EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
 		}
 	}
@@ -152,6 +159,10 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 	fmt.Println("valid offline msg: %v", validOfflineMsg)
 
 	msgValidNum = len(validOfflineMsg)
+
+	if 0 == msgValidNum {
+		ZeroOfflineMsgCh <- 1
+	}
 
 	return validOfflineMsg
 
