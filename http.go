@@ -54,11 +54,11 @@ var RuleBindingReqCh = make(chan RuleBindingReq, 10000)
 var PrefetchResCh = make(chan PrefetchRes)
 var RdHdfsResCh = make(chan RdHdfsRes)
 
-var StartOfflineCh = make(chan Start)
-var StopOfflineCh = make(chan Base)
-var ErrorOfflineCh = make(chan Base)
-var ShutdownOfflineCh = make(chan Base)
-var CompleteOfflineCh = make(chan Base)
+var StartOfflineCh = make(chan Start, 10)
+var StopOfflineCh = make(chan Base, 10)
+var ErrorOfflineCh = make(chan Base, 10)
+var ShutdownOfflineCh = make(chan Base, 10)
+var CompleteOfflineCh = make(chan Base, 10)
 var ReqCountCh = make(chan Base, 10000)
 
 var beeLogs *logs.BeeLogger
