@@ -26,25 +26,27 @@ func StartOffline(msg Start) {
 
 	time.Sleep(time.Duration(5) * time.Second) //can delete this
 
-	startOffset, _, startErr, _ := Offset(topic, Partition)
+	if _, ok := status[engine][topic]; !ok {
+		startOffset, _, startErr, _ := Offset(topic, Partition)
 
-	consumer, err := InitConsumer(topic, Partition, startOffset)
+		consumer, err := InitConsumer(topic, Partition, startOffset)
 
-	if nil != err {
-		Log.Error("create offline-task topic consumer err, topic: %s", topic)
-	}
+		if nil != err {
+			Log.Error("create offline-task topic consumer err, topic: %s", topic)
+		}
 
-	if nil == startErr && nil == err {
-		consumers[engine][topic] = consumer
-		status[engine][topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
-		fmt.Println("status", status)
+		if nil == startErr && nil == err {
+			consumers[engine][topic] = consumer
+			status[engine][topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
+			fmt.Println("status", status)
 
-		PrefetchMsgSwitchMap[topic] = true
+			PrefetchMsgSwitchMap[topic] = true
 
-		PrefetchChMap[topic] = make(chan PrefetchMsg, 100)
-		go Prefetch(PrefetchChMap[topic])
+			PrefetchChMap[topic] = make(chan PrefetchMsg, 100)
+			go Prefetch(PrefetchChMap[topic])
 
-		bufStatus[engine][topic] = BufStatus{0, 0}
+			bufStatus[engine][topic] = BufStatus{0, 0}
+		}
 	}
 
 	OfflineMsgExedCh <- 1
