@@ -35,7 +35,7 @@ var EtcdNodes = make(map[string]string)
 
 func Record() {
 	var s StatusFromEtcd
-	s.ReceivedOfflineMsgOffset = receivedOfflineMsgOffset
+	//	s.ReceivedOfflineMsgOffset = receivedOfflineMsgOffset
 	s.Status[0] = status["waf"]
 	s.Status[1] = status["vds"]
 	s.Status[2] = status["rule"]

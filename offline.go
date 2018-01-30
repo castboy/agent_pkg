@@ -1,9 +1,10 @@
 //offline.go
 
 package agent_pkg
+
 import (
 	"fmt"
-        "time"
+	"time"
 )
 
 func StartOffline(msg Start) {
@@ -23,20 +24,20 @@ func StartOffline(msg Start) {
 		msg.Weight = 1
 	}
 
-        time.Sleep(time.Duration(5) * time.Second) //can delete this
+	time.Sleep(time.Duration(5) * time.Second) //can delete this
 
 	startOffset, _, startErr, _ := Offset(topic, Partition)
 
 	consumer, err := InitConsumer(topic, Partition, startOffset)
 
-        if nil != err {
-            Log.Error("create offline-task topic consumer err, topic: %s", topic)
-        }
+	if nil != err {
+		Log.Error("create offline-task topic consumer err, topic: %s", topic)
+	}
 
 	if nil == startErr && nil == err {
 		consumers[engine][topic] = consumer
 		status[engine][topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
-                fmt.Println("status", status)
+		fmt.Println("status", status)
 
 		PrefetchMsgSwitchMap[topic] = true
 
@@ -45,6 +46,8 @@ func StartOffline(msg Start) {
 
 		bufStatus[engine][topic] = BufStatus{0, 0}
 	}
+
+	OfflineMsgExedCh <- 1
 }
 
 func StopOffline(msg Base) {
@@ -52,12 +55,13 @@ func StopOffline(msg Base) {
 	startOffset, endOffset, startErr, endErr := Offset(msg.Topic, Partition)
 	if nil == startErr && nil == endErr {
 		s := status[msg.Engine][msg.Topic]
-                if s.Weight == 0 {
-                    s.Weight = 5
-                }
+		if s.Weight == 0 {
+			s.Weight = 5
+		}
 		status[msg.Engine][msg.Topic] = Status{startOffset, s.Engine, s.Err, s.Cache, endOffset, s.Weight}
 	}
 
+	OfflineMsgExedCh <- 1
 }
 
 func ShutdownOffline(msg Base) {
@@ -73,6 +77,8 @@ func ShutdownOffline(msg Base) {
 	}
 
 	delete(PrefetchChMap, msg.Topic)
+
+	OfflineMsgExedCh <- 1
 }
 
 func CompleteOffline(msg Base) {

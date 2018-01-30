@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	//	"log"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -17,6 +18,32 @@ type OfflineMsg struct {
 var signals = []string{"start", "stop", "complete", "shutdown", "error"}
 var types = []string{"waf", "vds", "rule"}
 
+var OfflineMsgExedCh = make(chan int, 100)
+
+var (
+	IsBoot      bool = true
+	msgTotalNum int
+	msgValidNum int
+	msgExedNum  int
+)
+
+func OfflineMsgOffsetRecord() {
+	for {
+		<-OfflineMsgExedCh
+		if IsBoot {
+			msgExedNum++
+			if msgValidNum == msgExedNum {
+				receivedOfflineMsgOffset += msgTotalNum
+				EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
+				IsBoot = false
+			}
+		} else {
+			receivedOfflineMsgOffset++
+			EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
+		}
+	}
+}
+
 func TimingGetOfflineMsg(second int) {
 	defer func() {
 		if err := recover(); nil != err {
@@ -24,7 +51,7 @@ func TimingGetOfflineMsg(second int) {
 		}
 	}()
 
-	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
+	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), int64(receivedOfflineMsgOffset+1))
 	if nil != err {
 		Log.Error("init consumer of %s failed", AgentConf.OfflineMsgTopic)
 	}
@@ -41,7 +68,7 @@ func TimingGetOfflineMsg(second int) {
 				Log.Error("wrong offline msg: %s", string(kafkaMsg.Value))
 			} else {
 				OfflineHandle(msg)
-				receivedOfflineMsgOffset++
+				//				receivedOfflineMsgOffset++
 			}
 		}
 
@@ -65,7 +92,7 @@ func CompensationOfflineMsg() {
 func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 	var msg OfflineMsg
 
-	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), receivedOfflineMsgOffset+1)
+	consumer, err := InitConsumer(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion), int64(receivedOfflineMsgOffset+1))
 	if nil != err {
 		Log.Error("init consumer of %s failed", AgentConf.OfflineMsgTopic)
 	}
@@ -83,7 +110,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 			}
 		}
 
-		receivedOfflineMsgOffset++
+		msgTotalNum++
 	}
 
 	Log.Info("all offline msg %v", offlineMsgs)
@@ -123,6 +150,9 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 
 	Log.Info("valid offline msg: %v", validOfflineMsg)
 	fmt.Println("valid offline msg: %v", validOfflineMsg)
+
+	msgValidNum = len(validOfflineMsg)
+
 	return validOfflineMsg
 
 }

@@ -5,6 +5,7 @@ package agent_pkg
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 )
 
 type Status struct {
@@ -17,12 +18,12 @@ type Status struct {
 }
 
 type StatusFromEtcd struct {
-	ReceivedOfflineMsgOffset int64
-	Status                   [3]map[string]Status
+	//	ReceivedOfflineMsgOffset int64
+	Status [3]map[string]Status
 }
 
 var statusFromEtcd StatusFromEtcd
-var receivedOfflineMsgOffset int64
+var receivedOfflineMsgOffset int
 var status = make(map[string]map[string]Status)
 var err error
 var wafTopic, vdsTopic string
@@ -41,7 +42,7 @@ func InitStatus() {
 	Log.Info("%s", "init status")
 
 	start, _ := broker.OffsetEarliest(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion))
-	receivedOfflineMsgOffset = int64(start - 1)
+	receivedOfflineMsgOffset = int(start - 1)
 	Log.Info("Received Offline Task Msg Offset: %d", receivedOfflineMsgOffset)
 
 	status["waf"][wafTopic] = Status{0, wafStartOffset, 0, 0, -1, 1}
@@ -91,7 +92,18 @@ func GetStatusFromEtcd() error {
 		status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
 	}
 
-	receivedOfflineMsgOffset = statusFromEtcd.ReceivedOfflineMsgOffset
+	bytes, ok = EtcdGet("apt/agent/offset/" + Localhost)
+	if !ok {
+		Log.Warn("%s", "can not get offset from etcd")
+		receivedOfflineMsgOffset = -1
+	} else {
+		offset, err := strconv.Atoi(string(bytes))
+		if nil != err {
+			receivedOfflineMsgOffset = -1 //TODO
+		} else {
+			receivedOfflineMsgOffset = offset
+		}
+	}
 	Log.Info("Received Offline Task Msg Offset is %d", receivedOfflineMsgOffset)
 
 	return nil
