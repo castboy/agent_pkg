@@ -87,8 +87,10 @@ func CompensationOfflineMsg() {
 
 	msgs := LoadOfflineMsg()
 
-	SendOfflineMsg(msgs)
-	OfflineMsgOffsetRecord()
+	if 0 != msgTotalNum {
+		SendOfflineMsg(msgs)
+		OfflineMsgOffsetRecord()
+	}
 
 	Log.Info("CompensationOfflineMsg complete, current receivedOfflineMsgOffset: %d", receivedOfflineMsgOffset)
 }
