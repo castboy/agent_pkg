@@ -132,7 +132,7 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 	var validOfflineMsg []OfflineMsg
 
 	for _, v := range offlineMsgs {
-		if "shutdown" == v.SignalType || "error" == v.SignalType {
+		if "shutdown" == v.SignalType || "error" == v.SignalType || "complete" == v.SignalType {
 			invalidOfflineTask = append(invalidOfflineTask, v.Topic)
 		}
 	}
