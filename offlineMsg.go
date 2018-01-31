@@ -18,38 +18,31 @@ var signals = []string{"start", "stop", "complete", "shutdown", "error"}
 var types = []string{"waf", "vds", "rule"}
 
 var OfflineMsgExedCh = make(chan int, 100)
-var ZeroOfflineMsgCh = make(chan int)
 
 var (
 	IsBoot      bool = true
 	msgTotalNum int
-	msgValidNum int
 	msgExedNum  int
 )
 
 func OfflineMsgOffsetRecord() {
 	for {
-		select {
-		case <-OfflineMsgExedCh:
-			if IsBoot {
-				msgExedNum++
-				if msgValidNum == msgExedNum {
-					receivedOfflineMsgOffset += msgTotalNum
-					EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
-					IsBoot = false
-					Log.Info("OfflineMsgOffsetRecord, OfflineMsgExedCh, IsBoot = false, receivedOfflineMsgOffset = %d", receivedOfflineMsgOffset)
-				}
-			} else {
-				receivedOfflineMsgOffset++
-				EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
-				Log.Info("OfflineMsgOffsetRecord, OfflineMsgExedCh, receivedOfflineMsgOffset = %d", receivedOfflineMsgOffset)
-			}
-
-		case <-ZeroOfflineMsgCh:
+		<-OfflineMsgExedCh
+		msgExedNum++
+		if msgTotalNum == msgExedNum {
 			receivedOfflineMsgOffset += msgTotalNum
 			EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
-			Log.Info("OfflineMsgOffsetRecord, ZeroOfflineMsgCh, receivedOfflineMsgOffset = %d", receivedOfflineMsgOffset)
+
+			break
 		}
+	}
+}
+
+func CollectOfflineMsgExedRes() {
+	for {
+		<-OfflineMsgExedCh
+		receivedOfflineMsgOffset++
+		EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
 	}
 }
 
@@ -93,9 +86,11 @@ func CompensationOfflineMsg() {
 	}()
 
 	msgs := LoadOfflineMsg()
-	msgs = ExtractValidOfflineMsg(msgs)
 
 	SendOfflineMsg(msgs)
+	OfflineMsgOffsetRecord()
+
+	Log.Info("CompensationOfflineMsg complete, current receivedOfflineMsgOffset: %d", receivedOfflineMsgOffset)
 }
 
 func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
@@ -124,49 +119,6 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 
 	Log.Info("all offline msg %v", offlineMsgs)
 	return offlineMsgs
-}
-
-func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
-	var invalidOfflineTask []string
-	var invalidOfflineTaskId []int
-	var validOfflineMsg []OfflineMsg
-
-	for _, v := range offlineMsgs {
-		if "shutdown" == v.SignalType || "error" == v.SignalType || "complete" == v.SignalType {
-			invalidOfflineTask = append(invalidOfflineTask, v.Topic)
-		}
-	}
-
-	for i, j := range offlineMsgs {
-		for _, v := range invalidOfflineTask {
-			if j.Topic == v {
-				invalidOfflineTaskId = append(invalidOfflineTaskId, i)
-			}
-		}
-	}
-
-	for k, _ := range offlineMsgs {
-		valid := true
-		for _, j := range invalidOfflineTaskId {
-			if j == k {
-				valid = false
-			}
-		}
-		if valid {
-			validOfflineMsg = append(validOfflineMsg, offlineMsgs[k])
-		}
-	}
-
-	Log.Info("valid offline msg: %v", validOfflineMsg)
-
-	msgValidNum = len(validOfflineMsg)
-
-	if 0 == msgValidNum {
-		ZeroOfflineMsgCh <- 1
-	}
-
-	return validOfflineMsg
-
 }
 
 func SendOfflineMsg(validOfflineMsg []OfflineMsg) {
