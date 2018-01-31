@@ -50,6 +50,9 @@ func StartOffline(msg Start) {
 	}
 
 	OfflineMsgExedCh <- 1
+
+	Log.Info("Offline Start: %v", msg)
+
 }
 
 func StopOffline(msg Base) {
@@ -64,6 +67,7 @@ func StopOffline(msg Base) {
 	}
 
 	OfflineMsgExedCh <- 1
+	Log.Info("Offline Stop: %v", msg)
 }
 
 func ShutdownOffline(msg Base) {
@@ -81,6 +85,8 @@ func ShutdownOffline(msg Base) {
 	delete(PrefetchChMap, msg.Topic)
 
 	OfflineMsgExedCh <- 1
+
+	Log.Info("Offline Shutdown: %v", msg)
 }
 
 func CompleteOffline(msg Base) {

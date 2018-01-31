@@ -1,7 +1,6 @@
 package agent_pkg
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -31,7 +30,6 @@ func Manage() {
 			WriteBufferAndUpdateBufferOffset(res)
 
 		case start := <-StartOfflineCh:
-			fmt.Println("recv StartOfflineCh")
 			StartOffline(start)
 			if "rule" == start.Base.Engine {
 				go NewWafInstance(AgentConf.WafInstanceSrc, AgentConf.WafInstanceDst,

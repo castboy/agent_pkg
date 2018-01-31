@@ -3,7 +3,6 @@ package agent_pkg
 import (
 	"encoding/json"
 	//	"log"
-	"fmt"
 	"strconv"
 	"time"
 )
@@ -38,15 +37,18 @@ func OfflineMsgOffsetRecord() {
 					receivedOfflineMsgOffset += msgTotalNum
 					EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
 					IsBoot = false
+					Log.Info("OfflineMsgOffsetRecord, OfflineMsgExedCh, IsBoot = false, receivedOfflineMsgOffset = %d", receivedOfflineMsgOffset)
 				}
 			} else {
 				receivedOfflineMsgOffset++
 				EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
+				Log.Info("OfflineMsgOffsetRecord, OfflineMsgExedCh, receivedOfflineMsgOffset = %d", receivedOfflineMsgOffset)
 			}
 
 		case <-ZeroOfflineMsgCh:
 			receivedOfflineMsgOffset += msgTotalNum
 			EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
+			Log.Info("OfflineMsgOffsetRecord, ZeroOfflineMsgCh, receivedOfflineMsgOffset = %d", receivedOfflineMsgOffset)
 		}
 	}
 }
@@ -156,7 +158,6 @@ func ExtractValidOfflineMsg(offlineMsgs []OfflineMsg) []OfflineMsg {
 	}
 
 	Log.Info("valid offline msg: %v", validOfflineMsg)
-	fmt.Println("valid offline msg: %v", validOfflineMsg)
 
 	msgValidNum = len(validOfflineMsg)
 
