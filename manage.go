@@ -36,7 +36,6 @@ func Manage() {
 				if NextOfflineMsg {
 					break
 				}
-				time.Sleep(time.Duration(5) * time.Millisecond)
 			}
 			NextOfflineMsg = false
 
