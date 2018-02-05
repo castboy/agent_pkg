@@ -23,7 +23,9 @@ func Manage() {
 
 		case req := <-RuleBindingReqCh:
 			Log.Trace("RuleBindingReq: %v", req)
-			DisposeRuleBindingReq(req)
+			if _, exist := status["rule"][req.Base.Topic]; exist {
+				DisposeRuleBindingReq(req)
+			}
 
 		case res := <-PrefetchResCh:
 			go RdHdfs(res)
