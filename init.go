@@ -41,8 +41,8 @@ func InitVars() {
 func InitStatus() {
 	Log.Info("%s", "init status")
 
-	start, _ := broker.OffsetEarliest(AgentConf.OfflineMsgTopic, int32(AgentConf.OfflineMsgPartion))
-	receivedOfflineMsgOffset = int(start - 1)
+	GetOfflineMsgOffset()
+
 	Log.Info("Received Offline Task Msg Offset: %d", receivedOfflineMsgOffset)
 
 	status["waf"][wafTopic] = Status{0, wafStartOffset, 0, 0, -1, 1}
@@ -92,7 +92,13 @@ func GetStatusFromEtcd() error {
 		status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
 	}
 
-	bytes, ok = EtcdGet("apt/agent/offset/" + Localhost)
+	GetOfflineMsgOffset()
+
+	return nil
+}
+
+func GetOfflineMsgOffset() {
+	bytes, ok := EtcdGet("apt/agent/offset/" + Localhost)
 	if !ok {
 		Log.Warn("%s", "can not get offset from etcd")
 		receivedOfflineMsgOffset = -1
@@ -105,8 +111,6 @@ func GetStatusFromEtcd() error {
 		}
 	}
 	Log.Info("Received Offline Task Msg Offset is %d", receivedOfflineMsgOffset)
-
-	return nil
 }
 
 func RightStatus() {
