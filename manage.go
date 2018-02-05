@@ -17,6 +17,9 @@ func Manage() {
 
 	for {
 		select {
+		case <-TestCh:
+			Log.Info("Length of TestCh: %d", len(TestCh))
+
 		case req := <-NormalReqCh:
 			Log.Trace("NormalReq: %v", req)
 			DisposeNormalReq(req)
