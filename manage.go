@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+var NextOfflineMsg bool = true
+
 func Manage() {
 	defer func() {
 		if err := recover(); nil != err {
@@ -29,33 +31,16 @@ func Manage() {
 		case res := <-RdHdfsResCh:
 			WriteBufferAndUpdateBufferOffset(res)
 
-		case start := <-StartOfflineCh:
-			StartOffline(start)
-			if "rule" == start.Base.Engine {
-				go NewWafInstance(AgentConf.WafInstanceSrc, AgentConf.WafInstanceDst,
-					start.Base.Topic, AgentConf.WebServerReqIp, AgentConf.WebServerReqPort)
+		case msg := <-OfflineMsgCh:
+			for {
+				if NextOfflineMsg {
+					break
+				}
+				time.Sleep(time.Duration(5) * time.Millisecond)
 			}
+			NextOfflineMsg = false
 
-		case stop := <-StopOfflineCh:
-			StopOffline(stop)
-
-		case err := <-ErrorOfflineCh:
-			ShutdownOffline(err)
-			if "rule" == err.Engine {
-				go KillWafInstance(AgentConf.WafInstanceDst, err.Topic)
-			}
-
-		case shutdown := <-ShutdownOfflineCh:
-			ShutdownOffline(shutdown)
-			if "rule" == shutdown.Engine {
-				go KillWafInstance(AgentConf.WafInstanceDst, shutdown.Topic)
-			}
-
-		case complete := <-CompleteOfflineCh:
-			CompleteOffline(complete)
-			if "rule" == complete.Engine {
-				go KillWafInstance(AgentConf.WafInstanceDst, complete.Topic)
-			}
+			ExeOfflineMsg(msg)
 
 		case <-ticker.C:
 			Record()

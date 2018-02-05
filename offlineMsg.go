@@ -29,10 +29,10 @@ func OfflineMsgOffsetRecord() {
 	for {
 		<-OfflineMsgExedCh
 		msgExedNum++
-		if msgTotalNum == msgExedNum {
-			receivedOfflineMsgOffset += msgTotalNum
-			EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
+		receivedOfflineMsgOffset++
+		EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
 
+		if msgTotalNum == msgExedNum {
 			break
 		}
 	}
@@ -140,32 +140,9 @@ func OfflineHandle(msg OfflineMsg) {
 		return
 	}
 
-	start := Start{}
-	other := Base{msg.Engine, msg.Topic}
+	OfflineMsgCh <- msg
 
-	if "start" == msg.SignalType && "rule" == msg.Engine {
-		start = Start{Base{"rule", msg.Topic}, -1}
-	}
-	if "start" == msg.SignalType && "rule" != msg.Engine {
-		start = Start{Base{msg.Engine, msg.Topic}, msg.Weight}
-	}
-
-	switch msg.SignalType {
-	case "start":
-		StartOfflineCh <- start
-
-	case "stop":
-		StopOfflineCh <- other
-
-	case "error":
-		ErrorOfflineCh <- other
-
-	case "shutdown":
-		ShutdownOfflineCh <- other
-
-	case "complete":
-		CompleteOfflineCh <- other
-	}
+	Log.Info("OfflineMsgCh <- msg, msg %v", msg)
 }
 
 func paramsCheck(param string, options []string) bool {

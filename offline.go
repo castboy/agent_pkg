@@ -4,26 +4,35 @@ package agent_pkg
 
 import (
 	"fmt"
-	"time"
 )
 
-func StartOffline(msg Start) {
-	var start interface{} = msg
+func ExeOfflineMsg(msg OfflineMsg) {
+	switch msg.SignalType {
+	case "start":
+		StartOffline(msg)
+		if "rule" == msg.Engine {
+			go NewWafInstance(AgentConf.WafInstanceSrc, AgentConf.WafInstanceDst,
+				msg.Topic, AgentConf.WebServerReqIp, AgentConf.WebServerReqPort)
+		}
+	case "stop":
+		StopOffline(msg)
+	case "shutdown", "error", "complete":
+		ClearOffline(msg, msg.SignalType)
+		if "rule" == msg.Engine {
+			go KillWafInstance(AgentConf.WafInstanceDst, msg.Topic)
+		}
+	}
+}
+
+func StartOffline(msg OfflineMsg) {
 	var engine, topic string
 
-	if val, ok := start.(Start); ok {
-		engine = val.Base.Engine
-		topic = val.Base.Topic
-	} else {
-		engine = msg.Engine
-		topic = msg.Topic
-	}
+	engine = msg.Engine
+	topic = msg.Topic
 
 	if 0 == msg.Weight {
 		msg.Weight = 1
 	}
-
-	time.Sleep(time.Duration(5) * time.Second) //can delete this
 
 	if _, ok := status[engine][topic]; !ok {
 		startOffset, _, startErr, _ := Offset(topic, Partition)
@@ -49,12 +58,13 @@ func StartOffline(msg Start) {
 	}
 
 	OfflineMsgExedCh <- 1
+	NextOfflineMsg = true
 
-	Log.Info("Offline Start: %v", msg)
+	Log.Info("offline-start: %v", msg)
 
 }
 
-func StopOffline(msg Base) {
+func StopOffline(msg OfflineMsg) {
 	startOffset, endOffset, startErr, endErr := Offset(msg.Topic, Partition)
 	if nil == startErr && nil == endErr {
 		s := status[msg.Engine][msg.Topic]
@@ -65,10 +75,12 @@ func StopOffline(msg Base) {
 	}
 
 	OfflineMsgExedCh <- 1
-	Log.Info("Offline Stop: %v", msg)
+	NextOfflineMsg = true
+
+	Log.Info("offline-stop: %v", msg)
 }
 
-func ShutdownOffline(msg Base) {
+func ClearOffline(msg OfflineMsg, t string) {
 	delete(consumers[msg.Engine], msg.Topic)
 	delete(status[msg.Engine], msg.Topic)
 	delete(PrefetchMsgSwitchMap, msg.Topic)
@@ -82,10 +94,7 @@ func ShutdownOffline(msg Base) {
 	delete(PrefetchChMap, msg.Topic)
 
 	OfflineMsgExedCh <- 1
+	NextOfflineMsg = true
 
-	Log.Info("Offline Shutdown: %v", msg)
-}
-
-func CompleteOffline(msg Base) {
-	ShutdownOffline(msg)
+	Log.Info("offline-%s: %v", t, msg)
 }
