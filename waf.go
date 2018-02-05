@@ -171,7 +171,7 @@ func JsonFile(instance, topic string) error {
 	pid := fmt.Sprintf("%s/%s/conf/bz_waf.pid", instance, topic)
 	url := fmt.Sprintf("http://localhost:%s/?type=rule&topic=%s&count=100",
 		strconv.Itoa(AgentConf.EngineReqPort), topic)
-	log := fmt.Sprintf("/var/log/waf_instance/%s", topic)
+	log := fmt.Sprintf("/home/waf_instance/log/%s", topic)
 
 	bzWaf := BzWaf{
 		Daemon:    true,
