@@ -363,6 +363,7 @@ func HdfsToLocals() {
 }
 
 func Hdfs() {
+	go RecordErrXdr()
 	InitHdfsClis(AgentConf.HdfsNameNode)
 	HdfsToLocals()
 }

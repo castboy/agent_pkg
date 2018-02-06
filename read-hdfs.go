@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"path"
 	"strconv"
-        "time"
+	"time"
 )
 
 type HdfsToLocalResTag struct {
@@ -39,6 +39,8 @@ type LocationHdfs struct {
 	Size      int    `json:"Size"`
 	Signature string `json:"Signature"`
 }
+
+var ErrXdrCh = make(chan string, 100)
 
 func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) int {
 	engine := prefetchRes.Base.Engine
@@ -156,15 +158,22 @@ func GetCacheAndRightDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, 
 			cache = append(cache, data[key])
 			rightNum++
 		} else {
-			Log.Error("Err xdr: %s", string(data[key]))
+			ErrXdrCh <- string(data[key])
 		}
 	}
 
 	return cache, rightNum
 }
 
+func RecordErrXdr() {
+	for {
+		msg := <-ErrXdrCh
+		Log.Error("Err xdr: %s", msg)
+	}
+}
+
 func RdHdfs(prefetchRes PrefetchRes) {
-        time.Sleep(time.Duration(500) * time.Millisecond) //TODO
+	time.Sleep(time.Duration(500) * time.Millisecond) //TODO
 
 	engine := prefetchRes.Base.Engine
 	data := *prefetchRes.DataPtr
