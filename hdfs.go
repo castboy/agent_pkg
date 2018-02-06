@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/colinmarc/hdfs"
+	"github.com/widuu/goini"
 )
 
 type HdfsToLocalReqParams struct {
@@ -32,15 +34,18 @@ type HdfsToLocalRes struct {
 }
 
 const (
-	FILEPRTNNUM  = 65
-	HTTPPRTNNUM  = 65
 	CHECKFILE    = true
 	READTOLERANT = 3
 )
 
 var (
-	HttpHdfsToLocalReqChs [HTTPPRTNNUM]chan HdfsToLocalReqParams
-	FileHdfsToLocalReqChs [FILEPRTNNUM]chan HdfsToLocalReqParams
+	FILEPRTNNUM int
+	HTTPPRTNNUM int
+)
+
+var (
+	HttpHdfsToLocalReqChs []chan HdfsToLocalReqParams
+	FileHdfsToLocalReqChs []chan HdfsToLocalReqParams
 )
 
 type HdfsFileHdl struct {
@@ -93,7 +98,7 @@ func ReHdfsCli(cli HdfsClients, idx int) {
 	Log.Error("ReHdfsCli")
 }
 
-var ClearFileHdlChs, ClearHttpHdlChs [FILEPRTNNUM]chan int
+var ClearFileHdlChs, ClearHttpHdlChs []chan int
 
 func SendClearFileHdlMsg(seconds int) {
 	defer func() {
@@ -362,7 +367,26 @@ func HdfsToLocals() {
 	}
 }
 
+func InitHdfs() {
+	conf := goini.SetConfig("conf.ini")
+	n, err := strconv.Atoi(conf.GetValue("preproccess", "partition"))
+	if nil != err {
+		FILEPRTNNUM = 65
+		HTTPPRTNNUM = 65
+	}
+
+	FILEPRTNNUM = n
+	HTTPPRTNNUM = n
+
+	HttpHdfsToLocalReqChs = make([]chan HdfsToLocalReqParams, HTTPPRTNNUM)
+	FileHdfsToLocalReqChs = make([]chan HdfsToLocalReqParams, FILEPRTNNUM)
+
+	ClearFileHdlChs = make([]chan int, FILEPRTNNUM)
+	ClearHttpHdlChs = make([]chan int, HTTPPRTNNUM)
+}
+
 func Hdfs() {
+	InitHdfs()
 	go RecordErrXdr()
 	InitHdfsClis(AgentConf.HdfsNameNode)
 	HdfsToLocals()
