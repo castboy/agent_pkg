@@ -28,10 +28,10 @@ var (
 func OfflineMsgOffsetRecord() {
 	for {
 		<-OfflineMsgExedCh
-		msgExedNum++
 		receivedOfflineMsgOffset++
 		EtcdSet("apt/agent/offset/"+Localhost, strconv.Itoa(receivedOfflineMsgOffset))
 
+		msgExedNum++
 		if msgTotalNum == msgExedNum {
 			break
 		}
@@ -119,7 +119,7 @@ func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
 		msgTotalNum++
 	}
 
-	Log.Info("all offline msg %v", offlineMsgs)
+	Log.Info("LoadOfflineMsg, msgTotalNum: %d,  msgs %v", msgTotalNum, offlineMsgs)
 	return offlineMsgs
 }
 

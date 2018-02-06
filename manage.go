@@ -18,14 +18,10 @@ func Manage() {
 	for {
 		select {
 		case req := <-NormalReqCh:
-			Log.Trace("NormalReq: %v", req)
 			DisposeNormalReq(req)
 
 		case req := <-RuleBindingReqCh:
-			Log.Trace("RuleBindingReq: %v", req)
-			if _, exist := status["rule"][req.Base.Topic]; exist {
-				DisposeRuleBindingReq(req)
-			}
+			DisposeRuleBindingReq(req)
 
 		case res := <-PrefetchResCh:
 			go RdHdfs(res)
@@ -39,7 +35,6 @@ func Manage() {
 					break
 				}
 			}
-			NextOfflineMsg = false
 
 			ExeOfflineMsg(msg)
 

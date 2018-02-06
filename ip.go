@@ -4,7 +4,6 @@ package agent_pkg
 
 import (
 	"net"
-        "fmt"
 	"os"
 	"regexp"
 )
@@ -46,7 +45,6 @@ func GetPartition() {
 	value, ok := AgentConf.Partition[Localhost]
 	if ok {
 		Partition = value
-                fmt.Println("Partition", Partition)
 		Log.Trace("Consume Partition: %d", Partition)
 	} else {
 		LogCrt("%s", "Consume Partition Unknow")

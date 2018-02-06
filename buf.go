@@ -64,6 +64,8 @@ func AnalyseBuffer(req NormalReq) map[string]BufferAnalyse {
 		}
 	}
 
+	Log.Trace("AnalyseBuffer res: %v", Res)
+
 	return Res
 }
 
@@ -85,6 +87,8 @@ func UpdateBufferStatus(res map[string]BufferAnalyse, req NormalReq) {
 		s := bufStatus[req.Engine][topic]
 		bufStatus[req.Engine][topic] = BufStatus{s.Current + v.EngineRead, s.End}
 	}
+
+	Log.Trace("UpdateBufferStatus: %v", bufStatus)
 }
 
 func UpdateEngineOffset(res map[string]BufferAnalyse, req NormalReq) {
@@ -96,6 +100,8 @@ func UpdateEngineOffset(res map[string]BufferAnalyse, req NormalReq) {
 		readCount := int64(v.EngineRead)
 		status[req.Engine][topic] = Status{s.First, s.Engine + readCount, s.Err, s.Cache, s.Last, s.Weight}
 	}
+
+	Log.Trace("UpdateEngineOffset: %v", status)
 }
 
 func SendPrefetchMsg(res map[string]BufferAnalyse, req NormalReq) {
@@ -104,6 +110,8 @@ func SendPrefetchMsg(res map[string]BufferAnalyse, req NormalReq) {
 			PrefetchChMap[topic] <- PrefetchMsg{req.Engine, topic, AgentConf.MaxCache, false}
 
 			PrefetchMsgSwitchMap[topic] = false
+
+			Log.Trace("SendPrefetchMsg, PrefetchChMap[%s] <- %v", topic, PrefetchMsg{req.Engine, topic, AgentConf.MaxCache, false})
 		}
 	}
 }
@@ -117,6 +125,8 @@ func WriteBuffer(res RdHdfsRes) {
 
 		bufStatus[engine][topic] = BufStatus{0, count}
 		buffers[topic] = data
+
+		Log.Trace("WriteBuffer: bufStatus[%s][%s] = %v", engine, topic, bufStatus[engine][topic])
 	}
 }
 
@@ -131,12 +141,16 @@ func UpdateBufferOffset(res RdHdfsRes) {
 		}
 
 		status[res.Engine][topic] = Status{s.First, s.Engine, s.Err + errNum, s.Cache + count, s.Last, s.Weight}
+
+		Log.Trace("UpdateBufferOffset: status[%s][%s] = %v", res.Engine, topic, status[res.Engine][topic])
 	}
 
 	PrefetchMsgSwitchMap[topic] = true
 }
 
 func DisposeNormalReq(req NormalReq) {
+	Log.Trace("NormalReq: %v, NormalReqCh length: %d", req, len(NormalReqCh))
+
 	res := AnalyseBuffer(req)
 	ReadBuffer(res, req)
 	UpdateBufferStatus(res, req)
@@ -188,6 +202,8 @@ func UpdateRuleBindingBufferStatus(res BufferAnalyse, req RuleBindingReq) {
 
 	s := bufStatus[engine][topic]
 	bufStatus[engine][topic] = BufStatus{s.Current + readCount, s.End}
+
+	Log.Trace("UpdateRuleBindingBufferStatus: bufStatus[%s][%s] = %v", engine, topic, bufStatus[engine][topic])
 }
 
 func UpdateRuleBindingEngineOffset(res BufferAnalyse, req RuleBindingReq) {
@@ -200,6 +216,8 @@ func UpdateRuleBindingEngineOffset(res BufferAnalyse, req RuleBindingReq) {
 		s.Weight = 5
 	}
 	status[engine][topic] = Status{s.First, s.Engine + readCount, s.Err, s.Cache, s.Last, s.Weight}
+
+	Log.Trace("UpdateRuleBindingEngineOffset: status[%s][%s] = %v", engine, topic, status[engine][topic])
 }
 
 func SendRuleBindingPrefetchMsg(res BufferAnalyse, req RuleBindingReq) {
@@ -211,16 +229,23 @@ func SendRuleBindingPrefetchMsg(res BufferAnalyse, req RuleBindingReq) {
 		PrefetchChMap[topic] <- PrefetchMsg{engine, topic, AgentConf.MaxCache, false}
 
 		PrefetchMsgSwitchMap[topic] = false
+
+		Log.Trace("SendRuleBindingPrefetchMsg, PrefetchChMap[%s] <- %v", topic, PrefetchMsg{engine, topic, AgentConf.MaxCache, false})
 	}
 }
 
 func DisposeRuleBindingReq(req RuleBindingReq) {
-	Log.Info("dispose ruleBinding buffer: %v", req)
-	res := AnalysisRuleBindingBuffer(req)
-	ReadRuleBindingBuffer(res, req)
-	UpdateRuleBindingBufferStatus(res, req)
-	UpdateRuleBindingEngineOffset(res, req)
-	SendRuleBindingPrefetchMsg(res, req)
+	Log.Trace("RuleBindingReq: %v, RuleBindingReqCh length: %d", req, len(RuleBindingReqCh))
+
+	if _, exist := status["rule"][req.Base.Topic]; exist {
+		res := AnalysisRuleBindingBuffer(req)
+		ReadRuleBindingBuffer(res, req)
+		UpdateRuleBindingBufferStatus(res, req)
+		UpdateRuleBindingEngineOffset(res, req)
+		SendRuleBindingPrefetchMsg(res, req)
+	} else {
+		Log.Error("RuleBindingReq, status: %v, req: %v", status, req)
+	}
 }
 
 func Buffer() {

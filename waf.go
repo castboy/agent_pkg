@@ -226,7 +226,7 @@ func KillWafInstance(instance, topic string) {
 	Log.Info("Kill wafInstance, %s", topic)
 	KillWaf(instance, topic)
 	RmConf(instance, topic)
-	Log.Info("INF", "Kill wafInstance ok, %s", topic)
+	Log.Info("Kill wafInstance ok, %s", topic)
 }
 
 func KillWaf(instance, topic string) {

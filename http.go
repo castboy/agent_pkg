@@ -106,15 +106,9 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	if isRuleBindingReq {
 		ReqCountCh <- Base{engine, topic}
 		RuleBindingReqCh <- RuleBindingReq{Base{engine, topic}, count, HandleCh}
-		if len(RuleBindingReqCh) > 100 {
-			Log.Info("Length of RuleBindingReqCh: %d", len(RuleBindingReqCh))
-		}
 	} else {
 		ReqCountCh <- Base{Engine: engine}
 		NormalReqCh <- NormalReq{engine, count, HandleCh}
-		if len(NormalReqCh) > 100 {
-			Log.Info("Length of NormalReqCh: %d", len(NormalReqCh))
-		}
 	}
 
 	Data := <-HandleCh
@@ -189,7 +183,6 @@ func ReqCount() {
 				count[req.Topic]++
 			}
 		case <-ticker.C:
-			Log.Info("%s", "engine req count per 5 mins")
 			ReqCountIntoFile(count)
 			for k := range count {
 				delete(count, k)

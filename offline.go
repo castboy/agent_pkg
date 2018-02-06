@@ -2,11 +2,9 @@
 
 package agent_pkg
 
-import (
-	"fmt"
-)
-
 func ExeOfflineMsg(msg OfflineMsg) {
+	NextOfflineMsg = false
+
 	switch msg.SignalType {
 	case "start":
 		StartOffline(msg)
@@ -14,14 +12,21 @@ func ExeOfflineMsg(msg OfflineMsg) {
 			go NewWafInstance(AgentConf.WafInstanceSrc, AgentConf.WafInstanceDst,
 				msg.Topic, AgentConf.WebServerReqIp, AgentConf.WebServerReqPort)
 		}
+
 	case "stop":
 		StopOffline(msg)
+
 	case "shutdown", "error", "complete":
-		ClearOffline(msg, msg.SignalType)
+		ClearOffline(msg)
 		if "rule" == msg.Engine {
 			go KillWafInstance(AgentConf.WafInstanceDst, msg.Topic)
 		}
 	}
+
+	OfflineMsgExedCh <- 1
+	NextOfflineMsg = true
+
+	Log.Info("offline-%s: %v", msg.SignalType, msg)
 }
 
 func StartOffline(msg OfflineMsg) {
@@ -46,7 +51,6 @@ func StartOffline(msg OfflineMsg) {
 		if nil == startErr && nil == err {
 			consumers[engine][topic] = consumer
 			status[engine][topic] = Status{startOffset, startOffset, 0, startOffset, -1, msg.Weight}
-			fmt.Println("status", status)
 
 			PrefetchMsgSwitchMap[topic] = true
 
@@ -56,12 +60,6 @@ func StartOffline(msg OfflineMsg) {
 			bufStatus[engine][topic] = BufStatus{0, 0}
 		}
 	}
-
-	OfflineMsgExedCh <- 1
-	NextOfflineMsg = true
-
-	Log.Info("offline-start: %v", msg)
-
 }
 
 func StopOffline(msg OfflineMsg) {
@@ -73,14 +71,9 @@ func StopOffline(msg OfflineMsg) {
 		}
 		status[msg.Engine][msg.Topic] = Status{startOffset, s.Engine, s.Err, s.Cache, endOffset, s.Weight}
 	}
-
-	OfflineMsgExedCh <- 1
-	NextOfflineMsg = true
-
-	Log.Info("offline-stop: %v", msg)
 }
 
-func ClearOffline(msg OfflineMsg, t string) {
+func ClearOffline(msg OfflineMsg) {
 	delete(consumers[msg.Engine], msg.Topic)
 	delete(status[msg.Engine], msg.Topic)
 	delete(PrefetchMsgSwitchMap, msg.Topic)
@@ -92,9 +85,4 @@ func ClearOffline(msg OfflineMsg, t string) {
 	}
 
 	delete(PrefetchChMap, msg.Topic)
-
-	OfflineMsgExedCh <- 1
-	NextOfflineMsg = true
-
-	Log.Info("offline-%s: %v", t, msg)
 }
