@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+
+	"github.com/widuu/goini"
 )
 
 type Status struct {
@@ -43,18 +45,45 @@ func InitStatus() {
 
 	GetOfflineMsgOffset()
 
-	Log.Info("Received Offline Task Msg Offset: %d", receivedOfflineMsgOffset)
-
 	status["waf"][wafTopic] = Status{0, wafStartOffset, 0, 0, -1, 1}
 	status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
 
-	if (-1 != AgentConf.Offset[0]) && (wafStartOffset < AgentConf.Offset[0]) && (AgentConf.Offset[0] < wafEndOffset) {
-		Log.Trace("waf offset is reset to: %d", AgentConf.Offset[0])
-		status["waf"][wafTopic] = Status{0, AgentConf.Offset[0], 0, 0, -1, 1}
+	ResetOffsetWafVds()
+}
+
+func GetResetOffset() (int64, int64, error, error) {
+	conf := goini.SetConfig("conf.ini")
+	w := conf.GetValue("onlineOffset", "waf")
+	v := conf.GetValue("onlineOffset", "vds")
+	waf, wafErr := strconv.Atoi(w)
+	vds, vdsErr := strconv.Atoi(v)
+
+	if nil != wafErr {
+		Log.Error("ResetOffset Waf Value Err: %s", w)
 	}
-	if (-1 != AgentConf.Offset[1]) && (vdsStartOffset < AgentConf.Offset[1]) && (AgentConf.Offset[1] < vdsEndOffset) {
-		Log.Trace("vds offset is reset to: %s", AgentConf.Offset[1])
-		status["vds"][vdsTopic] = Status{0, AgentConf.Offset[1], 0, 0, -1, 1}
+	if nil != vdsErr {
+		Log.Error("ResetOffset Vds Value Err: %s", v)
+	}
+
+	return int64(waf), int64(vds), wafErr, vdsErr
+}
+
+func ResetOffset(t string, oft int64) {
+	Log.Trace("%s offset is reset to %d", t, oft)
+	if "waf" == t {
+		status["waf"][wafTopic] = Status{0, oft, 0, 0, -1, 1}
+	} else {
+		status["vds"][vdsTopic] = Status{0, oft, 0, 0, -1, 1}
+	}
+}
+
+func ResetOffsetWafVds() {
+	waf, vds, wafErr, vdsErr := GetResetOffset()
+	if nil != wafErr && -1 != waf && wafStartOffset < waf && waf < wafEndOffset {
+		ResetOffset("waf", waf)
+	}
+	if nil != vdsErr && -1 != vds && vdsStartOffset < vds && vds < vdsEndOffset {
+		ResetOffset("vds", vds)
 	}
 }
 
@@ -83,14 +112,14 @@ func GetStatusFromEtcd() error {
 	status["vds"] = statusFromEtcd.Status[1]
 	status["rule"] = statusFromEtcd.Status[2]
 
-	if (wafStartOffset > status["waf"][wafTopic].Engine) || (wafEndOffset < status["waf"][wafTopic].Engine) {
-		Log.Trace("waf offset is reset to %d", wafStartOffset)
-		status["waf"][wafTopic] = Status{0, wafStartOffset, 0, 0, -1, 1}
+	if wafStartOffset > status["waf"][wafTopic].Engine || wafEndOffset < status["waf"][wafTopic].Engine {
+		ResetOffset("waf", wafStartOffset)
 	}
-	if (vdsStartOffset > status["vds"][vdsTopic].Engine) || (vdsEndOffset < status["vds"][vdsTopic].Engine) {
-		Log.Trace("vds offset is reset to %d", vdsStartOffset)
-		status["vds"][vdsTopic] = Status{0, vdsStartOffset, 0, 0, -1, 1}
+	if vdsStartOffset > status["vds"][vdsTopic].Engine || vdsEndOffset < status["vds"][vdsTopic].Engine {
+		ResetOffset("vds", vdsStartOffset)
 	}
+
+	ResetOffsetWafVds()
 
 	GetOfflineMsgOffset()
 
