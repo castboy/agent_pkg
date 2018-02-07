@@ -84,7 +84,7 @@ func ClearOffline(msg OfflineMsg) {
 	_, exist := PrefetchChMap[msg.Topic]
 	if exist {
 		PrefetchChMap[msg.Topic] <- PrefetchMsg{"", "", 0, true}
+		close(PrefetchChMap[msg.Topic])
+		delete(PrefetchChMap, msg.Topic)
 	}
-
-	delete(PrefetchChMap, msg.Topic)
 }
