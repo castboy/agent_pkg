@@ -45,7 +45,7 @@ type Lg struct {
 }
 
 func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
-	Log.Info("%s", "new waf instance begin")
+	Log.Info("new waf instance begin: %s", topic)
 
 	if nil != CopyPkg(src, dst, topic) {
 		return
@@ -67,7 +67,7 @@ func NewWafInstance(src, dst, topic, srvIp string, srvPort int) {
 		return
 	}
 
-	Log.Info("%s", "new waf instance ok")
+	Log.Info("%s", "new waf instance end: %s", topic)
 }
 
 func CopyPkg(src, dst, topic string) error {
@@ -103,6 +103,7 @@ func AppendRule(instance, topic string) error {
 }
 
 func ReqRule(instance, topic, srvIp string, srvPort int) error {
+	Log.Info("ReqRule start: %s", topic)
 	url := fmt.Sprintf("http://%s:%d/byzoro.apt.com/off-line-dispatch/rule/request?topic=%s", srvIp, srvPort, topic)
 
 	var res *http.Response
@@ -153,6 +154,7 @@ func ReqRule(instance, topic, srvIp string, srvPort int) error {
 		return err
 	}
 
+	Log.Info("ReqRule end: %s", topic)
 	return nil
 }
 
@@ -210,6 +212,8 @@ func JsonFile(instance, topic string) error {
 }
 
 func NewWaf(instance, topic string) error {
+	Log.Info("NewWaf start: %s", topic)
+
 	file := []string{"-c", fmt.Sprintf("%s/%s/conf/bz_waf.json", instance, topic)}
 	bzWaf := fmt.Sprintf("%s/bz_waf/bin/bz_waf", os.Getenv("APT_HOME"))
 
@@ -219,6 +223,7 @@ func NewWaf(instance, topic string) error {
 		return err
 	}
 
+	Log.Info("NewWaf end: %s", topic)
 	return nil
 }
 

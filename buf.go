@@ -2,6 +2,10 @@
 
 package agent_pkg
 
+import (
+	"os"
+)
+
 type BufStatus struct {
 	Current int
 	End     int
@@ -149,7 +153,12 @@ func UpdateBufferOffset(res RdHdfsRes) {
 }
 
 func DisposeNormalReq(req NormalReq) {
-	Log.Trace("NormalReq: %v, NormalReqCh length: %d", req, len(NormalReqCh))
+	L := len(NormalReqCh)
+	Log.Trace("NormalReq: %v, NormalReqCh length: %d", req, L)
+	if L > 100 {
+		Log.Warn("NormalReq Overstock 100, exit")
+		os.Exit(1)
+	}
 
 	res := AnalyseBuffer(req)
 	ReadBuffer(res, req)
@@ -235,7 +244,12 @@ func SendRuleBindingPrefetchMsg(res BufferAnalyse, req RuleBindingReq) {
 }
 
 func DisposeRuleBindingReq(req RuleBindingReq) {
-	Log.Trace("RuleBindingReq: %v, RuleBindingReqCh length: %d", req, len(RuleBindingReqCh))
+	L := len(RuleBindingReqCh)
+	Log.Trace("RuleBindingReq: %v, RuleBindingReq length: %d", req, L)
+	if L > 100 {
+		Log.Warn("RuleBindingReq Overstock 100, exit")
+		os.Exit(1)
+	}
 
 	_, statusExist := status["rule"][req.Base.Topic]
 	_, consumerExist := consumers[req.Base.Engine]
