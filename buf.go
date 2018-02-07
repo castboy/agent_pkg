@@ -237,7 +237,10 @@ func SendRuleBindingPrefetchMsg(res BufferAnalyse, req RuleBindingReq) {
 func DisposeRuleBindingReq(req RuleBindingReq) {
 	Log.Trace("RuleBindingReq: %v, RuleBindingReqCh length: %d", req, len(RuleBindingReqCh))
 
-	if _, exist := status["rule"][req.Base.Topic]; exist {
+	_, statusExist := status["rule"][req.Base.Topic]
+	_, consumerExist := consumers[req.Base.Engine]
+
+	if statusExist && consumerExist {
 		res := AnalysisRuleBindingBuffer(req)
 		ReadRuleBindingBuffer(res, req)
 		UpdateRuleBindingBufferStatus(res, req)
