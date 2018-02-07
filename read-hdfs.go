@@ -173,7 +173,7 @@ func RecordErrXdr() {
 }
 
 func RdHdfs(prefetchRes PrefetchRes) {
-	time.Sleep(time.Duration(500) * time.Millisecond) //TODO
+	time.Sleep(time.Duration(HdfsReadDelay) * time.Millisecond) //TODO
 
 	engine := prefetchRes.Base.Engine
 	data := *prefetchRes.DataPtr

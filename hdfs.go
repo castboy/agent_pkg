@@ -61,6 +61,8 @@ var HttpHdfsClients = make([]*hdfs.Client, 0)
 var FileHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
 var HttpHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
 
+var HdfsReadDelay int
+
 func HdfsClisOffline() {
 	ticker := time.NewTicker(time.Second * time.Duration(300))
 	for range ticker.C {
@@ -383,6 +385,14 @@ func InitHdfs() {
 
 	ClearFileHdlChs = make([]chan int, FILEPRTNNUM)
 	ClearHttpHdlChs = make([]chan int, HTTPPRTNNUM)
+
+	ms, err := strconv.Atoi(conf.GetValue("preproccess", "hdfsDelay"))
+	if nil != err {
+		HdfsReadDelay = 500
+		Log.Info("HdfsReadDelay conf err: %d default.", HdfsReadDelay)
+	}
+
+	HdfsReadDelay = ms
 }
 
 func Hdfs() {
