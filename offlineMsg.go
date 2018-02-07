@@ -3,6 +3,7 @@ package agent_pkg
 import (
 	"encoding/json"
 	//	"log"
+	"os"
 	"strconv"
 	"time"
 )
@@ -155,4 +156,29 @@ func paramsCheck(param string, options []string) bool {
 	}
 
 	return ok
+}
+
+func MsgExeVerify() {
+	ticker := time.NewTicker(time.Second * time.Duration(60))
+
+	for {
+		<-ticker.C
+
+		_, end, _, err := Offset("offline_msg", 0)
+		if nil != err {
+			Log.Error("MsgExeVerify: offline_msg offset err, %s", err.Error())
+		} else {
+			if int(end-1) == receivedOfflineMsgOffset {
+				Log.Info("MsgExeVerify Ok")
+			} else {
+				time.Sleep(time.Duration(30) * time.Second)
+				if int(end-1) == receivedOfflineMsgOffset {
+					Log.Info("MsgExeVerify Ok")
+				} else {
+					Log.Error("MsgExeVerify Failed")
+					os.Exit(1)
+				}
+			}
+		}
+	}
 }

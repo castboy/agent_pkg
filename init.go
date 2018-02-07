@@ -79,10 +79,10 @@ func ResetOffset(t string, oft int64) {
 
 func ResetOffsetWafVds() {
 	waf, vds, wafErr, vdsErr := GetResetOffset()
-	if nil != wafErr && -1 != waf && wafStartOffset < waf && waf < wafEndOffset {
+	if nil == wafErr && -1 != waf && wafStartOffset < waf && waf < wafEndOffset {
 		ResetOffset("waf", waf)
 	}
-	if nil != vdsErr && -1 != vds && vdsStartOffset < vds && vds < vdsEndOffset {
+	if nil == vdsErr && -1 != vds && vdsStartOffset < vds && vds < vdsEndOffset {
 		ResetOffset("vds", vds)
 	}
 }
