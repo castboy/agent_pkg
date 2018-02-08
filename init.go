@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/widuu/goini"
 )
@@ -34,10 +35,39 @@ var wafStartOffset, wafEndOffset, vdsStartOffset, vdsEndOffset int64
 func InitVars() {
 	wafTopic = AgentConf.Topic[0]
 	vdsTopic = AgentConf.Topic[1]
-	wafStartOffset, _ = broker.OffsetEarliest(wafTopic, int32(Partition))
-	wafEndOffset, _ = broker.OffsetLatest(wafTopic, int32(Partition))
-	vdsStartOffset, _ = broker.OffsetEarliest(vdsTopic, int32(Partition))
-	vdsEndOffset, _ = broker.OffsetLatest(vdsTopic, int32(Partition))
+
+	for {
+		wafStartOffset, err = broker.OffsetEarliest(wafTopic, int32(Partition))
+		if nil != err {
+			time.Sleep(time.Duration(500) * time.Millisecond)
+		} else {
+			break
+		}
+	}
+	for {
+		wafEndOffset, err = broker.OffsetLatest(wafTopic, int32(Partition))
+		if nil != err {
+			time.Sleep(time.Duration(500) * time.Millisecond)
+		} else {
+			break
+		}
+	}
+	for {
+		vdsStartOffset, err = broker.OffsetEarliest(vdsTopic, int32(Partition))
+		if nil != err {
+			time.Sleep(time.Duration(500) * time.Millisecond)
+		} else {
+			break
+		}
+	}
+	for {
+		vdsEndOffset, err = broker.OffsetLatest(vdsTopic, int32(Partition))
+		if nil != err {
+			time.Sleep(time.Duration(500) * time.Millisecond)
+		} else {
+			break
+		}
+	}
 }
 
 func InitStatus() {
