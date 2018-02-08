@@ -2,10 +2,6 @@
 
 package agent_pkg
 
-import (
-	"os"
-)
-
 type BufStatus struct {
 	Current int
 	End     int
@@ -156,8 +152,7 @@ func DisposeNormalReq(req NormalReq) {
 	L := len(NormalReqCh)
 	Log.Trace("NormalReq: %v, NormalReqCh length: %d", req, L)
 	if L > 100 {
-		Log.Warn("NormalReq Overstock 100, exit")
-		os.Exit(1)
+		LogCrt("NormalReq Overstock 100, exit")
 	}
 
 	res := AnalyseBuffer(req)
@@ -247,8 +242,7 @@ func DisposeRuleBindingReq(req RuleBindingReq) {
 	L := len(RuleBindingReqCh)
 	Log.Trace("RuleBindingReq: %v, RuleBindingReq length: %d", req, L)
 	if L > 100 {
-		Log.Warn("RuleBindingReq Overstock 100, exit")
-		os.Exit(1)
+		LogCrt("RuleBindingReq Overstock 100, exit")
 	}
 
 	_, statusExist := status["rule"][req.Base.Topic]

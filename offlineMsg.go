@@ -3,7 +3,6 @@ package agent_pkg
 import (
 	"encoding/json"
 	//	"log"
-	"os"
 	"strconv"
 	"time"
 )
@@ -175,8 +174,7 @@ func MsgExeVerify() {
 				if int(end-1) == receivedOfflineMsgOffset {
 					Log.Info("MsgExeVerify Ok")
 				} else {
-					Log.Error("MsgExeVerify Failed")
-					os.Exit(1)
+					LogCrt("MsgExeVerify Failed")
 				}
 			}
 		}
