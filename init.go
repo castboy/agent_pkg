@@ -109,11 +109,28 @@ func ResetOffset(t string, oft int64) {
 
 func ResetOffsetWafVds() {
 	waf, vds, wafErr, vdsErr := GetResetOffset()
-	if nil == wafErr && -1 != waf && wafStartOffset < waf && waf < wafEndOffset {
-		ResetOffset("waf", waf)
+	if nil == wafErr {
+		if -1 != waf {
+			if wafStartOffset <= waf && waf <= wafEndOffset {
+				ResetOffset("waf", waf)
+			} else {
+				Log.Warn("waf offset %d out of <%d %d>", waf, wafStartOffset, wafEndOffset)
+			}
+		}
+	} else {
+		Log.Warn("waf reset offset in conf.ini err, %s", wafErr.Error())
 	}
-	if nil == vdsErr && -1 != vds && vdsStartOffset < vds && vds < vdsEndOffset {
-		ResetOffset("vds", vds)
+
+	if nil == vdsErr {
+		if -1 != vds {
+			if vdsStartOffset <= vds && vds <= vdsEndOffset {
+				ResetOffset("vds", vds)
+			} else {
+				Log.Warn("vds offset %d out of <%d %d>", vds, vdsStartOffset, vdsEndOffset)
+			}
+		}
+	} else {
+		Log.Warn("vds reset offset in conf.ini err, %s", vdsErr.Error())
 	}
 }
 
