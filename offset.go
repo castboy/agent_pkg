@@ -10,7 +10,7 @@ import (
 func ResetOffsetInConfFile() {
 	conf := "conf.ini"
 
-	line := fmt.Sprintf("sed -n '/offlineOffset/=' %s", conf)
+	line := fmt.Sprintf("sed -n '/onlineOffset/=' %s", conf)
 	out, err := exec.Command("sh", "-c", line).Output()
 	s := strings.Replace(string(out), "\n", "", -1)
 	i, err := strconv.Atoi(s)
