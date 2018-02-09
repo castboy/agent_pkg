@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/colinmarc/hdfs"
@@ -61,7 +62,7 @@ var HttpHdfsClients = make([]*hdfs.Client, 0)
 var FileHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
 var HttpHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
 
-var HdfsReadDelay int
+var HdfsReadDelay int32
 
 func HdfsClisOffline() {
 	ticker := time.NewTicker(time.Second * time.Duration(300))
@@ -268,9 +269,23 @@ func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mar
 		bytes := hdfsRd(fHdl, file, offset, size)
 		ok := isRightFile(bytes, mark)
 		if ok {
+			for {
+				delay := HdfsReadDelay
+				if atomic.CompareAndSwapInt32(&HdfsReadDelay, delay, func(d int32) int32 {
+					if d >= 200 {
+						return d - 200
+					} else {
+						return 0
+					}
+				}(delay)) {
+					break
+				}
+			}
 			return bytes, true
 		} else {
 			errNum++
+			atomic.AddInt32(&HdfsReadDelay, 500)
+			time.Sleep(time.Duration(500) * time.Millisecond)
 		}
 	}
 
@@ -388,11 +403,11 @@ func InitHdfs() {
 
 	ms, err := strconv.Atoi(conf.GetValue("preproccess", "hdfsDelay"))
 	if nil != err {
-		HdfsReadDelay = 500
+		HdfsReadDelay = int32(500)
 		Log.Info("HdfsReadDelay conf err: %d default.", HdfsReadDelay)
 	}
 
-	HdfsReadDelay = ms
+	HdfsReadDelay = int32(ms)
 }
 
 func Hdfs() {

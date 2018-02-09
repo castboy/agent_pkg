@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"path"
 	"strconv"
+	"sync/atomic"
 	"time"
 )
 
@@ -173,7 +174,10 @@ func RecordErrXdr() {
 }
 
 func RdHdfs(prefetchRes PrefetchRes) {
-	time.Sleep(time.Duration(HdfsReadDelay) * time.Millisecond) //TODO
+	d := atomic.LoadInt32(&HdfsReadDelay)
+	Log.Info("HdfsRdDelay(ms): %d", d)
+
+	time.Sleep(time.Duration(d) * time.Millisecond) //TODO
 
 	engine := prefetchRes.Base.Engine
 	data := *prefetchRes.DataPtr
