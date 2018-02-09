@@ -85,6 +85,8 @@ func CompensationOfflineMsg() {
 		}
 	}()
 
+	ReceivedOfflineMsgOffset()
+
 	msgs := LoadOfflineMsg()
 
 	if 0 != msgTotalNum {
@@ -93,6 +95,19 @@ func CompensationOfflineMsg() {
 	}
 
 	Log.Info("CompensationOfflineMsg complete, current receivedOfflineMsgOffset: %d", receivedOfflineMsgOffset)
+}
+
+func ReceivedOfflineMsgOffset() {
+	for {
+		_, end, _, err := Offset(AgentConf.OfflineMsgTopic, 0)
+		if nil == err {
+			if int(end-1) < receivedOfflineMsgOffset {
+				receivedOfflineMsgOffset = int(end - 1)
+				Log.Warn("receivedOfflineMsgOffset > offset in fact, set receivedOfflineMsgOffset to fact-offset: %d", receivedOfflineMsgOffset)
+			}
+			break
+		}
+	}
 }
 
 func LoadOfflineMsg() (offlineMsgs []OfflineMsg) {
