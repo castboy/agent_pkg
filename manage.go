@@ -6,6 +6,9 @@ import (
 
 var NextOfflineMsg bool = true
 
+var manageHeartBeat = make(chan int)
+var manageHeartBeatVerified bool
+
 func Manage() {
 	defer func() {
 		if err := recover(); nil != err {
@@ -40,6 +43,23 @@ func Manage() {
 
 		case <-ticker.C:
 			Record()
+
+		case <-manageHeartBeat:
+			manageHeartBeatVerified = true
 		}
+	}
+}
+
+func ManageHeartBeat() {
+	for {
+		manageHeartBeat <- 1
+		time.Sleep(time.Duration(20) * time.Second)
+		if manageHeartBeatVerified {
+			Log.Info("%s", " manage run normal")
+		} else {
+			LogCrt("%s", "manage run abnormal")
+		}
+
+		manageHeartBeatVerified = false
 	}
 }
