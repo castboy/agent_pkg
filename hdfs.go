@@ -272,7 +272,9 @@ func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mar
 			for {
 				delay := HdfsReadDelay
 				if atomic.CompareAndSwapInt32(&HdfsReadDelay, delay, func(d int32) int32 {
-					if d >= 200 {
+					if d >= 5000 {
+						return 1000
+					} else if d >= 200 {
 						return d - 200
 					} else {
 						return 0
