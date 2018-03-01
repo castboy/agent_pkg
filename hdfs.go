@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/colinmarc/hdfs"
@@ -35,13 +34,17 @@ type HdfsToLocalRes struct {
 }
 
 const (
-	CHECKFILE    = true
-	READTOLERANT = 3
+	CHECKFILE = true
 )
 
 var (
 	FILEPRTNNUM int
 	HTTPPRTNNUM int
+)
+
+var (
+	reRdNum      int
+	reRdInterval int
 )
 
 var (
@@ -61,8 +64,6 @@ var FileHdfsClients = make([]*hdfs.Client, 0)
 var HttpHdfsClients = make([]*hdfs.Client, 0)
 var FileHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
 var HttpHdfsFileHdl = make([]map[string]HdfsFileHdl, 0)
-
-var HdfsReadDelay int32
 
 func HdfsClisOffline() {
 	ticker := time.NewTicker(time.Second * time.Duration(300))
@@ -265,57 +266,41 @@ func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mar
 	errNum := 0
 	var b []byte
 
-	for errNum < READTOLERANT {
-		bytes := hdfsRd(fHdl, file, offset, size)
+	for errNum < reRdNum {
+		bytes, err := hdfsRd(fHdl, file, offset, size)
+		if nil != err {
+			Log.Error("Read Hdfs, reRdNum: %d, reRdInterval: %d, file = %s, offset = %d, size = %d fileSize = %d",
+				reRdNum, reRdInterval, file, offset, size, fHdl.Stat().Size())
+			errNum++
+			time.Sleep(time.Duration(reRdInterval) * time.Millisecond)
+			continue
+		}
 		ok := isRightFile(bytes, mark)
 		if ok {
-			for {
-				delay := HdfsReadDelay
-				if atomic.CompareAndSwapInt32(&HdfsReadDelay, delay, func(d int32) int32 {
-					if d >= 5000 {
-						return 1000
-					} else if d >= 200 {
-						return d - 200
-					} else {
-						return 0
-					}
-				}(delay)) {
-					break
-				}
+			if 0 != errNum {
+				Log.Info("rdHdfs errNum: %d", errNum)
 			}
 			return bytes, true
-		} else {
-			errNum++
-			atomic.AddInt32(&HdfsReadDelay, 500)
-			time.Sleep(time.Duration(500) * time.Millisecond)
 		}
+		errNum++
+		time.Sleep(time.Duration(reRdInterval) * time.Millisecond)
 	}
 
 	return b, false
 }
 
-func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte) {
+func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			switch err := r.(type) {
-			case string:
-				Log.Error("HDFS-PANIC: %s", err)
-			case error:
-				Log.Error("HDFS-PANIC: %s", err.Error())
-			default:
-				Log.Error("HDFS-PANIC: %v", err)
-			}
+			Log.Error("HDFS-PANIC: %v", r)
+			err = errors.New("HDFS-PANIC")
 		}
 	}()
 
 	bytes = make([]byte, size)
-	_, err := fHdl.ReadAt(bytes, offset)
+	_, err = fHdl.ReadAt(bytes, offset)
 
-	if nil != err {
-		Log.Error("Read Hdfs, file = %s, offset = %d, size = %d fileSize = %d", file, offset, size, fHdl.Stat().Size())
-	}
-
-	return bytes
+	return bytes, err
 }
 
 func fileIsExist(file string) bool {
@@ -403,13 +388,19 @@ func InitHdfs() {
 	ClearFileHdlChs = make([]chan int, FILEPRTNNUM)
 	ClearHttpHdlChs = make([]chan int, HTTPPRTNNUM)
 
-	ms, err := strconv.Atoi(conf.GetValue("preproccess", "hdfsDelay"))
+	reRdNum, err = strconv.Atoi(conf.GetValue("preproccess", "reRdNum"))
 	if nil != err {
-		HdfsReadDelay = int32(500)
-		Log.Info("HdfsReadDelay conf err: %d default.", HdfsReadDelay)
+		reRdNum = 5
+		Log.Info("reRdNum conf err, %d default.", reRdNum)
 	}
 
-	HdfsReadDelay = int32(ms)
+	reRdInterval, err = strconv.Atoi(conf.GetValue("preproccess", "reRdInterval"))
+	if nil != err {
+		reRdInterval = 500
+		Log.Info("reRdInterval conf err, %d default.", reRdInterval)
+	}
+
+	Log.Info("<HDFS> reRdNum: %d, reRdInterval: %d(ms)", reRdNum, reRdInterval)
 }
 
 func Hdfs() {

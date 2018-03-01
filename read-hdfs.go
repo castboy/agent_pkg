@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"path"
 	"strconv"
-	"sync/atomic"
-	"time"
 )
 
 type HdfsToLocalResTag struct {
@@ -174,11 +172,6 @@ func RecordErrXdr() {
 }
 
 func RdHdfs(prefetchRes PrefetchRes) {
-	d := atomic.LoadInt32(&HdfsReadDelay)
-	Log.Info("HdfsRdDelay(ms): %d", d)
-
-	time.Sleep(time.Duration(d) * time.Millisecond) //TODO
-
 	engine := prefetchRes.Base.Engine
 	data := *prefetchRes.DataPtr
 	topic := prefetchRes.Base.Topic
