@@ -6,7 +6,7 @@ import (
 
 var NextOfflineMsg bool = true
 
-var manageHeartBeat = make(chan int)
+var manageHeartBeat = make(chan int, 5)
 var manageHeartBeatVerified bool
 
 func Manage() {
