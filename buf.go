@@ -123,29 +123,32 @@ func WriteBuffer(res RdHdfsRes) {
 		count := len(*res.CacheDataPtr)
 		data := *res.CacheDataPtr
 
-		bufStatus[engine][topic] = BufStatus{0, count}
-		buffers[topic] = data
-
-		Log.Trace("WriteBuffer: bufStatus[%s][%s] = %v", engine, topic, bufStatus[engine][topic])
+		if _, ok := bufStatus[engine][topic]; ok {
+			bufStatus[engine][topic] = BufStatus{0, count}
+			buffers[topic] = data
+			Log.Trace("WriteBuffer: bufStatus[%s][%s] = %v", engine, topic, bufStatus[engine][topic])
+		}
 	}
 }
 
 func UpdateBufferOffset(res RdHdfsRes) {
 	topic := res.Base.Topic
-	if 0 != res.PrefetchNum {
-		count := int64(res.PrefetchNum)
-		errNum := res.ErrNum
-		s := status[res.Engine][topic]
-		if s.Weight == 0 {
-			s.Weight = 5
+	if _, ok := status[res.Engine][topic]; ok {
+		if 0 != res.PrefetchNum {
+			count := int64(res.PrefetchNum)
+			errNum := res.ErrNum
+			s := status[res.Engine][topic]
+			if s.Weight == 0 {
+				s.Weight = 5
+			}
+
+			status[res.Engine][topic] = Status{s.First, s.Engine, s.Err + errNum, s.Cache + count, s.Last, s.Weight}
+
+			Log.Trace("UpdateBufferOffset: status[%s][%s] = %v", res.Engine, topic, status[res.Engine][topic])
 		}
 
-		status[res.Engine][topic] = Status{s.First, s.Engine, s.Err + errNum, s.Cache + count, s.Last, s.Weight}
-
-		Log.Trace("UpdateBufferOffset: status[%s][%s] = %v", res.Engine, topic, status[res.Engine][topic])
+		PrefetchMsgSwitchMap[topic] = true
 	}
-
-	PrefetchMsgSwitchMap[topic] = true
 }
 
 func DisposeNormalReq(req NormalReq) {
