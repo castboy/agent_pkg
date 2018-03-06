@@ -79,6 +79,7 @@ func ClearOffline(msg OfflineMsg) {
 		delete(status[msg.Engine], msg.Topic)
 		delete(PrefetchMsgSwitchMap, msg.Topic)
 		delete(bufStatus[msg.Engine], msg.Topic)
+		delete(buffers, msg.Topic)
 	}
 
 	_, exist := PrefetchChMap[msg.Topic]
