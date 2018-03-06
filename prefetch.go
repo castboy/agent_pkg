@@ -2,6 +2,10 @@
 
 package agent_pkg
 
+import (
+	"sync"
+)
+
 type PrefetchMsg struct {
 	Engine string
 	Topic  string
@@ -12,6 +16,8 @@ type PrefetchMsg struct {
 
 var PrefetchMsgSwitchMap = make(map[string]bool)
 var PrefetchChMap = make(map[string]chan PrefetchMsg)
+
+var MutexConsumer sync.Mutex
 
 func InitPrefetchMsgSwitchMap() {
 	for _, val := range status {
@@ -26,6 +32,8 @@ func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 		recover()
 	}()
 
+	MutexConsumer.Lock()
+
 	for i := 0; i < prefetchMsg.Count; i++ {
 		msg, err := consumers[prefetchMsg.Engine][prefetchMsg.Topic].Consume()
 		if err != nil {
@@ -33,6 +41,8 @@ func ReadKafka(prefetchMsg PrefetchMsg, data *[][]byte) {
 		}
 		*data = append(*data, msg.Value)
 	}
+
+	MutexConsumer.Unlock()
 }
 
 func Prefetch(prefetchCh chan PrefetchMsg) {

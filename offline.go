@@ -74,13 +74,14 @@ func StopOffline(msg OfflineMsg) {
 }
 
 func ClearOffline(msg OfflineMsg) {
-	for i := 0; i < 3; i++ { //map key cannot be deleted once,so use for
-		delete(consumers[msg.Engine], msg.Topic)
-		delete(status[msg.Engine], msg.Topic)
-		delete(PrefetchMsgSwitchMap, msg.Topic)
-		delete(bufStatus[msg.Engine], msg.Topic)
-		delete(buffers, msg.Topic)
-	}
+	MutexConsumer.Lock()
+	delete(consumers[msg.Engine], msg.Topic)
+	MutexConsumer.Unlock()
+
+	delete(status[msg.Engine], msg.Topic)
+	delete(PrefetchMsgSwitchMap, msg.Topic)
+	delete(bufStatus[msg.Engine], msg.Topic)
+	delete(buffers, msg.Topic)
 
 	_, exist := PrefetchChMap[msg.Topic]
 	if exist {
