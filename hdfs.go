@@ -264,29 +264,27 @@ func FileHdfsToLocal(idx int, p HdfsToLocalReqParams) {
 
 func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mark string) ([]byte, bool) {
 	errNum := 0
-	var b []byte
+	var bytes []byte
 
 	for errNum < reRdNum {
 		bytes, err := hdfsRd(fHdl, file, offset, size)
 		if nil != err {
-			Log.Error("Read Hdfs, reRdNum: %d, reRdInterval: %d, file = %s, offset = %d, size = %d fileSize = %d",
-				reRdNum, reRdInterval, file, offset, size, fHdl.Stat().Size())
 			errNum++
 			time.Sleep(time.Duration(reRdInterval) * time.Millisecond)
 			continue
-		}
-		ok := isRightFile(bytes, mark)
-		if ok {
-			if 0 != errNum {
-				Log.Info("rdHdfs errNum: %d", errNum)
+		} else {
+			ok := isRightFile(bytes, mark)
+			if ok {
+				return bytes, true
+			} else {
+				return bytes, false
 			}
-			return bytes, true
 		}
-		errNum++
-		time.Sleep(time.Duration(reRdInterval) * time.Millisecond)
 	}
+	Log.Error("Read Hdfs, reRdNum: %d, reRdInterval: %d, file = %s, offset = %d, size = %d fileSize = %d",
+		reRdNum, reRdInterval, file, offset, size, fHdl.Stat().Size())
 
-	return b, false
+	return bytes, false
 }
 
 func hdfsRd(fHdl *hdfs.FileReader, file string, offset int64, size int) (bytes []byte, err error) {
