@@ -2,6 +2,12 @@
 
 package agent_pkg
 
+import (
+	"time"
+
+	"github.com/optiopay/kafka"
+)
+
 func ExeOfflineMsg(msg OfflineMsg) {
 	NextOfflineMsg = false
 
@@ -31,6 +37,8 @@ func ExeOfflineMsg(msg OfflineMsg) {
 
 func StartOffline(msg OfflineMsg) {
 	var engine, topic string
+	var err error
+	var consumer kafka.Consumer
 
 	engine = msg.Engine
 	topic = msg.Topic
@@ -42,7 +50,16 @@ func StartOffline(msg OfflineMsg) {
 	if _, ok := status[engine][topic]; !ok {
 		startOffset, _, startErr, _ := Offset(topic, Partition)
 
-		consumer, err := InitConsumer(topic, Partition, startOffset)
+		for i := 0; i < 10; i++ {
+			consumer, err = InitConsumer(topic, Partition, startOffset)
+			if nil != err {
+				time.Sleep(time.Duration(5) * time.Second)
+
+				continue
+			} else {
+				break
+			}
+		}
 
 		if nil != err {
 			Log.Error("create offline-task topic consumer err, topic: %s", topic)
