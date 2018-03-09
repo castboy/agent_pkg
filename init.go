@@ -36,38 +36,38 @@ func InitVars() {
 	wafTopic = AgentConf.Topic[0]
 	vdsTopic = AgentConf.Topic[1]
 
-	for {
-		wafStartOffset, err = broker.OffsetEarliest(wafTopic, int32(Partition))
+	wafStartOffset, err = GetOffsetRepeatedly(broker.OffsetEarliest, wafTopic, int32(Partition))
+	if nil != err {
+		LogCrt("get start-offset of kafka %s topic %d partition, detail: %s", wafTopic, int32(Partition), err.Error())
+	}
+
+	wafEndOffset, err = GetOffsetRepeatedly(broker.OffsetLatest, wafTopic, int32(Partition))
+	if nil != err {
+		LogCrt("get last-offset of kafka %s topic %d partition, detail: %s", wafTopic, int32(Partition), err.Error())
+	}
+
+	vdsStartOffset, err = GetOffsetRepeatedly(broker.OffsetEarliest, vdsTopic, int32(Partition))
+	if nil != err {
+		LogCrt("get start-offset of kafka %s topic %d partition, detail: %s", vdsTopic, int32(Partition), err.Error())
+	}
+
+	vdsEndOffset, err = GetOffsetRepeatedly(broker.OffsetLatest, vdsTopic, int32(Partition))
+	if nil != err {
+		LogCrt("get last-offset of kafka %s topic %d partition, detail: %s", vdsTopic, int32(Partition), err.Error())
+	}
+}
+
+func GetOffsetRepeatedly(f func(string, int32) (int64, error), topic string, partition int32) (offset int64, err error) {
+	for i := 0; i < 5; i++ {
+		offset, err = f(topic, partition)
 		if nil != err {
 			time.Sleep(time.Duration(500) * time.Millisecond)
 		} else {
 			break
 		}
 	}
-	for {
-		wafEndOffset, err = broker.OffsetLatest(wafTopic, int32(Partition))
-		if nil != err {
-			time.Sleep(time.Duration(500) * time.Millisecond)
-		} else {
-			break
-		}
-	}
-	for {
-		vdsStartOffset, err = broker.OffsetEarliest(vdsTopic, int32(Partition))
-		if nil != err {
-			time.Sleep(time.Duration(500) * time.Millisecond)
-		} else {
-			break
-		}
-	}
-	for {
-		vdsEndOffset, err = broker.OffsetLatest(vdsTopic, int32(Partition))
-		if nil != err {
-			time.Sleep(time.Duration(500) * time.Millisecond)
-		} else {
-			break
-		}
-	}
+
+	return offset, err
 }
 
 func InitStatus() {
