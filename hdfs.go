@@ -281,8 +281,8 @@ func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mar
 			}
 		}
 	}
-	Log.Error("Read Hdfs, reRdNum: %d, reRdInterval: %d, file = %s, offset = %d, size = %d fileSize = %d",
-		reRdNum, reRdInterval, file, offset, size, fHdl.Stat().Size())
+	Log.Error("Read Hdfs, reRdNum: %d, reRdInterval: %d, file = %s, offset = %d, size = %d, signature = %s, fileSize = %d",
+		reRdNum, reRdInterval, file, offset, size, mark, fHdl.Stat().Size())
 
 	return bytes, false
 }
@@ -345,7 +345,7 @@ func localWrite(file string, bytes []byte) bool {
 	err = ioutil.WriteFile(file, bytes, 0644)
 	if nil != err {
 		success = false
-		Log.Error("Write local file %s failed", file)
+		Log.Error("Write local file %s failed, err: %s", file, err.Error())
 	}
 
 	return success
@@ -403,7 +403,6 @@ func InitHdfs() {
 
 func Hdfs() {
 	InitHdfs()
-	go RecordErrXdr()
 	InitHdfsClis(AgentConf.HdfsNameNode)
 	HdfsToLocals()
 }

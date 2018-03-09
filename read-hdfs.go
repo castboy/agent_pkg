@@ -39,8 +39,6 @@ type LocationHdfs struct {
 	Signature string `json:"Signature"`
 }
 
-var ErrXdrCh = make(chan string, 100)
-
 func DisposeRdHdfs(ch chan HdfsToLocalRes, prefetchRes PrefetchRes) int {
 	engine := prefetchRes.Base.Engine
 	data := *prefetchRes.DataPtr
@@ -156,19 +154,10 @@ func GetCacheAndRightDataNum(prefetchRes PrefetchRes, tags []HdfsToLocalResTag, 
 		if val.Success {
 			cache = append(cache, data[key])
 			rightNum++
-		} else {
-			ErrXdrCh <- string(data[key])
 		}
 	}
 
 	return cache, rightNum
-}
-
-func RecordErrXdr() {
-	for {
-		msg := <-ErrXdrCh
-		Log.Error("Err xdr: %s", msg)
-	}
 }
 
 func RdHdfs(prefetchRes PrefetchRes) {
