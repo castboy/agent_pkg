@@ -40,6 +40,6 @@ func InitLog(logName string) {
 }
 
 func LogCrt(format string, v ...interface{}) {
-	Log.Critical(format, v)
+	Log.Critical(format, v...)
 	log.Fatal(exitInfo)
 }
