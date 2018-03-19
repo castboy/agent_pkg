@@ -10,6 +10,19 @@ import (
 
 var exitInfo = "Shut down due to critical fault."
 var Log *logs.BeeLogger
+var LogXdrErr *logs.BeeLogger
+
+func InitLogXdrErr(logName string) {
+	defer func() {
+		if err := recover(); nil != err {
+			LogCrt("PANIC in InitLogXdrErr(), %v", err)
+		}
+	}()
+
+	LogXdrErr = logs.NewLogger(1000)
+	LogXdrErr.SetLogger(logs.AdapterFile, fmt.Sprintf(`{"filename":"log/%s","level":7}`, logName))
+	LogXdrErr.SetLevel(logs.LevelError)
+}
 
 func InitLog(logName string) {
 	defer func() {

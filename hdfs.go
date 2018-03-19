@@ -281,8 +281,8 @@ func hdfsRdCheck(fHdl *hdfs.FileReader, file string, offset int64, size int, mar
 			}
 		}
 	}
-	Log.Error("Read Hdfs, reRdNum: %d, reRdInterval: %d, file = %s, offset = %d, size = %d, signature = %s, fileSize = %d",
-		reRdNum, reRdInterval, file, offset, size, mark, fHdl.Stat().Size())
+
+	LogXdrErr.Error(`{"file": "%s", "offset": %d, "size": %d, "signature": "%s", "fileSize": %d}`, file, offset, size, mark, fHdl.Stat().Size())
 
 	return bytes, false
 }
