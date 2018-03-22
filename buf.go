@@ -95,6 +95,7 @@ func UpdateEngineOffset(res map[string]BufferAnalyse, req NormalReq) {
 	for topic, v := range res {
 		s := status[req.Engine][topic]
 		if s.Weight == 0 {
+			Log.Error("%s: s.Weight==0", "UpdateEngineOffset")
 			s.Weight = 5
 		}
 		readCount := int64(v.EngineRead)
@@ -140,6 +141,7 @@ func UpdateBufferOffset(res RdHdfsRes) {
 			s := status[res.Engine][topic]
 			if s.Weight == 0 {
 				s.Weight = 5
+				Log.Error("%s: s.Weight==0", "UpdateBufferOffset")
 			}
 
 			status[res.Engine][topic] = Status{s.First, s.Engine, s.Err + errNum, s.Cache + count, s.Last, s.Weight}
@@ -221,6 +223,7 @@ func UpdateRuleBindingEngineOffset(res BufferAnalyse, req RuleBindingReq) {
 	s := status[engine][topic]
 	if s.Weight == 0 {
 		s.Weight = 5
+		Log.Error("%s: s.Weight==0", "UpdateRuleBindingEngineOffset")
 	}
 	status[engine][topic] = Status{s.First, s.Engine + readCount, s.Err, s.Cache, s.Last, s.Weight}
 

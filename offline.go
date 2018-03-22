@@ -85,6 +85,7 @@ func StopOffline(msg OfflineMsg) {
 		s := status[msg.Engine][msg.Topic]
 		if s.Weight == 0 {
 			s.Weight = 5
+			Log.Error("%s: s.Weight==0", "StopOffline")
 		}
 		status[msg.Engine][msg.Topic] = Status{startOffset, s.Engine, s.Err, s.Cache, endOffset, s.Weight}
 	}

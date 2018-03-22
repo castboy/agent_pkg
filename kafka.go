@@ -77,6 +77,7 @@ func UpdateOffset() {
 		for topic, v := range val {
 			if v.Weight == 0 {
 				v.Weight = 5
+				Log.Error("%s: s.Weight==0", "UpdateOffset")
 			}
 			startOffset, endOffset, startErr, endErr := Offset(topic, Partition)
 			if "xdrHttp" == topic || "xdrFile" == topic {
