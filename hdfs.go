@@ -178,24 +178,14 @@ func ClearHdlCertain(hdl HdfsFileHdls, idx int) {
 func FileHdl(hdl HdfsFileHdls, cli HdfsClients, idx int, p HdfsToLocalReqParams) error {
 	var f *hdfs.FileReader
 	var err error
-	var errNum int
 
 	hdfsFileHdl, exist := hdl[idx][p.SrcFile]
 
 	if !exist {
-		for errNum < reRdNum {
-			f, err = cli[idx].Open(p.SrcFile)
-			if nil != err {
-				errNum++
-				time.Sleep(time.Duration(reRdInterval) * time.Millisecond)
-			} else {
-				break
-			}
-		}
-
+		f, err = cli[idx].Open(p.SrcFile)
 		if nil != err {
 			if _, ok := err.(*os.PathError); ok {
-				Log.Error("Open Hdfs File %s Path Err, detail: %s", p.SrcFile, err.Error())
+				Log.Error("Open Hdfs File %s Path Err", p.SrcFile)
 				return errors.New("path err")
 			} else {
 				ReHdfsCli(cli, idx)
