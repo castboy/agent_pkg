@@ -107,6 +107,9 @@ func xdrProperty(engine string, bytes []byte) (XdrProperty, error) {
 
 		dir := path.Dir(property.SrcFile)
 		prtn, err = strconv.Atoi(path.Base(dir))
+		if nil != err {
+			Log.Error("strconv.Atoi in xdrProperty, detail: %s", err.Error())
+		}
 
 		property.Prtn = int(prtn)
 	} else {
@@ -118,6 +121,9 @@ func xdrProperty(engine string, bytes []byte) (XdrProperty, error) {
 
 		dir := path.Dir(property.SrcFile)
 		prtn, err = strconv.Atoi(path.Base(dir))
+		if nil != err {
+			Log.Error("strconv.Atoi in xdrProperty, detail: %s", err.Error())
+		}
 
 		property.Prtn = int(prtn)
 	}
